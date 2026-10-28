@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #f2611d;
+  --ink: #111214;
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: auto; }
+  body { @apply bg-surface-0 font-sans text-ink-600 antialiased; }
+  h1, h2, h3, h4 { @apply text-ink-900; }
+  ::selection { background: #f2611d; color: #fff; }
+  :focus-visible { outline: 2px solid #f2611d; outline-offset: 2px; border-radius: 6px; }
+  img { max-width: 100%; }
+}
+
+@layer components {
+  .container-x { @apply mx-auto w-full max-w-container px-4 sm:px-6 lg:px-8; }
+  .section-y { @apply py-16 md:py-24 lg:py-28; }
+  .display { @apply font-display font-extrabold uppercase leading-[0.95] tracking-[-0.005em]; }
+  .h2 { @apply display text-[2.25rem] sm:text-5xl lg:text-[4rem]; }
+  .lead { @apply max-w-[60ch] text-base leading-relaxed md:text-lg; }
+  .btn { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-semibold transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-brand-500 text-white hover:bg-brand-600; }
+  .btn-secondary { @apply btn bg-surface-100 text-ink-900 hover:bg-line; }
+  .btn-outline-dark { @apply btn border-2 border-brand-500 text-brand-500 hover:bg-brand-500 hover:text-white; }
+  .btn-whatsapp { @apply btn bg-whatsapp text-white hover:bg-whatsapp-dark; }
+  .link { @apply font-semibold text-ink-900 underline decoration-2 underline-offset-4 transition-colors hover:text-brand-600; }
+  .field { @apply h-12 w-full rounded-field border border-line bg-surface-50 px-4 text-[15px] text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:bg-white focus:outline-none; }
+  .label { @apply mb-1.5 block text-sm font-semibold text-ink-900; }
+  .chip { @apply inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-full border border-line bg-white px-4 text-sm font-medium text-ink-900 transition-colors hover:border-ink-300; }
+  .chip-on { @apply border-brand-500 bg-brand-50 text-brand-700; }
+}
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+.road-dash {
+  background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 60px, transparent 60px 130px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+.select-chevron {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111214' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-size: 18px;
+  background-position: right 14px center;
+  background-repeat: no-repeat;
+}
+.ga-seen #ga-loader { display: none; }
+@keyframes acc-down { from { height: 0 } to { height: var(--radix-accordion-content-height) } }
+@keyframes acc-up { from { height: var(--radix-accordion-content-height) } to { height: 0 } }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
