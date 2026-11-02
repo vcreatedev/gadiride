@@ -18,7 +18,11 @@ export default function Featured() {
           <Link href="/vehicles/" className="link shrink-0">View all vehicles</Link>
         </div>
         <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((v) => <li key={v.slug}><VehicleCard v={v} /></li>)}
+          {list.map((v) => (
+            <li key={v.slug} className="flex h-full">
+              <VehicleCard v={v} />
+            </li>
+          ))}
         </ul>
       </div>
     </section>

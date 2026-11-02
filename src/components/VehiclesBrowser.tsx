@@ -51,7 +51,11 @@ export default function VehiclesBrowser({ lockGroup }: { lockGroup?: GroupId }) 
       <p className="mt-6 text-sm text-ink-400" aria-live="polite">{list.length} {list.length === 1 ? "vehicle" : "vehicles"}. Sample list, availability confirmed on request.</p>
       {list.length ? (
         <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((v) => <li key={v.slug}><VehicleCard v={v} /></li>)}
+          {list.map((v) => (
+            <li key={v.slug} className="flex h-full">
+              <VehicleCard v={v} />
+            </li>
+          ))}
         </ul>
       ) : (
         <div className="mt-6 rounded-card border border-dashed border-line p-10 text-center">

@@ -91,7 +91,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
               <h2 className="font-head text-2xl font-bold">More {g.name.toLowerCase()}</h2>
               <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {similar.map((s) => (
-                  <li key={s.slug}>
+                  <li key={s.slug} className="flex h-full">
                     <VehicleCard v={s} />
                   </li>
                 ))}
