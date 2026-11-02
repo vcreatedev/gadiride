@@ -6,7 +6,7 @@ import { Minus, Plus, ArrowRight } from "lucide-react";
 import { FORMS, type Field } from "@/data/forms";
 import type { FormKey } from "@/data/services";
 import { buildSchema, isVisible, todayISO } from "@/lib/schema";
-import { useQuote } from "./QuoteFlow";
+import { buildDirectMessage, openWhatsApp } from "@/lib/whatsapp";
 
 const spanCls: Record<number, string> = {
   3: "lg:col-span-3",
@@ -40,7 +40,6 @@ export default function RequestForm({ formKey, idPrefix = formKey, preset, extra
     defaultValues: defaults,
   });
   const values = watch();
-  const { openQuote } = useQuote();
 
   useEffect(() => {
     if (!preset) return;
@@ -60,7 +59,8 @@ export default function RequestForm({ formKey, idPrefix = formKey, preset, extra
             : v[f.name],
       }))
       .filter((e) => !(e.label === "Hire by"));
-    openQuote({ title: def.title, entries: [...extra, ...entries] });
+
+    openWhatsApp(buildDirectMessage(def.title, [...extra, ...entries]));
   };
 
   const errors = formState.errors as FieldErrors<Record<string, string>>;

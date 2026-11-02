@@ -2,7 +2,7 @@
 import { useState, useId } from "react";
 import { Search, Calendar, Clock, Check, Info, Car, Truck, Bus, Wrench } from "lucide-react";
 import { GROUPS, type GroupId } from "@/data/vehicles";
-import { useQuote } from "./QuoteFlow";
+import { buildDirectMessage, openWhatsApp } from "@/lib/whatsapp";
 import { todayISO } from "@/lib/schema";
 
 const GROUP_ICONS: Record<GroupId, React.ElementType> = {
@@ -71,7 +71,6 @@ export default function MobileBookingForm({ activeTab, onTabChange }: Props) {
   const [dropTime, setDropTime] = useState(initial.dropTime);
   const [error, setError] = useState<string | null>(null);
 
-  const { openQuote } = useQuote();
   const inputId = useId();
 
   const handlePickupDateChange = (val: string) => {
@@ -100,19 +99,18 @@ export default function MobileBookingForm({ activeTab, onTabChange }: Props) {
     const groupDef = GROUPS.find((g) => g.id === activeTab);
     const groupName = groupDef ? groupDef.short : "Cars";
 
-    openQuote({
-      title: `${groupName} rental request`,
-      entries: [
-        { label: "Category", value: groupName },
-        { label: "Pickup location", value: pickup.trim() },
-        ...(differentDrop && dropLocation.trim() ? [{ label: "Drop-off location", value: dropLocation.trim() }] : []),
-        { label: "Pickup date", value: formatDisplayDate(pickupDate) },
-        { label: "Pickup time", value: formatDisplayTime(pickupTime) },
-        { label: "Drop-off date", value: formatDisplayDate(dropDate) },
-        { label: "Drop-off time", value: formatDisplayTime(dropTime) },
-        { label: "Driver option", value: driverAge30 ? "Driver age 30+" : "Standard driver" },
-      ],
-    });
+    const entries = [
+      { label: "Category", value: groupName },
+      { label: "Pickup location", value: pickup.trim() },
+      ...(differentDrop && dropLocation.trim() ? [{ label: "Drop-off location", value: dropLocation.trim() }] : []),
+      { label: "Pickup date", value: formatDisplayDate(pickupDate) },
+      { label: "Pickup time", value: formatDisplayTime(pickupTime) },
+      { label: "Drop-off date", value: formatDisplayDate(dropDate) },
+      { label: "Drop-off time", value: formatDisplayTime(dropTime) },
+      { label: "Driver option", value: driverAge30 ? "Driver age 30+" : "Standard driver" },
+    ];
+
+    openWhatsApp(buildDirectMessage(`${groupName} rental request`, entries));
   };
 
   return (
