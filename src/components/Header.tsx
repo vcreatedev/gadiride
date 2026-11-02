@@ -95,11 +95,17 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {site.phone && (
-            <a href={`tel:${site.phone.replace(/\s/g, "")}`} className={`hidden items-center gap-2 px-3 text-sm font-semibold md:flex ${dark ? "text-white" : "text-ink-900"}`}>
-              <Phone className="h-4 w-4" />Call
-            </a>
-          )}
+          <a
+            href={site.phone ? `tel:${site.phone.replace(/\s/g, "")}` : "tel:+919876543210"}
+            className={`hidden min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors sm:inline-flex ${
+              dark
+                ? "border-white/20 text-white hover:bg-white/10"
+                : "border-line bg-white text-ink-900 hover:border-brand-500 hover:text-brand-600 shadow-sm"
+            }`}
+          >
+            <Phone className="h-4 w-4 text-brand-500" />
+            <span>Call</span>
+          </a>
           <a href={whatsappChatHref()} target="_blank" rel="noopener noreferrer" className="btn-whatsapp hidden min-h-10 px-4 text-sm sm:inline-flex">
             <WhatsAppIcon className="h-4 w-4" />WhatsApp
           </a>
@@ -127,7 +133,24 @@ export default function Header() {
                     <Link key={m.href} href={m.href} className="rounded-field px-3 py-3 text-base font-medium text-ink-900 hover:bg-surface-50">{m.label}</Link>
                   ))}
                 </nav>
-                <a href={whatsappChatHref()} target="_blank" rel="noopener noreferrer" className="btn-whatsapp mt-auto w-full"><WhatsAppIcon className="h-5 w-5" />Chat on WhatsApp</a>
+                <div className="mt-auto flex flex-col gap-2.5 pt-6">
+                  <a
+                    href={site.phone ? `tel:${site.phone.replace(/\s/g, "")}` : "tel:+919876543210"}
+                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-line bg-white font-semibold text-ink-900 transition-colors hover:bg-surface-50"
+                  >
+                    <Phone className="h-4 w-4 text-brand-500" />
+                    <span>Call us</span>
+                  </a>
+                  <a
+                    href={whatsappChatHref()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-whatsapp flex h-12 w-full items-center justify-center gap-2 rounded-full"
+                  >
+                    <WhatsAppIcon className="h-5 w-5" />
+                    <span>Chat on WhatsApp</span>
+                  </a>
+                </div>
               </Dialog.Content>
             </Dialog.Portal>
           </Dialog.Root>
