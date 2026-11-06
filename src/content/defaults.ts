@@ -15,7 +15,7 @@ export const homeDefaults = {
   seo: {
     title: "Gadiride | Self drive car rental in Hyderabad, buses, trucks and JCBs",
     description:
-      "Self drive and chauffeur-driven cars in Hyderabad from ₹1,199 a day, plus tempo travellers, buses, trucks and JCBs. Doorstep and RGIA airport delivery. Call 9000-478-478.",
+      "Self drive and chauffeur-driven cars in Hyderabad from ₹1,199 a day, plus tempo travellers, buses, trucks and JCBs. Doorstep and RGIA airport delivery. Call 94915 44981.",
   },
   hero: {
     title: "Every vehicle. Every journey.",
@@ -23,6 +23,58 @@ export const homeDefaults = {
     subtitle: "From city cars and group travel to trucks and JCBs. Tell us what you need and get a quote on WhatsApp.",
     primaryCta: "Find your vehicle",
     secondaryCta: "Explore our services",
+  },
+  /** Promotional hero slides, one per service. `art`/`scene` pick the drawing; `group` links the search tab. */
+  slides: [
+    {
+      group: "cars", eyebrow: "Self drive & chauffeur cars in Hyderabad", title: "Your car,", highlight: "from ₹1,199 a day.",
+      text: "Hatchbacks to 7-seat SUVs with a zero deposit option, unlimited km and doorstep or RGIA airport delivery.",
+      points: ["Zero deposit option", "Unlimited km plans", "Airport delivery"], cta: "Book a car", href: "/vehicles/cars/",
+      scene: "city", art: "sedan", color: "#FFC20E",
+    },
+    {
+      group: "passenger", eyebrow: "Tempo travellers, minibuses & buses", title: "Travel together,", highlight: "every seat sorted.",
+      text: "AC vehicles with experienced drivers for weddings, pilgrimages, tours and daily staff transport.",
+      points: ["12 to 50 seats", "AC and pushback seats", "Outstation trips"], cta: "Plan group travel", href: "/vehicles/passenger/",
+      scene: "highway", art: "van", color: "#F47A16",
+    },
+    {
+      group: "logistics", eyebrow: "Goods transport, within city & intercity", title: "Move anything,", highlight: "helpers included.",
+      text: "Pickups and trucks for house shifting, shop stock and business loads, with loading helpers when you need them.",
+      points: ["Same-day pickups", "Loading helpers", "Covered trucks"], cta: "Book a truck", href: "/vehicles/logistics/",
+      scene: "port", art: "truck", color: "#1F4E79",
+    },
+    {
+      group: "equipment", eyebrow: "Heavy equipment hire", title: "Site work,", highlight: "by the hour.",
+      text: "Backhoe loaders (JCB) for digging, loading and levelling, with a trained operator on request.",
+      points: ["Hourly or daily hire", "Trained operators", "Telangana & Andhra Pradesh"], cta: "Hire a JCB", href: "/vehicles/equipment/",
+      scene: "site", art: "jcb", color: "#FFC20E",
+    },
+    {
+      group: "driver", eyebrow: "Verified drivers", title: "Your car,", highlight: "our trusted driver.",
+      text: "Uniformed, background-checked drivers for local runs, outstation trips and daily office commutes.",
+      points: ["Verified & uniformed", "Local & outstation", "Daily or monthly"], cta: "Find a driver", href: "/drivers/",
+      scene: "street", art: "sedan", color: "#FFC20E",
+    },
+    {
+      group: "partner", eyebrow: "Own a vehicle?", title: "Attach your car,", highlight: "start earning.",
+      text: "List your car, tempo traveller, truck or JCB with Gadiride. We bring verified customers, you earn on every trip.",
+      points: ["Verified customers", "Regular payouts", "With or without driver"], cta: "Attach your vehicle", href: "/partner/",
+      scene: "city", art: "suv", color: "#2E2E34",
+    },
+  ],
+  /** "Everything on wheels" services overview. */
+  hub: {
+    title: "Everything on wheels.",
+    text: "One team for cars, group travel, goods, machines and drivers. Pick a service to see vehicles and prices.",
+    items: [
+      { title: "Self drive & chauffeur cars", text: "Hatchbacks, sedans and SUVs by the day, week or month.", tag: "From ₹1,199/day", href: "/vehicles/cars/", art: "sedan", color: "#FFC20E" },
+      { title: "Tempo travellers & buses", text: "12 to 50 seats for weddings, tours and staff transport.", tag: "With driver", href: "/vehicles/passenger/", art: "van", color: "#F47A16" },
+      { title: "Trucks & goods transport", text: "City and intercity loads, with loading helpers.", tag: "Same day", href: "/vehicles/logistics/", art: "truck", color: "#1F4E79" },
+      { title: "JCB & heavy equipment", text: "Backhoe loaders by the hour or day, with operator.", tag: "Hourly hire", href: "/vehicles/equipment/", art: "jcb", color: "#FFC20E" },
+      { title: "Hire a driver", text: "Verified drivers for your own car, local or outstation.", tag: "Verified", href: "/drivers/", art: "sedan", color: "#F4F5F7" },
+      { title: "Attach your vehicle", text: "Earn by listing your car, bus, truck or JCB with us.", tag: "Earn", href: "/partner/", art: "suv", color: "#1F4E79" },
+    ],
   },
   styles: { title: "Pick a style." },
   featured: {
@@ -103,7 +155,7 @@ export const pageDefaults = {
     emptyTitle: "Nothing listed for this filter yet",
     emptyText: "Ask us on WhatsApp. We often have more than what is listed here.",
     detailQuoteTitle: "Request a quote",
-    detailQuoteText: "We check availability for your dates and reply on WhatsApp. Or call 9000-478-478.",
+    detailQuoteText: "We check availability for your dates and reply on WhatsApp. Or call 94915 44981.",
     stockPhotoNote: "Representative photo. Exact model, make and details confirmed with your quote.",
   },
   services: {
@@ -141,13 +193,13 @@ export const pageDefaults = {
     paragraphs: [
       "Gadiride rents self drive cars across Hyderabad, from fuel-saving hatchbacks to seven-seat SUVs, with doorstep delivery, airport delivery at RGIA and unlimited km plans.",
       "We also provide chauffeur-driven cars for outstation trips and weddings, tempo travellers and buses for groups, trucks for goods and backhoe loaders for construction sites.",
-      "Instead of calling different agencies for different needs, call 9000-478-478 or message us on WhatsApp. Our team replies with options and a price.",
+      "Instead of calling different agencies for different needs, call 94915 44981 or message us on WhatsApp. Our team replies with options and a price.",
     ],
   },
   contact: {
-    seo: { title: "Contact", description: "Call 9000-478-478 or WhatsApp Gadiride for self drive cars and vehicle rentals in Hyderabad." },
+    seo: { title: "Contact", description: "Call 94915 44981 or WhatsApp Gadiride for self drive cars and vehicle rentals in Hyderabad." },
     title: "Talk to us.",
-    intro: "Call 9000-478-478 or message us on WhatsApp. We help with bookings every day.",
+    intro: "Call 94915 44981 or message us on WhatsApp. We help with bookings every day.",
     whatsappTitle: "Chat on WhatsApp",
     whatsappText: "Ask about any vehicle, service or job. Our team replies on WhatsApp.",
     whatsappCta: "Open WhatsApp",
@@ -202,7 +254,7 @@ export const pageDefaults = {
 };
 
 export const footerDefaults = {
-  blurb: "Self drive and chauffeur cars in Hyderabad, plus buses, trucks and JCBs. Doorstep and airport delivery. Call 9000-478-478.",
+  blurb: "Self drive and chauffeur cars in Hyderabad, plus buses, trucks and JCBs. Doorstep and airport delivery. Call 94915 44981.",
 };
 
 export type HomeContent = typeof homeDefaults;

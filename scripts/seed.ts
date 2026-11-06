@@ -33,7 +33,7 @@ type Doc = { _id: string; _type: string; [k: string]: unknown };
 
 let keyN = 0;
 /** Array member type names, matching the schema. */
-const MEMBER: Record<string, string> = { banners: "banner", highlights: "item", chapters: "chapter", promos: "promo", items: "item", steps: "item", uses: "item", specs: "spec", cities: "city", social: "socialLink" };
+const MEMBER: Record<string, string> = { slides: "slide", banners: "banner", highlights: "item", chapters: "chapter", promos: "promo", items: "item", steps: "item", uses: "item", specs: "spec", cities: "city", social: "socialLink" };
 /** Arrays of objects need a _key and the member _type in Sanity. */
 function withKeys<T>(v: T, field = ""): T {
   if (Array.isArray(v))
@@ -82,6 +82,7 @@ async function main() {
     showPrices: dataset !== "production",
     whatsappNumber: site.whatsappNumber,
     phone: site.phone,
+    email: site.email,
     address: site.address,
     ...withKeys({ cities: site.cities, banners: site.banners, highlights: site.highlights }),
     marquee: site.marquee,

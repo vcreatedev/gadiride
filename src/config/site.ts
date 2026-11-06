@@ -46,14 +46,14 @@ export type SiteSettings = {
   heroTheme: "light" | "dark";
 };
 
-const PHONE = "+91 9000-478-478";
+const PHONE = "+91 94915 44981";
 
 export const site: SiteSettings = {
   name: "Gadiride",
   tagline: "Every vehicle. One ride.",
-  whatsappNumber: "919000478478",
+  whatsappNumber: "919491544981",
   phone: PHONE,
-  email: "",
+  email: "gadirideofficial@gmail.com",
   address: "Hyderabad, Telangana",
   cities: [
     { name: "Hyderabad", note: "Self drive and chauffeur cars across the city, with airport delivery." },
@@ -94,6 +94,22 @@ export const site: SiteSettings = {
     {
       eyebrow: "With driver", title: "Sit back, we drive.", text: "Chauffeur-driven Innova and Fortuner for weddings, guests and outstation trips.",
       cta: "Car with driver", href: "/search/?tab=cars&mode=With%20driver", tone: "dark", art: "suv", color: "#F4F5F7", group: "cars",
+    },
+    {
+      eyebrow: "Group trips", title: "Weddings & pilgrimages.", text: "AC tempo travellers and buses with experienced drivers, local or outstation.",
+      cta: "Plan group travel", href: "/vehicles/passenger/", tone: "taxi", art: "van", color: "#F4F5F7", group: "passenger",
+    },
+    {
+      eyebrow: "Shifting?", title: "Trucks with helpers.", text: "House shifting and shop stock moved the same day, with loading helpers on request.",
+      cta: "Book a truck", href: "/vehicles/logistics/", tone: "brand", art: "truck", color: "#1F4E79", group: "logistics",
+    },
+    {
+      eyebrow: "Site work", title: "JCB by the hour.", text: "Backhoe loaders with trained operators for digging, loading and levelling.",
+      cta: "Hire a JCB", href: "/vehicles/equipment/", tone: "dark", art: "jcb", color: "#FFC20E", group: "equipment",
+    },
+    {
+      eyebrow: "Drivers", title: "Trusted drivers on call.", text: "Verified, uniformed drivers for your own car. Local runs or long trips.",
+      cta: "Find a driver", href: "/drivers/", tone: "taxi", art: "sedan", color: "#2E2E34", group: "driver",
     },
   ],
   areasTitle: "Self drive cars across Hyderabad.",

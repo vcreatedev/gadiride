@@ -33,6 +33,57 @@ export const homePage = defineType({
       str("primaryCta", "Main button"),
       str("secondaryCta", "Second button"),
     ]),
+    defineField({
+      name: "slides",
+      title: "Hero slides (one per service)",
+      type: "array",
+      group: "hero",
+      description: "Promotional slides at the top of the home page. They rotate every 7 seconds.",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "slide",
+          fields: [
+            defineField({ name: "group", title: "Service", type: "string", options: { list: [...GROUPS.map((g) => ({ title: g.name, value: g.id })), { title: "Drivers", value: "driver" }, { title: "Attach your vehicle", value: "partner" }] } }),
+            str("eyebrow", "Small label"),
+            str("title", "Headline"),
+            str("highlight", "Highlighted line (orange)"),
+            txt("text", "Text", { rows: 2 }),
+            strList("points", "Key points (3 work best)"),
+            str("cta", "Button label"),
+            str("href", "Button link", { description: "e.g. /vehicles/cars/" }),
+            defineField({ name: "scene", title: "Background", type: "string", options: { list: ["city", "highway", "port", "site", "street"] } }),
+            defineField({ name: "art", title: "Vehicle drawing", type: "string", options: { list: ["hatch", "sedan", "suv", "van", "bus", "pickup", "truck", "jcb"] } }),
+            str("color", "Vehicle colour", { description: "Hex, e.g. #FFC20E" }),
+          ],
+          preview: { select: { title: "title", subtitle: "highlight" } },
+        }),
+      ],
+    }),
+    section("hub", "Services overview", [
+      str("title", "Heading", { description: HEADING_HINT }),
+      txt("text", "Text", { rows: 2 }),
+      defineField({
+        name: "items",
+        title: "Services",
+        type: "array",
+        of: [
+          defineArrayMember({
+            type: "object",
+            name: "item",
+            fields: [
+              str("title", "Title"),
+              txt("text", "Text", { rows: 2 }),
+              str("tag", "Tag", { description: "e.g. From ₹1,199/day" }),
+              str("href", "Link"),
+              defineField({ name: "art", title: "Vehicle drawing", type: "string", options: { list: ["hatch", "sedan", "suv", "van", "bus", "pickup", "truck", "jcb"] } }),
+              str("color", "Vehicle colour"),
+            ],
+            preview: { select: { title: "title", subtitle: "tag" } },
+          }),
+        ],
+      }),
+    ], "services"),
     section("styles", "Pick a style", [str("title", "Heading", { description: HEADING_HINT })]),
     section("featured", "Popular right now", [
       str("title", "Heading", { description: HEADING_HINT }),

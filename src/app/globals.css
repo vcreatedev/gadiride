@@ -116,3 +116,6 @@ html.lenis, html.lenis body { height: auto; }
 @media (prefers-reduced-motion: reduce) {
   .scene-twinkle { animation: none; }
 }
+
+/* ---------- Home hero slide progress ---------- */
+@keyframes slide-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }

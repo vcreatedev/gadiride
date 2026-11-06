@@ -11,6 +11,8 @@ import { SEARCH_CTA, type TabId } from "@/lib/search";
 
 type Props = {
   onTabChange?: (g: GroupId) => void;
+  /** Called with every tab the visitor picks, Drivers included. */
+  onServiceChange?: (t: TabId) => void;
   /** Pre-select a tab and fill the fields (used on the search results page). */
   initialTab?: TabId;
   initialValues?: Record<string, string>;
@@ -19,7 +21,7 @@ type Props = {
 };
 
 /** Search card: pick a service, enter trip details, see matching vehicles or drivers. */
-export default function BookingCard({ onTabChange, initialTab = "cars", initialValues, lockTab }: Props) {
+export default function BookingCard({ onTabChange, onServiceChange, initialTab = "cars", initialValues, lockTab }: Props) {
   const router = useRouter();
   const { groups } = useCatalog();
   const dark = useSite().heroTheme === "dark";
@@ -35,6 +37,7 @@ export default function BookingCard({ onTabChange, initialTab = "cars", initialV
   const change = (t: TabId, values?: Record<string, string>) => {
     setTab(t);
     if (t !== "driver") onTabChange?.(t);
+    onServiceChange?.(t);
     setPreset(values ? { values, nonce: Date.now() } : undefined);
   };
 

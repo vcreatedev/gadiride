@@ -19,10 +19,6 @@ const nextConfig = {
     optimizePackageImports: ["lucide-react", "gsap"],
   },
   // The home page is hidden for now: the site opens on the Cars page.
-  // Delete this redirect to bring the home page (src/app/(site)/page.tsx) back.
-  async redirects() {
-    return [{ source: "/", destination: "/vehicles/cars/", permanent: false }];
-  },
   async headers() {
     return [
       {

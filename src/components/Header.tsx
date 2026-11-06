@@ -63,7 +63,7 @@ export default function Header() {
     <header className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${solid ? "border-b border-line bg-white/95 backdrop-blur" : "bg-transparent"}`}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-ink-900">Skip to content</a>
       <div className="container-x flex h-[60px] items-center justify-between gap-4 md:h-[72px]">
-        <Link href="/vehicles/cars/" aria-label="Gadiride home"><Logo tone={dark ? "light" : "dark"} /></Link>
+        <Link href="/" aria-label="Gadiride home"><Logo tone={dark ? "light" : "dark"} /></Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
           {groups.map((g) => (
