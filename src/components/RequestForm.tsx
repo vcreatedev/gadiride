@@ -13,6 +13,8 @@ import LocationInput from "./LocationInput";
 
 const PLACE = /pickup|drop|from|^to$|site|location|destination|route|city/i;
 /** Text fields that get place suggestions and "use my current location". */
+/** Two-option choices longer than this (total characters) get a full row in the compact form. */
+const WIDE_SEGMENT_CHARS = 22;
 const isPlace = (f: Field) => f.type === "text" && PLACE.test(f.name) && f.name !== "route";
 function iconFor(f: Field): LucideIcon | null {
   if (f.type === "date") return CalendarDays;
@@ -105,11 +107,15 @@ export default function RequestForm({ formKey, idPrefix = formKey, preset, extra
   };
 
   // Compact layout pairs short fields two to a row; a short field with no partner takes the full row.
+  // Choice buttons with long labels ("With operator / Without operator") need the full row to fit.
+  const fullRow = (f: Field) =>
+    f.type === "text" || f.type === "textarea" ||
+    (f.type === "segment" && ((f.options?.length ?? 0) > 2 || (f.options ?? []).join("").length > WIDE_SEGMENT_CHARS));
   const halfWidth = new Set<string>();
   if (compact) {
     let pending: string | null = null;
     for (const f of def.fields.filter((x) => isVisible(x, values))) {
-      if (f.type === "text" || f.type === "textarea") { pending = null; continue; }
+      if (fullRow(f)) { pending = null; continue; }
       if (pending) { halfWidth.add(pending).add(f.name); pending = null; } else pending = f.name;
     }
   }
