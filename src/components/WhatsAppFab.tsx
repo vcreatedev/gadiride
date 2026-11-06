@@ -2,16 +2,17 @@
 import { Phone } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 import { whatsappChatHref } from "@/lib/whatsapp";
-import { site } from "@/config/site";
+import { telHref } from "@/config/site";
+import { useSite } from "./SiteProvider";
 
 export default function WhatsAppFab() {
-  const phoneHref = site.phone ? `tel:${site.phone.replace(/\s/g, "")}` : "tel:+919876543210";
+  const site = useSite();
 
   return (
     <div className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-40 flex flex-col items-end gap-2.5">
       {/* Floating Call button positioned directly above the WhatsApp button */}
-      <a
-        href={phoneHref}
+      {site.phone && <a
+        href={telHref(site.phone)}
         aria-label="Call Gadiride"
         className="group flex h-12 items-center gap-2 rounded-full bg-ink-900 px-3.5 text-white shadow-float transition-all hover:bg-brand-500 hover:scale-105 active:scale-95"
       >
@@ -19,11 +20,11 @@ export default function WhatsAppFab() {
         <span className="hidden max-w-0 overflow-hidden whitespace-nowrap text-sm font-semibold transition-all duration-300 group-hover:max-w-[90px] md:inline">
           Call us
         </span>
-      </a>
+      </a>}
 
       {/* WhatsApp button */}
       <a
-        href={whatsappChatHref()}
+        href={whatsappChatHref(site.whatsappNumber)}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat with Gadiride on WhatsApp"

@@ -13,7 +13,8 @@ export type Service = {
   /** Marked when the client still needs to confirm the details. */
   toConfirm?: boolean;
 };
-export type FormKey = "cars" | "passenger" | "logistics" | "equipment" | "corporate" | "driver" | "careers";
+export const FORM_KEYS = ["cars", "passenger", "logistics", "equipment", "corporate", "driver", "careers", "partner"] as const;
+export type FormKey = (typeof FORM_KEYS)[number];
 
 export const SERVICES: Service[] = [
   {
@@ -32,13 +33,13 @@ export const SERVICES: Service[] = [
     id: "logistics", name: "Logistics and goods transport", forWho: "Shops, businesses and house shifting",
     offer: "Pickups and trucks for local and inter-city loads.",
     points: ["Open and closed body options", "Loading help on request", "Single trips or regular runs"],
-    cta: "Get truck quote", form: "logistics", art: "truck", color: "#F2611D",
+    cta: "Get truck quote", form: "logistics", art: "truck", color: "#F47A16",
   },
   {
     id: "heavy-equipment", name: "Heavy equipment hire", forWho: "Contractors, builders and site owners",
     offer: "Backhoe loaders (JCB) for digging, loading and levelling.",
     points: ["Hourly or daily hire", "With or without operator", "Other machines on request"],
-    cta: "Get equipment quote", form: "equipment", art: "jcb", color: "#F2B705",
+    cta: "Get equipment quote", form: "equipment", art: "jcb", color: "#FFC20E",
   },
   {
     id: "corporate", name: "Corporate transport and fleet", forWho: "Companies and institutions",

@@ -22,17 +22,18 @@ export function buildDirectMessage(title: string, entries: Entry[]) {
   return buildMessage(title, entries);
 }
 
-export function whatsappHref(message: string) {
+/** `number` comes from site settings (useSite() on the client, getSettings() on the server). */
+export function whatsappHref(message: string, number = "") {
   const text = encodeURIComponent(message);
-  return site.whatsappNumber ? `https://wa.me/${site.whatsappNumber}?text=${text}` : `https://wa.me/?text=${text}`;
+  return number ? `https://wa.me/${number}?text=${text}` : `https://wa.me/?text=${text}`;
 }
 
-export function whatsappChatHref() {
-  return whatsappHref(`Hello ${site.name}, I have a question.`);
+export function whatsappChatHref(number = "") {
+  return whatsappHref(`Hello ${site.name}, I have a question.`, number);
 }
 
-export function openWhatsApp(message: string) {
-  const href = whatsappHref(message);
+export function openWhatsApp(message: string, number = "") {
+  const href = whatsappHref(message, number);
   if (typeof window !== "undefined") {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     if (isMobile) {

@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { GROUPS, TYPES, VEHICLES, type GroupId } from "@/data/vehicles";
+import type { GroupId, Vehicle } from "@/data/vehicles";
+import { useCatalog } from "./SiteProvider";
 import VehicleCard from "./VehicleCard";
 import CategoryIcon from "./CategoryIcon";
 
 /** Filterable listing. Filters are kept in the URL query so results can be shared. */
-export default function VehiclesBrowser({ lockGroup }: { lockGroup?: GroupId }) {
+export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = false, empty }: { vehicles: Vehicle[]; lockGroup?: GroupId; showPrices?: boolean; empty: { title: string; text: string } }) {
+  const { groups: GROUPS, types: TYPES } = useCatalog();
   const [group, setGroup] = useState<GroupId | "all">(lockGroup ?? "all");
   const [type, setType] = useState<string>("all");
 
@@ -17,7 +19,7 @@ export default function VehiclesBrowser({ lockGroup }: { lockGroup?: GroupId }) 
     }
     const t = p.get("type") || window.location.hash.slice(1);
     if (t && TYPES.some((x) => x.id === t)) setType(t);
-  }, [lockGroup]);
+  }, [lockGroup, GROUPS, TYPES]);
 
   useEffect(() => {
     const p = new URLSearchParams();
@@ -27,8 +29,9 @@ export default function VehiclesBrowser({ lockGroup }: { lockGroup?: GroupId }) 
     window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
   }, [group, type, lockGroup]);
 
-  const types = TYPES.filter((t) => group === "all" || t.group === group);
-  const list = useMemo(() => VEHICLES.filter((v) => (group === "all" || v.group === group) && (type === "all" || v.type === type)), [group, type]);
+  const types = TYPES.filter((t) => (group === "all" || t.group === group) && vehicles.some((v) => v.type === t.id));
+  const list = useMemo(() => vehicles.filter((v) => (group === "all" || v.group === group) && (type === "all" || v.type === type)), [vehicles, group, type]);
+  const sample = vehicles.some((v) => v.sample);
 
   return (
     <div>
@@ -48,19 +51,19 @@ export default function VehiclesBrowser({ lockGroup }: { lockGroup?: GroupId }) 
           ))}
         </div>
       )}
-      <p className="mt-6 text-sm text-ink-400" aria-live="polite">{list.length} {list.length === 1 ? "vehicle" : "vehicles"}. Sample list, availability confirmed on request.</p>
+      <p className="mt-6 text-sm text-ink-400" aria-live="polite">{list.length} {list.length === 1 ? "vehicle" : "vehicles"}. {sample ? "Sample list, availability" : "Availability"} confirmed on request.</p>
       {list.length ? (
         <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((v) => (
+          {list.map((v, i) => (
             <li key={v.slug} className="flex h-full">
-              <VehicleCard v={v} />
+              <VehicleCard v={v} showPrices={showPrices} priority={i < 3} />
             </li>
           ))}
         </ul>
       ) : (
         <div className="mt-6 rounded-card border border-dashed border-line p-10 text-center">
-          <p className="font-head text-xl font-bold text-ink-900">Nothing listed for this filter yet</p>
-          <p className="mt-2">Ask us on WhatsApp. We often have more than what is listed here.</p>
+          <p className="font-head text-xl font-semibold text-ink-900">{empty.title}</p>
+          <p className="mt-2">{empty.text}</p>
           <button type="button" className="btn-secondary mt-5" onClick={() => { setGroup(lockGroup ?? "all"); setType("all"); }}>Clear filters</button>
         </div>
       )}

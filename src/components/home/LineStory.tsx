@@ -5,9 +5,11 @@ import Speedometer, { type SpeedoHandle } from "../Speedometer";
 import { ART, type ArtId } from "@/data/vehicleArt";
 import { gsap, ScrollTrigger, useGSAP, prefersReducedMotion, isSmallScreen } from "@/lib/motion";
 import { scrollToTarget } from "@/lib/lenis";
+import type { HomeContent } from "@/content/defaults";
+import { accent } from "../Accent";
 
 type Chapter = { n: string; key: string; title: string; copy: string; art?: ArtId; readout: string };
-const CHAPTERS: Chapter[] = [
+const BASE: Chapter[] = [
   { n: "01", key: "Choose", title: "Start with what you need", copy: "A trip, a load or a job site. Pick the vehicle group and we take it from there.", readout: "Route" },
   { n: "02", key: "Cars", title: "Cars for every day", copy: "Hatchbacks for the city, sedans for the airport, SUVs for family trips and luxury cars for weddings. Self drive or with a driver.", art: "suv", readout: "Cars" },
   { n: "03", key: "Passenger", title: "Seats for the whole group", copy: "Tempo travellers, minibuses and buses for functions, tours and staff transport.", art: "van", readout: "Groups" },
@@ -15,7 +17,7 @@ const CHAPTERS: Chapter[] = [
   { n: "05", key: "Heavy equipment", title: "Machines for the site", copy: "Backhoe loaders (JCB) by the hour or the day, with or without an operator.", art: "jcb", readout: "Site work" },
   { n: "06", key: "Book", title: "One message away", copy: "Send your details on WhatsApp and get a quote from our team.", readout: "Ready" },
 ];
-const N = CHAPTERS.length;
+const N = BASE.length;
 
 function Dimensions({ art }: { art: ArtId }) {
   const a = ART[art];
@@ -60,7 +62,12 @@ function RouteMap() {
 }
 
 /** Pinned, scrubbed blueprint story: each vehicle group draws itself in tiers while a HUD gauge tracks progress. */
-export default function LineStory() {
+export default function LineStory({ content }: { content: HomeContent["story"] }) {
+  // Always six chapters: the drawings are tied to positions 2 to 5.
+  const CHAPTERS: Chapter[] = BASE.map((b, i) => {
+    const c = content.chapters[i];
+    return c ? { ...b, key: c.key || b.key, title: c.title || b.title, copy: c.text || b.copy, readout: c.readout || b.readout } : b;
+  });
   const root = useRef<HTMLElement>(null);
   const pin = useRef<HTMLDivElement>(null);
   const gauge = useRef<SpeedoHandle>(null);
@@ -133,12 +140,12 @@ export default function LineStory() {
     return (
       <section className="section-y bg-[#07080a] text-white" aria-labelledby="story-title">
         <div className="container-x">
-          <h2 id="story-title" className="h2 text-white">From hatchback to JCB<span className="text-brand-500">.</span></h2>
+          <h2 id="story-title" className="h2 text-white">{accent(content.title)}</h2>
           <ul className="mt-12 grid gap-10 md:grid-cols-2">
             {CHAPTERS.filter((c) => c.art).map((c) => (
               <li key={c.n}>
                 <div className="relative aspect-[2/1]"><VehicleSvg art={c.art!} mode="line" className="h-full w-full" /></div>
-                <h3 className="mt-4 font-head text-xl font-bold text-white">{c.title}</h3>
+                <h3 className="mt-4 font-head text-xl font-semibold text-white">{c.title}</h3>
                 <p className="mt-2 text-ink-300">{c.copy}</p>
               </li>
             ))}
@@ -160,7 +167,7 @@ export default function LineStory() {
           <span key={p} aria-hidden className={`absolute ${p} h-4 w-4 border-white/30 before:absolute before:left-1/2 before:top-0 before:h-full before:w-px before:bg-white/30 after:absolute after:left-0 after:top-1/2 after:h-px after:w-full after:bg-white/30`} />
         ))}
 
-        <h2 id="story-title" className="sr-only">From hatchback to JCB: the Gadiride range</h2>
+        <h2 id="story-title" className="sr-only">{content.title}</h2>
 
         {/* Mobile progress */}
         <div className="absolute inset-x-4 top-[76px] h-[2px] bg-white/10 md:hidden"><div ref={bar} className="h-full origin-left scale-x-0 bg-brand-500" /></div>
@@ -170,7 +177,7 @@ export default function LineStory() {
           <ol className="relative space-y-5 border-l border-white/15 pl-6">
             {CHAPTERS.map((c, i) => (
               <li key={c.n} className="relative">
-                <span aria-hidden className={`absolute -left-[29px] top-1.5 h-[9px] w-[9px] rounded-full transition-all duration-300 ${active === i ? "scale-125 bg-brand-500 shadow-[0_0_12px_rgba(242,97,29,.8)]" : active > i ? "bg-white/60" : "bg-white/20"}`} />
+                <span aria-hidden className={`absolute -left-[29px] top-1.5 h-[9px] w-[9px] rounded-full transition-all duration-300 ${active === i ? "scale-125 bg-brand-500 shadow-[0_0_12px_rgba(244,122,22,.8)]" : active > i ? "bg-white/60" : "bg-white/20"}`} />
                 <button type="button" onClick={() => go(i)} aria-current={active === i ? "step" : undefined} className={`font-mono text-[13px] transition-colors ${active === i ? "text-white" : "text-white/45 hover:text-white/80"}`}>
                   {c.n} // {c.key}
                 </button>
@@ -197,7 +204,7 @@ export default function LineStory() {
                       <VehicleSvg art={a} mode="line" className="absolute inset-0 h-full w-full" />
                     </div>
                   ))}
-                  <div data-final-glow aria-hidden className="pointer-events-none absolute -bottom-6 left-0 right-0 h-px bg-brand-500 opacity-0 shadow-[0_0_30px_8px_rgba(242,97,29,.55)]" />
+                  <div data-final-glow aria-hidden className="pointer-events-none absolute -bottom-6 left-0 right-0 h-px bg-brand-500 opacity-0 shadow-[0_0_30px_8px_rgba(244,122,22,.55)]" />
                 </div>
               )}
             </div>
@@ -212,7 +219,7 @@ export default function LineStory() {
               <h3 className="display mt-2 text-4xl text-white md:text-6xl">{c.title}</h3>
               <p className="mt-3 max-w-[48ch] text-ink-300">{c.copy}</p>
               {i === N - 1 && (
-                <button type="button" onClick={() => scrollToTarget("#book", -100)} className="btn-primary mt-5">Get a quote</button>
+                <button type="button" onClick={() => scrollToTarget("#book", -100)} className="btn-primary mt-5">{content.cta}</button>
               )}
             </div>
           ))}

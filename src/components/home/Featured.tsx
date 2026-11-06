@@ -1,26 +1,26 @@
 import Link from "next/link";
-import { VEHICLES } from "@/data/vehicles";
 import VehicleCard from "../VehicleCard";
 import SectionTitle from "../SectionTitle";
+import { accent } from "../Accent";
+import type { HomeContent } from "@/content/defaults";
+import type { Vehicle } from "@/data/vehicles";
 
-const PICKS = ["seven-seater-suv", "executive-sedan", "tempo-traveller-12", "box-truck-19ft", "backhoe-loader", "luxury-sedan"];
-
-export default function Featured() {
-  const list = PICKS.map((s) => VEHICLES.find((v) => v.slug === s)!);
+export default function Featured({ content: c, vehicles, showPrices }: { content: HomeContent["featured"]; vehicles: Vehicle[]; showPrices: boolean }) {
+  if (!vehicles.length) return null;
   return (
     <section className="section-y bg-surface-50" aria-labelledby="featured-title">
       <div className="container-x">
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <SectionTitle id="featured-title">Popular right now<span className="text-brand-500">.</span></SectionTitle>
-            <p className="lead mt-4">A few of the vehicles customers ask for most. Every request gets a quote from our team.</p>
+            <SectionTitle id="featured-title">{accent(c.title)}</SectionTitle>
+            <p className="lead mt-4">{c.text}</p>
           </div>
-          <Link href="/vehicles/" className="link shrink-0">View all vehicles</Link>
+          <Link href="/vehicles/" className="link shrink-0">{c.linkLabel}</Link>
         </div>
         <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((v) => (
+          {vehicles.map((v, i) => (
             <li key={v.slug} className="flex h-full">
-              <VehicleCard v={v} />
+              <VehicleCard v={v} showPrices={showPrices} priority={i < 3} />
             </li>
           ))}
         </ul>

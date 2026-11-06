@@ -1,22 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource/barlow-condensed/700.css";
 import "@fontsource/barlow-condensed/800.css";
-import "@fontsource/manrope/700.css";
-import "@fontsource/manrope/800.css";
+import "@fontsource/fredoka/500.css";
+import "@fontsource/fredoka/600.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import Loader from "@/components/Loader";
-import SmoothScroll from "@/components/SmoothScroll";
-import QuoteFlow from "@/components/QuoteFlow";
-import WhatsAppFab from "@/components/WhatsAppFab";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000"),
+  ),
   title: { default: "Gadiride | Cars, buses, trucks and JCBs on rent", template: "%s | Gadiride" },
   description: "Rent cars, tempo travellers, buses, trucks and backhoe loaders (JCB) from one place. Share your details and get a quote on WhatsApp.",
   openGraph: {
@@ -25,29 +23,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     siteName: "Gadiride",
+    images: [{ url: "/brand/og.jpg", width: 1200, height: 630, alt: "Gadiride" }],
   },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#111214" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#F47A16" };
 
-const seenScript = `try{if(sessionStorage.getItem('ga_loader_seen'))document.documentElement.classList.add('ga-seen')}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: seenScript }} />
-        <noscript><style>{`#ga-loader{display:none}`}</style></noscript>
+        <noscript><style>{`#ga-loader{display:none}.invisible{visibility:visible!important}`}</style></noscript>
       </head>
       <body>
-        <QuoteFlow>
-          <Loader />
-          <SmoothScroll />
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
-          <WhatsAppFab />
-        </QuoteFlow>
+        {children}
       </body>
     </html>
   );

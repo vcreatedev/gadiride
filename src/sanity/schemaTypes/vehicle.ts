@@ -1,0 +1,170 @@
+import { defineArrayMember, defineField, defineType } from "sanity";
+import { GROUPS } from "@/data/vehicles";
+
+const photo = (name: string, title: string, description?: string) =>
+  defineField({
+    name,
+    title,
+    type: "image",
+    group: "photos",
+    description,
+    options: { hotspot: true },
+    fields: [defineField({ name: "alt", title: "Alt text (describe the photo)", type: "string" })],
+  });
+
+export const vehicle = defineType({
+  name: "vehicle",
+  title: "Vehicle",
+  type: "document",
+  groups: [
+    { name: "main", title: "Main", default: true },
+    { name: "photos", title: "Photos" },
+    { name: "details", title: "Details" },
+    { name: "listing", title: "Listing" },
+  ],
+  fields: [
+    defineField({ name: "name", title: "Name", type: "string", group: "main", validation: (r) => r.required().max(60) }),
+    defineField({
+      name: "slug",
+      title: "URL slug",
+      type: "slug",
+      group: "main",
+      description: "Used in the page address, e.g. /vehicle/7-seater-suv/. Click Generate.",
+      options: { source: "name", maxLength: 80 },
+      validation: (r) => r.required(),
+    }),
+    defineField({
+      name: "group",
+      title: "Vehicle group",
+      type: "string",
+      group: "main",
+      options: { list: GROUPS.map((g) => ({ title: g.name, value: g.id })), layout: "radio" },
+      validation: (r) => r.required(),
+    }),
+    defineField({
+      name: "type",
+      title: "Vehicle type",
+      type: "reference",
+      group: "main",
+      to: [{ type: "vehicleType" }],
+      description: "Only types from the selected group are listed. Add new types under Catalog → Vehicle types.",
+      options: {
+        disableNew: true,
+        filter: ({ document }) => ({
+          filter: "group == $group",
+          params: { group: (document as { group?: string }).group ?? "" },
+        }),
+      },
+      validation: (r) => r.required(),
+    }),
+    defineField({ name: "summary", title: "Short description", type: "text", rows: 3, group: "main", validation: (r) => r.required().max(220) }),
+
+    photo("image", "Main photo", "Leave empty to use the vehicle type's photo. Use the hotspot (crop icon) to mark the vehicle's centre."),
+    defineField({
+      name: "gallery",
+      title: "More photos",
+      type: "array",
+      group: "photos",
+      description: "Interior, boot, side, back. Shown as thumbnails on the vehicle page.",
+      of: [
+        defineArrayMember({
+          type: "image",
+          options: { hotspot: true },
+          fields: [defineField({ name: "alt", title: "Alt text", type: "string" })],
+        }),
+      ],
+      validation: (r) => r.max(12),
+    }),
+    defineField({
+      name: "photoFit",
+      title: "Photo framing",
+      type: "string",
+      group: "photos",
+      initialValue: "cover",
+      options: {
+        layout: "radio",
+        list: [
+          { title: "Fill the frame (best for normal photos; set the hotspot on the vehicle)", value: "cover" },
+          { title: "Show the whole vehicle (best for cut-out PNGs on a transparent or white background)", value: "contain" },
+        ],
+      },
+    }),
+    defineField({
+      name: "photoBackground",
+      title: "Card background behind the photo",
+      type: "string",
+      group: "photos",
+      initialValue: "studio",
+      options: {
+        layout: "radio",
+        direction: "horizontal",
+        list: [
+          { title: "Studio (warm grey)", value: "studio" },
+          { title: "White", value: "white" },
+          { title: "Dark", value: "dark" },
+          { title: "Brand orange", value: "brand" },
+        ],
+      },
+    }),
+    defineField({
+      name: "photoZoom",
+      title: "Zoom",
+      type: "number",
+      group: "photos",
+      description: "100 = normal. Increase if the vehicle looks small in its card, e.g. 115.",
+      initialValue: 100,
+      validation: (r) => r.min(70).max(160),
+    }),
+
+    defineField({
+      name: "specs",
+      title: "Specifications",
+      type: "array",
+      group: "details",
+      description: "Label and value pairs, e.g. Seats: 7. The first three show on cards.",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "spec",
+          fields: [
+            defineField({ name: "label", title: "Label", type: "string", validation: (r) => r.required() }),
+            defineField({ name: "value", title: "Value", type: "string", validation: (r) => r.required() }),
+          ],
+          preview: { select: { title: "label", subtitle: "value" } },
+        }),
+      ],
+    }),
+    defineField({
+      name: "options",
+      title: "Options",
+      type: "array",
+      group: "details",
+      of: [defineArrayMember({ type: "string" })],
+      options: { layout: "tags" },
+      description: "e.g. Self drive, With driver, With operator",
+    }),
+    defineField({
+      name: "pricePerDay",
+      title: "Price per day (₹)",
+      type: "number",
+      group: "details",
+      description: 'Only shown when "Show prices" is on in Site settings.',
+      validation: (r) => r.min(0),
+    }),
+    defineField({ name: "available", title: "Show on website", type: "boolean", group: "listing", initialValue: true }),
+    defineField({ name: "featured", title: 'Show in "Popular right now" on the home page', type: "boolean", group: "listing", initialValue: false }),
+    defineField({ name: "order", title: "Sort order", type: "number", group: "listing", description: "Lower numbers show first.", initialValue: 100 }),
+  ],
+  orderings: [
+    { title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }, { field: "name", direction: "asc" }] },
+    { title: "Name", name: "nameAsc", by: [{ field: "name", direction: "asc" }] },
+  ],
+  preview: {
+    select: { title: "name", group: "group", type: "type.name", media: "image", typeMedia: "type.image", available: "available", featured: "featured" },
+    prepare: ({ title, group, type, media, typeMedia, available, featured }) => ({
+      title,
+      subtitle: [GROUPS.find((g) => g.id === group)?.short, type, featured && "★ featured", available === false && "hidden"].filter(Boolean).join(" · "),
+      media: media ?? typeMedia,
+    }),
+  },
+});

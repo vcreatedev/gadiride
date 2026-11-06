@@ -7,7 +7,8 @@ import { X, Pencil, Phone, CheckCircle2 } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 import { contactSchema, type Contact } from "@/lib/schema";
 import { buildMessage, whatsappHref, type Entry } from "@/lib/whatsapp";
-import { site } from "@/config/site";
+import { telHref } from "@/config/site";
+import { useSite } from "./SiteProvider";
 
 type Request = { title: string; entries: Entry[] };
 type Ctx = { openQuote: (r: Request) => void };
@@ -17,6 +18,7 @@ export const useQuote = () => useContext(QuoteCtx);
 type Step = "contact" | "summary" | "sent";
 
 export default function QuoteFlow({ children }: { children: React.ReactNode }) {
+  const site = useSite();
   const [req, setReq] = useState<Request | null>(null);
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("contact");
@@ -29,7 +31,7 @@ export default function QuoteFlow({ children }: { children: React.ReactNode }) {
     setOpen(true);
   }, []);
 
-  const href = req && contact ? whatsappHref(buildMessage(req.title, req.entries, contact)) : "#";
+  const href = req && contact ? whatsappHref(buildMessage(req.title, req.entries, contact), site.whatsappNumber) : "#";
 
   return (
     <QuoteCtx.Provider value={{ openQuote }}>
@@ -44,7 +46,7 @@ export default function QuoteFlow({ children }: { children: React.ReactNode }) {
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-brand-600">{req?.title}</p>
-                <Dialog.Title className="mt-1 font-head text-2xl font-bold text-ink-900">
+                <Dialog.Title className="mt-1 font-head text-2xl font-semibold text-ink-900">
                   {step === "contact" && "Where should we send your quote?"}
                   {step === "summary" && "Check your request"}
                   {step === "sent" && "Finish in WhatsApp"}
@@ -103,7 +105,7 @@ export default function QuoteFlow({ children }: { children: React.ReactNode }) {
                   </a>
                 </div>
                 {site.phone && (
-                  <a href={`tel:${site.phone.replace(/\s/g, "")}`} className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-ink-900 underline underline-offset-4">
+                  <a href={telHref(site.phone)} className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-ink-900 underline underline-offset-4">
                     <Phone className="h-4 w-4" />Call instead
                   </a>
                 )}

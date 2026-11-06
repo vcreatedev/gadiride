@@ -5,11 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "npx serve out",
-    "lint": "next lint"
+    "start": "next start",
+    "lint": "next lint",
+    "sanity": "sanity",
+    "seed:dev": "sanity exec scripts/seed.ts --with-user-token -- --dataset development",
+    "seed:prod": "sanity exec scripts/seed.ts --with-user-token -- --dataset production",
+    "data:prod-to-dev": "sanity dataset export production .sanity-backup/production.tar.gz --overwrite && sanity dataset import .sanity-backup/production.tar.gz development --replace"
   },
   "dependencies": {
     "@fontsource/barlow-condensed": "5.2.6",
+    "@fontsource/fredoka": "5.2.8",
     "@fontsource/ibm-plex-mono": "5.2.6",
     "@fontsource/inter": "5.2.6",
     "@fontsource/manrope": "5.2.6",
@@ -17,13 +22,18 @@
     "@hookform/resolvers": "5.2.1",
     "@radix-ui/react-accordion": "1.2.11",
     "@radix-ui/react-dialog": "1.1.14",
+    "@sanity/image-url": "1.2.0",
+    "@sanity/vision": "4.22.1",
     "gsap": "3.13.0",
     "lenis": "1.3.8",
     "lucide-react": "0.525.0",
     "next": "15.5.27",
+    "next-sanity": "11.6.13",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "7.60.0",
+    "sanity": "4.22.1",
+    "styled-components": "6.6.0",
     "zod": "3.25.76"
   },
   "devDependencies": {

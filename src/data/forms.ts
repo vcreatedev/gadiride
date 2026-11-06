@@ -16,6 +16,8 @@ export type Field = {
   defaultValue?: string;
   /** Only show when another field has this value. */
   showIf?: { field: string; equals: string };
+  /** false = not shown in the search bar (still in full forms). */
+  bar?: false;
 };
 
 export type FormDef = { key: FormKey; title: string; cta: string; fields: Field[] };
@@ -25,21 +27,22 @@ export const FORMS: Record<FormKey, FormDef> = {
     key: "cars", title: "Car rental request", cta: "Get car quote",
     fields: [
       { name: "mode", label: "Rental type", type: "segment", options: ["Self drive", "With driver"], defaultValue: "Self drive", span: 4 },
-      { name: "carType", label: "Car type", type: "select", options: ["Any", "Hatchback", "Sedan", "SUV", "Luxury"], defaultValue: "Any", span: 4 },
-      { name: "differentDrop", label: "Drop location", type: "segment", options: ["Same as pickup", "Different"], defaultValue: "Same as pickup", span: 4 },
-      { name: "pickup", label: "Pickup location", type: "text", required: true, placeholder: "Area, landmark or airport", span: 6 },
-      { name: "drop", label: "Drop location", type: "text", required: true, placeholder: "Where will you return the car?", span: 6, showIf: { field: "differentDrop", equals: "Different" } },
+      { name: "carType", label: "Car type", type: "select", options: ["Any", "Hatchback", "Sedan", "SUV", "Luxury"], defaultValue: "Any", span: 4, bar: false },
+      // Self drive: book by number of days. With driver: a trip with drop-off and return.
+      { name: "days", label: "No. of days", type: "number", min: 1, max: 90, defaultValue: "1", required: true, span: 4, showIf: { field: "mode", equals: "Self drive" } },
+      { name: "pickup", label: "Pickup location", type: "text", required: true, placeholder: "Area or airport", span: 6 },
+      { name: "drop", label: "Drop-off location", type: "text", placeholder: "Same as pickup", span: 6, showIf: { field: "mode", equals: "With driver" } },
       { name: "pickupDate", label: "Pickup date", type: "date", required: true, span: 3 },
       { name: "pickupTime", label: "Pickup time", type: "time", required: true, defaultValue: "10:00", span: 3 },
-      { name: "returnDate", label: "Return date", type: "date", required: true, notBefore: "pickupDate", span: 3 },
-      { name: "returnTime", label: "Return time", type: "time", required: true, defaultValue: "10:00", span: 3 },
+      { name: "returnDate", label: "Return date", type: "date", required: true, notBefore: "pickupDate", span: 3, showIf: { field: "mode", equals: "With driver" } },
+      { name: "returnTime", label: "Return time", type: "time", required: true, defaultValue: "20:00", span: 3, showIf: { field: "mode", equals: "With driver" } },
     ],
   },
   passenger: {
     key: "passenger", title: "Passenger vehicle request", cta: "Get vehicle quote",
     fields: [
       { name: "tripType", label: "Trip type", type: "segment", options: ["Local", "Outstation", "Round trip"], defaultValue: "Local", span: 6 },
-      { name: "vehicle", label: "Vehicle", type: "select", options: ["Any", "Tempo traveller", "Minibus", "Bus"], defaultValue: "Any", span: 3 },
+      { name: "vehicle", label: "Vehicle", type: "select", options: ["Any", "Tempo traveller", "Minibus", "Bus"], defaultValue: "Any", span: 3, bar: false },
       { name: "passengers", label: "Passengers", type: "number", min: 1, max: 60, defaultValue: "12", required: true, span: 3 },
       { name: "pickup", label: "Pickup location", type: "text", required: true, placeholder: "Area or landmark", span: 6 },
       { name: "destination", label: "Destination", type: "text", required: true, placeholder: "City or venue", span: 6 },
@@ -50,18 +53,20 @@ export const FORMS: Record<FormKey, FormDef> = {
   logistics: {
     key: "logistics", title: "Goods transport request", cta: "Get truck quote",
     fields: [
-      { name: "goods", label: "What are you moving?", type: "select", options: ["Household items", "Shop stock", "Construction material", "Machinery", "Other"], defaultValue: "Household items", span: 4 },
-      { name: "weight", label: "Approx. weight", type: "select", options: ["Under 1 tonne", "1 to 3 tonnes", "3 to 7 tonnes", "Over 7 tonnes", "Not sure"], defaultValue: "Not sure", span: 4 },
-      { name: "loading", label: "Loading help", type: "segment", options: ["Needed", "Not needed"], defaultValue: "Not needed", span: 4 },
+      { name: "route", label: "Trip", type: "segment", options: ["Within city", "Intercity"], defaultValue: "Within city", span: 4, bar: false },
+      { name: "goods", label: "Goods", type: "select", options: ["Household items", "Shop stock", "Construction material", "Machinery", "Other"], defaultValue: "Household items", span: 4, bar: false },
+      { name: "weight", label: "Weight", type: "select", options: ["Under 1 tonne", "1 to 3 tonnes", "3 to 7 tonnes", "Over 7 tonnes", "Not sure"], defaultValue: "Not sure", span: 4 },
+      { name: "helpers", label: "Loading helpers", type: "number", min: 0, max: 10, defaultValue: "0", span: 4 },
       { name: "from", label: "Pickup address", type: "text", required: true, placeholder: "Area, city", span: 6 },
       { name: "to", label: "Drop address", type: "text", required: true, placeholder: "Area, city", span: 6 },
-      { name: "date", label: "Date", type: "date", required: true, span: 12 },
+      { name: "date", label: "Date", type: "date", required: true, span: 6 },
+      { name: "time", label: "Time", type: "time", required: true, defaultValue: "09:00", span: 6 },
     ],
   },
   equipment: {
     key: "equipment", title: "Heavy equipment request", cta: "Get equipment quote",
     fields: [
-      { name: "machine", label: "Machine", type: "select", options: ["Backhoe loader (JCB)", "Other (describe in notes)"], defaultValue: "Backhoe loader (JCB)", span: 4 },
+      { name: "machine", label: "Machine", type: "select", options: ["Backhoe loader (JCB)", "Other (describe in notes)"], defaultValue: "Backhoe loader (JCB)", span: 4, bar: false },
       { name: "operator", label: "Operator", type: "segment", options: ["With operator", "Without operator"], defaultValue: "With operator", span: 4 },
       { name: "durationUnit", label: "Hire by", type: "segment", options: ["Hours", "Days"], defaultValue: "Hours", span: 4 },
       { name: "site", label: "Site location", type: "text", required: true, placeholder: "Village, area or city", span: 6 },
@@ -83,11 +88,26 @@ export const FORMS: Record<FormKey, FormDef> = {
   driver: {
     key: "driver", title: "Driver request", cta: "Ask about a driver",
     fields: [
-      { name: "vehicle", label: "Whose vehicle?", type: "segment", options: ["My vehicle", "Gadiride vehicle"], defaultValue: "My vehicle", span: 6 },
-      { name: "trip", label: "Trip", type: "segment", options: ["Local", "Outstation"], defaultValue: "Local", span: 6 },
+      { name: "vehicle", label: "Whose vehicle?", type: "segment", options: ["My vehicle", "Gadiride vehicle"], defaultValue: "My vehicle", span: 4 },
+      { name: "trip", label: "Trip", type: "segment", options: ["Local", "Outstation"], defaultValue: "Local", span: 4 },
+      { name: "drives", label: "Vehicle", type: "select", options: ["Car", "SUV", "Tempo traveller", "Bus", "Truck"], defaultValue: "Car", span: 4 },
       { name: "location", label: "Pickup location", type: "text", required: true, placeholder: "Area or landmark", span: 6 },
-      { name: "date", label: "Date", type: "date", required: true, span: 6 },
+      { name: "date", label: "Date", type: "date", required: true, span: 3 },
+      { name: "time", label: "Time", type: "time", required: true, defaultValue: "09:00", span: 3 },
       { name: "notes", label: "Details", type: "textarea", placeholder: "Vehicle type, duration, timings", span: 12 },
+    ],
+  },
+  partner: {
+    key: "partner", title: "Attach my vehicle", cta: "Send vehicle details",
+    fields: [
+      { name: "vehicleType", label: "Vehicle", type: "select", options: ["Hatchback", "Sedan", "SUV", "Luxury car", "Tempo traveller", "Bus", "Pickup", "Truck", "Backhoe loader (JCB)", "Other"], defaultValue: "Sedan", span: 6 },
+      { name: "offer", label: "Offer it", type: "segment", options: ["With driver", "Without driver", "Both"], defaultValue: "With driver", span: 6 },
+      { name: "model", label: "Make and model", type: "text", required: true, placeholder: "e.g. Toyota Innova Crysta", span: 6 },
+      { name: "year", label: "Year", type: "number", min: 1990, max: 2030, defaultValue: "2021", span: 3 },
+      { name: "count", label: "How many", type: "number", min: 1, max: 500, defaultValue: "1", span: 3 },
+      { name: "city", label: "City", type: "text", required: true, placeholder: "Where is the vehicle?", span: 6 },
+      { name: "name", label: "Your name", type: "text", required: true, placeholder: "Owner or company name", span: 6 },
+      { name: "notes", label: "Anything else", type: "textarea", placeholder: "Seats, payload, documents, availability", span: 12 },
     ],
   },
   careers: {

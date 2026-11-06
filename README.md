@@ -1,115 +1,153 @@
-# Gaadi Adda
+# Gadiride
 
-Premium vehicle rental portal: cars, passenger vehicles, logistics vehicles and heavy equipment. Booking requests hand off to WhatsApp.
+Vehicle rental website for cars, passenger vehicles, logistics vehicles and heavy equipment. Booking requests are sent through WhatsApp. Vehicles, FAQs, career roles and business details are managed in an admin panel (Sanity Studio) at `/studio`.
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # static export to ./out
-npm start        # serve the export locally
+cp .env.example .env.local   # uses the development dataset
+npm run dev                  # http://localhost:3000  (admin: http://localhost:3000/studio)
+npm run build && npm start   # production build
 ```
+
+The site works without Sanity content: anything missing falls back to the built-in defaults.
 
 ## Stack
 
-- Next.js 15 (App Router, static export)
-- TypeScript in strict mode
-- Tailwind CSS
-- GSAP + ScrollTrigger + DrawSVG + SplitText
-- Lenis (smooth scroll, synced to ScrollTrigger)
-- Radix (accordion, dialog)
-- react-hook-form + zod
-- lucide-react
+- Next.js 15 (App Router, server build with ISR)
+- Sanity v4 (embedded Studio at `/studio`, content via `next-sanity`)
+- TypeScript, Tailwind CSS
+- GSAP + ScrollTrigger, Lenis
+- Radix (accordion, dialog), react-hook-form + zod, lucide-react
 
-No backend. No database. The only external action is opening a WhatsApp link.
+## Admin (Sanity)
 
-## Client configuration
+Everything a visitor reads or sees is editable at `/studio`:
 
-Open `src/config/site.ts` and fill in:
-
-| Field | What to enter |
+| Studio section | Controls |
 |---|---|
-| `whatsappNumber` | International digits, e.g. `"919876543210"` |
-| `phone` | Display format, e.g. `"+91 98765 43210"` |
-| `email` | Business email |
-| `address` | Business address |
-| `cities` | Array of `{ name, note? }` objects |
-| `social` | Array of `{ label, href }` objects |
-| `showPrices` | Set `true` once real prices are added in `vehicles.ts` |
+| **Vehicles** | Every vehicle: name, group, type, main photo, extra photos, photo framing/background/zoom, specs, options, price, featured, show/hide, order |
+| **Catalog → Vehicle types** | Types (Hatchback, SUV, Bus…): name, group, photo, animation style. New types appear in filters, "Pick a style", "Meet the fleet" and the booking forms |
+| **Catalog → Vehicle groups** | Names, short names and descriptions of the 4 groups (the set itself is fixed: forms and animations depend on it) |
+| **Catalog → Services** | Service sections: text, bullet points, button, form, photo |
+| **Pages → Home page** | Every home section: hero, headings, story chapters, promo cards, reasons, steps, corporate, careers, final CTA, SEO |
+| **Pages → Vehicles / Services / Corporate / Careers / About / Contact / FAQ / 404** | All page headings, intros, labels, SEO title, description and share image |
+| **FAQs, Customer reviews, Career roles** | Lists (reviews are hidden until you add one) |
+| **Site settings** | WhatsApp, phone, email, address, cities, social links, logo, footer text, share image, show prices, intro animation |
 
-Empty values are hidden on the site, never faked.
+Headings ending in `.` or `?` show that character in brand orange. Any empty field falls back to the built-in text in `src/content/defaults.ts`, so the site never shows blanks.
 
-## Vehicle data
+Not in Sanity on purpose: the animated SVG vehicle drawings (code), booking form fields and validation (`src/data/forms.ts`).
 
-`src/data/vehicles.ts` holds the sample fleet. Every entry is marked `sample: true`. Replace them with the client's confirmed list. Each vehicle needs:
+### Search, drivers and vehicle partners
 
-- `slug`: URL-safe id
-- `name`, `type`, `group`, `art` (which SVG to render), `color`
-- `specs`: array of `{ label, value }`
-- `summary`, `options`
-- `pricePerDay`: leave undefined until the client confirms
+- The home search card has five tabs: Cars, Passenger, Trucks, Heavy equipment and **Drivers**. **Search** opens `/search/` with vehicles that fit the trip (car type, with or without driver, seats, payload, operator), then other options in the same group. Each result has **Request this…**, which sends the trip details plus that vehicle on WhatsApp.
+- Matching uses each vehicle's **Specifications** (for example `Seats: 7`, `Payload: Up to 7 t`) and **Options** (`With driver`, `Self drive`, `With operator`). Fill these in so searches match well.
+- **Drivers** come from the **Drivers** list in the Studio. Only real profiles are shown; drivers in the customer's pickup city come first. With no profiles, customers get a "Request a driver" button.
+- **Attach your vehicle** (`/partner/`) lets owners send their car, bus, truck or machine details on WhatsApp. Nothing is listed until your team verifies it and adds it under **Vehicles**.
+- Search page and partner page text is editable under **Pages**.
 
-## Replacing vehicle art with photos
+### Two datasets: development and production
 
-The SVG vehicles are stand-ins. To use real photography:
+| Where | Dataset | Studio workspace |
+|---|---|---|
+| Your computer (`npm run dev`) | `development` | `/studio/development` (labelled **DEV**) |
+| Vercel **Preview** deployments | `development` | |
+| Vercel **Production** | `production` | `/studio/production` (labelled **LIVE**) |
 
-1. Prepare a **transparent side-profile PNG** of the body (no wheels) and a **separate wheel PNG**, both at 2x resolution with consistent lighting.
-2. Place them in `/public/vehicles/`, e.g. `suv-body.webp` and `suv-wheel.webp`.
-3. In `src/data/vehicleArt.ts`, add a `png` field to the vehicle entry:
-   ```ts
-   png: { body: "/vehicles/suv-body.webp", wheel: "/vehicles/suv-wheel.webp" }
-   ```
-4. Update `VehicleSvg.tsx` to render `<img>` when `png` exists. The `VehicleRig` already reads the `wheels` array for positions and radii, so rotation continues to work.
+The dataset is chosen by `NEXT_PUBLIC_SANITY_DATASET`. Edits in the DEV workspace never reach the live site. Whenever the site is showing development data, a yellow **DEV DATA** badge appears in the bottom-left corner.
 
-For the JCB, supply separate arm, boom and bucket PNGs with the pivot points noted. Update the `arms` array in `vehicleArt.ts`.
+**One-time setup** (from the project folder):
 
-## Services and FAQ
+```bash
+npx sanity login
+npx sanity dataset create development --visibility public
+npx sanity cors add http://localhost:3000 --credentials
+npx sanity cors add https://YOUR-DOMAIN --credentials
+npm run seed:dev        # fills development with all current text and photos
+npm run seed:prod       # same for production (only creates what is missing)
+```
 
-- `src/data/services.ts`: service list and career roles.
-- `src/data/faq.ts`: FAQ answers. Keep answers honest; anything unconfirmed should say "Message us on WhatsApp for details".
-- `src/data/forms.ts`: booking form fields per category.
+In **Vercel → Settings → Environment Variables**:
 
-## Animation notes
+| Variable | Production | Preview | Development |
+|---|---|---|---|
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | `imd3p4ax` | `imd3p4ax` | `imd3p4ax` |
+| `NEXT_PUBLIC_SANITY_DATASET` | `production` | `development` | `development` |
 
-- **Speedometer loader** plays once per session (tracked in sessionStorage). Skip button always visible. Falls back to a fade when reduced motion is on.
-- **Hero drive-in**: vehicle enters with wheel rotation derived from distance, suspension dip on braking, parallax scenery.
-- **Tab switch**: current vehicle exits right, next enters from left.
-- **Line-drawing story**: pinned ScrollTrigger section. Requires stroke-based SVGs (the ones in vehicleArt are ready). Falls back to static drawings for reduced motion.
-- **Fleet convoy**: scroll-linked horizontal movement with synchronized wheel rotation.
-- **Lenis** smooth scroll syncs to ScrollTrigger via the GSAP ticker. Disabled for reduced motion and touch devices.
+**Day-to-day workflow**
+
+1. Try changes in `/studio/development` and check them on `localhost:3000` or a Vercel preview.
+2. When happy, make the same edit in `/studio/production` (LIVE).
+3. To reset development to a copy of live: `npm run data:prod-to-dev` (overwrites development).
+
+The seed scripts never overwrite existing documents, so they are safe to re-run.
+
+### Instant updates
+
+Published changes appear within **60 seconds**. For instant updates, set `SANITY_REVALIDATE_SECRET` in Vercel (Production) and add a webhook in sanity.io/manage → API → Webhooks:
+
+- URL: `https://YOUR-DOMAIN/api/revalidate`
+- Dataset: `production`
+- Trigger on: Create, Update, Delete
+- Secret: the same value as `SANITY_REVALIDATE_SECRET`
+
+### Photo tips
+
+- Upload large originals (1600 px wide or more). The site serves resized AVIF/WebP automatically.
+- **Fill the frame** (default) suits normal photos: click the crop icon and drag the hotspot onto the vehicle so it stays centred on every card size.
+- **Show the whole vehicle** suits cut-out PNGs; pick a card background and use **Zoom** if it looks small.
+- Add interior and boot shots under **More photos**; they appear as thumbnails on the vehicle page.
+
+## Brand and theme
+
+The theme comes from the Gadiride logo (`public/brand/gadiride-logo.webp`):
+
+| Token | Value | Use |
+|---|---|---|
+| `brand-gradient` | `#FDB022 → #F47A16 → #E8540C` | Primary buttons, wordmark, accents |
+| `brand-500` / `600` / `700` | `#F47A16` / `#E35E0B` / `#B9470A` | Accents, hover, text on white |
+| `taxi` | `#FFC20E` | Highlight cards, checker motif |
+| `ink-900` | `#16161A` | Text, dark sections |
+| Font `font-brand` / `font-head` | Fredoka | Wordmark and card titles |
+
+The header and footer use `src/components/Logo.tsx` (live text and SVG, works on dark and light backgrounds). The favicon is `src/app/icon.svg`. The social share image is `public/brand/og.jpg`.
+
+## Project layout
+
+```
+src/app/(site)/        public pages (shared header/footer via SiteShell)
+src/app/studio/        embedded Sanity Studio
+src/app/api/revalidate Sanity webhook → cache refresh
+src/sanity/            client, schemas, Studio desk structure
+src/lib/content.ts     all content reads (one cached Sanity query, merged over defaults)
+src/content/defaults.ts default text for every section (fallback + seed source)
+scripts/seed.ts        fills a dataset with the current text and photos
+src/data/              fixed groups/types, forms, services, sample content
+sanity.config.ts       Studio config
+```
 
 ## Pages
 
 | Route | Content |
 |---|---|
-| `/` | Full homepage with all sections |
+| `/` | Homepage |
 | `/vehicles/` | Filterable listing across all groups |
 | `/vehicles/[group]/` | Group page with filters and quote form |
-| `/vehicle/[slug]/` | Vehicle detail with gallery and quote form |
-| `/services/` | All service lines with inline quote forms |
-| `/corporate/` | Corporate offering and enquiry form |
-| `/careers/` | Roles and job enquiry form |
-| `/about/` | Company information (confirmed facts only) |
-| `/contact/` | WhatsApp, phone, email, address |
-| `/faq/` | Full accordion |
+| `/vehicle/[slug]/` | Vehicle detail with quote form (new vehicles from the admin render on first visit) |
+| `/services/`, `/corporate/`, `/careers/`, `/about/`, `/contact/`, `/faq/` | Supporting pages |
+| `/search/` | Search results (vehicles or drivers for the entered trip) |
+| `/partner/` | Attach your vehicle |
+| `/studio/` | Admin |
 
-All routes are statically exported.
+## Still needed from the client
 
-## Deployment
+- Real WhatsApp number, phone, email and address (enter them in **Site settings**).
+- The real fleet with photos (enter it in **Vehicles**).
+- Confirmed company details for `/about/` (history, registration). Nothing there should be invented.
+- Verified customer reviews, if a testimonials section is wanted.
 
-The `out/` folder is a static site. Deploy to Vercel, Netlify, Cloudflare Pages, or any static host.
+## Not built
 
-```bash
-npm run build
-# Upload the out/ directory
-```
-
-## What is NOT built
-
-- Backend, database, API
-- Authentication, accounts
-- Payments
-- Live inventory or booking confirmation
-- Admin panel
-- Email sending (all enquiries go to WhatsApp)
+- Online payments, user accounts, live inventory or instant booking confirmation. All enquiries go to WhatsApp.

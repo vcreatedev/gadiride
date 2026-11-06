@@ -1,22 +1,21 @@
 "use client";
+import { useCatalog } from "./SiteProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Menu, X, ChevronDown, Phone, Building2 } from "lucide-react";
+import { Menu, X, ChevronDown, Phone } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 import Logo from "./Logo";
 import CategoryIcon from "./CategoryIcon";
-import { GROUPS } from "@/data/vehicles";
-import { site } from "@/config/site";
+import { telHref } from "@/config/site";
+import { useSite } from "./SiteProvider";
 import { whatsappChatHref } from "@/lib/whatsapp";
-import { selectTab } from "@/lib/events";
-import { scrollToTarget } from "@/lib/lenis";
-import { gsap } from "@/lib/motion";
 
 const MORE = [
   { href: "/services/", label: "All services" },
-  { href: "/services/#driver-services", label: "Driver services" },
+  { href: "/corporate/", label: "Corporate" },
+  { href: "/partner/", label: "Attach your vehicle" },
   { href: "/careers/", label: "Careers" },
   { href: "/about/", label: "About us" },
   { href: "/faq/", label: "FAQ" },
@@ -24,29 +23,24 @@ const MORE = [
 ];
 
 export default function Header() {
+  const { groups } = useCatalog();
   const path = usePathname();
   const [solid, setSolid] = useState(false);
-  const [compact, setCompact] = useState(false);
   const [more, setMore] = useState(false);
   const [menu, setMenu] = useState(false);
-  const bar = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
   const home = path === "/";
+  const site = useSite();
 
   useEffect(() => {
     const onScroll = () => {
       setSolid(window.scrollY > 24);
-      setCompact(home && window.scrollY > window.innerHeight * 1.05);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [home]);
 
-  useEffect(() => {
-    if (!bar.current) return;
-    gsap.to(bar.current, { height: compact ? "auto" : 0, opacity: compact ? 1 : 0, duration: 0.3, ease: "power2.out" });
-  }, [compact]);
 
   useEffect(() => {
     const close = (e: MouseEvent) => { if (!moreRef.current?.contains(e.target as Node)) setMore(false); };
@@ -58,7 +52,8 @@ export default function Header() {
 
   useEffect(() => { setMenu(false); setMore(false); }, [path]);
 
-  const dark = !solid;
+  // White text over a dark hero; dark text over a light one. Solid white once scrolled.
+  const dark = site.heroTheme === "dark" && !solid;
   const navCls = (active: boolean) =>
     `flex h-10 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition-colors ${
       active ? "border-brand-500" : "border-transparent"
@@ -68,17 +63,17 @@ export default function Header() {
     <header className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${solid ? "border-b border-line bg-white/95 backdrop-blur" : "bg-transparent"}`}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-ink-900">Skip to content</a>
       <div className="container-x flex h-[60px] items-center justify-between gap-4 md:h-[72px]">
-        <Link href="/" aria-label="Gadiride home"><Logo tone={dark ? "light" : "dark"} /></Link>
+        <Link href="/vehicles/cars/" aria-label="Gadiride home"><Logo tone={dark ? "light" : "dark"} /></Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
-          {GROUPS.map((g) => (
+          {groups.map((g) => (
             <Link key={g.id} href={`/vehicles/${g.id}/`} className={navCls(path.startsWith(`/vehicles/${g.id}`))}>
               <CategoryIcon id={g.id} className="h-5 w-6" />
               {g.short}
             </Link>
           ))}
-          <Link href="/corporate/" className={navCls(path.startsWith("/corporate"))}>
-            <Building2 className="h-4 w-4" />Corporate
+          <Link href="/drivers/" className={navCls(path.startsWith("/drivers"))}>
+            <CategoryIcon id="driver" className="h-5 w-6" />Drivers
           </Link>
           <div ref={moreRef} className="relative">
             <button type="button" aria-expanded={more} aria-controls="more-menu" onClick={() => setMore((m) => !m)} className={navCls(MORE.some((m) => path.startsWith(m.href.split("#")[0]) && m.href !== "/"))}>
@@ -95,8 +90,8 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <a
-            href={site.phone ? `tel:${site.phone.replace(/\s/g, "")}` : "tel:+919876543210"}
+          {site.phone && <a
+            href={telHref(site.phone)}
             className={`hidden min-h-10 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors sm:inline-flex ${
               dark
                 ? "border-white/20 text-white hover:bg-white/10"
@@ -104,9 +99,10 @@ export default function Header() {
             }`}
           >
             <Phone className="h-4 w-4 text-brand-500" />
-            <span>Call</span>
-          </a>
-          <a href={whatsappChatHref()} target="_blank" rel="noopener noreferrer" className="btn-whatsapp hidden min-h-10 px-4 text-sm sm:inline-flex">
+            <span className="hidden tabular-nums xl:inline">{site.phone.replace(/^\+91\s*/, "")}</span>
+            <span className="xl:hidden">Call</span>
+          </a>}
+          <a href={whatsappChatHref(site.whatsappNumber)} target="_blank" rel="noopener noreferrer" className="btn-whatsapp hidden min-h-10 px-4 text-sm sm:inline-flex">
             <WhatsAppIcon className="h-4 w-4" />WhatsApp
           </a>
           <Dialog.Root open={menu} onOpenChange={setMenu}>
@@ -122,27 +118,27 @@ export default function Header() {
                 </div>
                 <Dialog.Description className="sr-only">Site navigation</Dialog.Description>
                 <nav aria-label="Mobile" className="flex flex-col gap-1">
-                  {GROUPS.map((g) => (
-                    <Link key={g.id} href={`/vehicles/${g.id}/`} className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-bold text-ink-900 hover:bg-surface-50">
+                  {groups.map((g) => (
+                    <Link key={g.id} href={`/vehicles/${g.id}/`} className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-semibold text-ink-900 hover:bg-surface-50">
                       <CategoryIcon id={g.id} className="h-6 w-8 text-brand-500" />{g.name}
                     </Link>
                   ))}
-                  <Link href="/corporate/" className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-bold text-ink-900 hover:bg-surface-50"><Building2 className="h-6 w-8 text-brand-500" />Corporate</Link>
+                  <Link href="/drivers/" className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-semibold text-ink-900 hover:bg-surface-50"><CategoryIcon id="driver" className="h-6 w-8 text-brand-500" />Drivers</Link>
                   <hr className="my-3 border-line" />
                   {MORE.map((m) => (
                     <Link key={m.href} href={m.href} className="rounded-field px-3 py-3 text-base font-medium text-ink-900 hover:bg-surface-50">{m.label}</Link>
                   ))}
                 </nav>
                 <div className="mt-auto flex flex-col gap-2.5 pt-6">
-                  <a
-                    href={site.phone ? `tel:${site.phone.replace(/\s/g, "")}` : "tel:+919876543210"}
+                  {site.phone && <a
+                    href={telHref(site.phone)}
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-line bg-white font-semibold text-ink-900 transition-colors hover:bg-surface-50"
                   >
                     <Phone className="h-4 w-4 text-brand-500" />
-                    <span>Call us</span>
-                  </a>
+                    <span>Call {site.phone}</span>
+                  </a>}
                   <a
-                    href={whatsappChatHref()}
+                    href={whatsappChatHref(site.whatsappNumber)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-whatsapp flex h-12 w-full items-center justify-center gap-2 rounded-full"
@@ -157,18 +153,6 @@ export default function Header() {
         </div>
       </div>
 
-      {home && (
-        <div ref={bar} className="hidden h-0 overflow-hidden opacity-0 lg:block" aria-hidden={!compact}>
-          <div className="container-x flex items-center gap-3 pb-3">
-            <span className="text-sm font-semibold text-ink-900">Quick quote</span>
-            {GROUPS.map((g) => (
-              <button key={g.id} type="button" tabIndex={compact ? 0 : -1} className="chip" onClick={() => { selectTab(g.id); scrollToTarget("#book", -120); }}>
-                <CategoryIcon id={g.id} className="h-4 w-5" />{g.short}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </header>
   );
 }

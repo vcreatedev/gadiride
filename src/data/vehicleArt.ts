@@ -27,7 +27,8 @@ export type VehicleArt = {
   feel: { accel: number; roll: number };
 };
 
-export type ArtId = "hatch" | "sedan" | "suv" | "van" | "bus" | "pickup" | "truck" | "jcb";
+export const ART_IDS = ["hatch", "sedan", "suv", "van", "bus", "pickup", "truck", "jcb"] as const;
+export type ArtId = (typeof ART_IDS)[number];
 
 const busWindows = Array.from({ length: 6 }, (_, i) => {
   const x = 40 + i * 144;

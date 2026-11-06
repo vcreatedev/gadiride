@@ -1,9 +1,8 @@
 "use client";
 import * as Accordion from "@radix-ui/react-accordion";
 import { ChevronDown } from "lucide-react";
-import { FAQ } from "@/data/faq";
 
-export default function FaqList({ items = FAQ }: { items?: typeof FAQ }) {
+export default function FaqList({ items }: { items: { q: string; a: string }[] }) {
   return (
     <Accordion.Root type="single" collapsible className="border-t border-line">
       {items.map((f, i) => (
@@ -15,7 +14,7 @@ export default function FaqList({ items = FAQ }: { items?: typeof FAQ }) {
             </Accordion.Trigger>
           </Accordion.Header>
           <Accordion.Content className="overflow-hidden data-[state=closed]:animate-[acc-up_.25s_ease-out] data-[state=open]:animate-[acc-down_.25s_ease-out]">
-            <p className="max-w-[75ch] px-4 pb-6 pt-1 leading-relaxed">{f.a}</p>
+            <p className="max-w-[75ch] whitespace-pre-line px-4 pb-6 pt-1 leading-relaxed">{f.a}</p>
           </Accordion.Content>
         </Accordion.Item>
       ))}

@@ -1,10 +1,12 @@
 "use client";
+import { useCatalog } from "./SiteProvider";
 import { useRef, useState, useEffect, useLayoutEffect } from "react";
 import Link from "next/link";
 import VehicleRig, { type RigHandle } from "./VehicleRig";
 import BookingCard from "./BookingCard";
 import { Skyline, Lamps, Road } from "./Scenery";
-import { GROUPS, type GroupId } from "@/data/vehicles";
+import type { GroupId } from "@/data/vehicles";
+import type { HomeContent } from "@/content/defaults";
 import type { ArtId } from "@/data/vehicleArt";
 import { gsap, SplitText, useGSAP, prefersReducedMotion, isSmallScreen } from "@/lib/motion";
 import { drive, dig, prepareRig } from "@/lib/drive";
@@ -18,11 +20,12 @@ const HERO_WIDTH_SM: Record<ArtId, string> = {
   hatch: "78vw", sedan: "86vw", suv: "86vw", pickup: "88vw", van: "92vw", truck: "96vw", bus: "100vw", jcb: "90vw",
 };
 
-export default function Hero() {
+export default function Hero({ content: c }: { content: HomeContent["hero"] }) {
+  const { groups } = useCatalog();
   const section = useRef<HTMLElement>(null);
   const rig = useRef<RigHandle>(null);
   const [group, setGroup] = useState<GroupId>("cars");
-  const g = GROUPS.find((x) => x.id === group)!;
+  const g = groups.find((x) => x.id === group)!;
   const [shown, setShown] = useState<{ art: ArtId; color: string }>({ art: g.art, color: g.color });
   const busy = useRef(false);
   const queued = useRef<GroupId | null>(null);
@@ -64,7 +67,7 @@ export default function Hero() {
   const swap = (next: GroupId) => {
     setGroup(next);
     const r = rig.current;
-    const target = GROUPS.find((x) => x.id === next)!;
+    const target = groups.find((x) => x.id === next)!;
     if (!r || prefersReducedMotion()) { setShown({ art: target.art, color: target.color }); return; }
     if (busy.current) { queued.current = next; return; }
     busy.current = true;
@@ -85,7 +88,7 @@ export default function Hero() {
       busy.current = false;
       const q = queued.current;
       queued.current = null;
-      if (q && GROUPS.find((x) => x.id === q)!.art !== shown.art) swap(q);
+      if (q && groups.find((x) => x.id === q)!.art !== shown.art) swap(q);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shown]);
@@ -107,14 +110,14 @@ export default function Hero() {
 
         <div className="container-x relative z-10 pb-[calc(40vw+120px)] pt-10 sm:pb-[calc(32vw+130px)] md:pb-[calc(26vw+150px)] md:pt-16 lg:pb-[290px] lg:pt-14">
           <h1 data-hero-title className="display max-w-[14ch] text-[3.1rem] text-white xs:text-[3.5rem] sm:text-7xl lg:text-[5.75rem]">
-            Every vehicle. Every journey. One adda<span className="text-brand-500">.</span>
+            {c.title}{c.highlight && <> <span className="text-gradient">{c.highlight}</span></>}
           </h1>
           <p data-hero-sub className="lead mt-6 text-ink-300">
-            From city cars and group travel to trucks and JCBs. Tell us what you need and get a quote on WhatsApp.
+            {c.subtitle}
           </p>
           <div data-hero-ctas className="mt-8 flex flex-wrap gap-3">
-            <a href="#book" className="btn-primary">Find your vehicle</a>
-            <Link href="/services/" className="btn border border-white/25 text-white hover:bg-white/10">Explore our services</Link>
+            <a href="#book" className="btn-primary">{c.primaryCta}</a>
+            <Link href="/services/" className="btn border border-white/25 text-white hover:bg-white/10">{c.secondaryCta}</Link>
           </div>
         </div>
 

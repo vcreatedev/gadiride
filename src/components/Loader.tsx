@@ -1,100 +1,103 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import Speedometer, { type SpeedoHandle } from "./Speedometer";
-import { gsap, prefersReducedMotion } from "@/lib/motion";
 import { markReady } from "@/lib/ready";
 
-const KEY = "ga_loader_seen";
+const WORD = "Gadiride".split("");
+/** Letter colours sampled along the logo gradient (#FDB022 → #F47A16 → #E8540C). */
+const SHADES = ["#FDB022", "#FCA61F", "#FA9A1C", "#F78C19", "#F47A16", "#F06C13", "#EC6010", "#E8540C"];
+/** Length of the CSS intro (see .ld-* in globals.css). The loader never closes before this. */
+const INTRO_MS = 1800;
 
 /**
- * Speedometer intro. The needle follows real loading milestones
- * (fonts ready, window load), never a fixed timer. Shown once per session.
+ * Logo intro on every full page load or reload (not on in-app navigation).
+ * The animation is pure CSS (transform/opacity), so it starts at first paint and
+ * stays smooth while the page's scripts load. JS only decides when to fade it out:
+ * after the intro has played and the page has finished loading.
  */
-export default function Loader() {
-  const [done, setDone] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
-  const speedo = useRef<SpeedoHandle>(null);
-  const streak = useRef<HTMLDivElement>(null);
+export default function Loader({ enabled = true }: { enabled?: boolean }) {
+  const [state, setState] = useState<"on" | "out" | "done">(enabled ? "on" : "done");
   const exitRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const html = document.documentElement;
-    const finish = () => {
-      try { sessionStorage.setItem(KEY, "1"); } catch {}
-      html.style.overflow = "";
-      setDone(true);
-    };
-    let seen = false;
-    try { seen = !!sessionStorage.getItem(KEY); } catch {}
-    if (seen || !root.current || !speedo.current) { markReady(); finish(); return; }
-
+    if (!enabled) { markReady(); return; }
     html.style.overflow = "hidden";
-    if (prefersReducedMotion()) {
-      speedo.current.set(240);
-      const t = gsap.to(root.current, { opacity: 0, duration: 0.4, delay: 0.3, onStart: markReady, onComplete: finish });
-      exitRef.current = () => t.progress(1);
-      return () => { t.kill(); };
-    }
 
-    const s = speedo.current;
-    const state = { v: 0 };
-    let target = 0;
     let exiting = false;
-    let tween: gsap.core.Tween | null = null;
-    const render = () => s.set(state.v);
-
+    const timers: number[] = [];
     const exit = () => {
       if (exiting) return;
       exiting = true;
-      tween?.kill();
-      gsap.timeline({ onComplete: finish })
-        .to(state, { v: 236, duration: 0.08, onUpdate: render })
-        .to(state, { v: 240, duration: 0.12, onUpdate: render })
-        .fromTo(streak.current, { scaleX: 0, opacity: 1 }, { scaleX: 1, duration: 0.35, ease: "power3.in" })
-        .add(markReady)
-        .fromTo(root.current, { clipPath: "circle(75% at 50% 50%)" }, { clipPath: "circle(0% at 50% 50%)", duration: 0.65, ease: "power3.inOut" }, ">-0.05");
+      setState("out");
+      markReady(); // hero vehicle starts driving as the loader fades
+      timers.push(window.setTimeout(() => { html.style.overflow = ""; setState("done"); }, 550));
     };
     exitRef.current = exit;
 
-    const go = (t: number) => {
-      target = Math.max(target, t);
-      tween?.kill();
-      tween = gsap.to(state, {
-        v: target,
-        duration: 0.35 + (target - state.v) / 220,
-        ease: target >= 240 ? "power2.in" : "power2.out",
-        onUpdate: render,
-        onComplete: () => { if (target >= 240) exit(); },
-      });
-    };
+    // Close when both the intro has played (timed from first paint) and the page has loaded.
+    const whenLoaded = new Promise<void>((resolve) => {
+      if (document.readyState === "complete") resolve();
+      else window.addEventListener("load", () => resolve(), { once: true });
+    });
+    whenLoaded.then(() => {
+      const wait = Math.max(0, INTRO_MS + 250 - performance.now());
+      timers.push(window.setTimeout(exit, wait));
+    });
+    timers.push(window.setTimeout(exit, 4000)); // never block longer than this
 
-    // Ignition: ticks light up around the dial, then the needle starts moving.
-    const ign = gsap.timeline();
-    ign.from(s.root, { scale: 0.92, opacity: 0, duration: 0.5, ease: "power3.out" })
-      .to(s.ticks(), { opacity: 1, duration: 0.25, stagger: 0.008 }, "-=0.25")
-      .add(() => go(80));
+    return () => { timers.forEach(clearTimeout); html.style.overflow = ""; };
+  }, [enabled]);
 
-    document.fonts?.ready.then(() => go(170)).catch(() => go(170));
-    const onLoad = () => go(240);
-    if (document.readyState === "complete") setTimeout(onLoad, 350);
-    else window.addEventListener("load", onLoad, { once: true });
-    const safety = setTimeout(onLoad, 4000);
-
-    return () => {
-      clearTimeout(safety);
-      window.removeEventListener("load", onLoad);
-      ign.kill();
-      tween?.kill();
-      html.style.overflow = "";
-    };
-  }, []);
-
-  if (done) return null;
+  if (state === "done") return null;
   return (
-    <div id="ga-loader" ref={root} className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink-900" role="status" aria-label="Loading Gadiride">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_55%,rgba(242,97,29,0.10),transparent_70%)]" />
-      <Speedometer ref={speedo} className="relative w-[min(78vw,460px)]" />
-      <div ref={streak} aria-hidden className="pointer-events-none absolute left-0 top-1/2 h-[3px] w-full origin-left scale-x-0 bg-gradient-to-r from-transparent via-brand-500 to-white opacity-0 shadow-[0_0_24px_6px_rgba(242,97,29,0.6)]" />
+    <div
+      id="ga-loader"
+      className={`ld fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ink-900 ${state === "out" ? "ld-out" : ""}`}
+      role="status"
+      aria-label="Loading Gadiride"
+    >
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_50%_50%,rgba(244,122,22,0.14),transparent_70%)]" />
+
+      <div className="ld-logo relative select-none font-brand font-semibold leading-none" aria-hidden>
+        <svg viewBox="0 0 420 60" className="absolute -top-[0.62em] left-[2%] h-[0.6em] w-[78%] overflow-visible text-[clamp(3.5rem,14vw,8.5rem)]">
+          <defs>
+            <linearGradient id="ld-swoosh" x1="0" x2="1">
+              <stop offset="0" stopColor="#FDB022" />
+              <stop offset="0.6" stopColor="#F47A16" />
+              <stop offset="1" stopColor="#BABAC2" />
+            </linearGradient>
+          </defs>
+          <path className="ld-swoosh" pathLength={1} d="M6 54 Q210 -22 414 40" fill="none" stroke="url(#ld-swoosh)" strokeWidth="9" strokeLinecap="round" />
+        </svg>
+
+        <div className="flex items-end text-[clamp(3.5rem,14vw,8.5rem)]">
+          <span className="flex overflow-hidden pb-[0.08em]">
+            {WORD.map((c, i) => (
+              <span key={i} className="ld-letter inline-block" style={{ color: SHADES[i], animationDelay: `${250 + i * 55}ms` }}>{c}</span>
+            ))}
+          </span>
+          <span className="ld-pin mb-[0.1em] ml-[0.03em] inline-block self-start">
+            <svg viewBox="0 0 24 34" className="block h-[0.95em] w-[0.67em] overflow-visible">
+              <defs>
+                <linearGradient id="ld-pin" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#FA9A2A" />
+                  <stop offset="1" stopColor="#E8540C" />
+                </linearGradient>
+              </defs>
+              <path d="M12 1C6 1 1.5 5.4 1.5 11.2 1.5 18.6 12 27 12 27s10.5-8.4 10.5-15.8C22.5 5.4 18 1 12 1Z" fill="url(#ld-pin)" />
+              <circle cx="12" cy="11" r="4.2" fill="#16161A" />
+              <circle className="ld-dot" cx="12" cy="31" r="2.6" fill="#ffffff" />
+            </svg>
+          </span>
+        </div>
+      </div>
+
+      <p className="ld-tag mt-6 font-head text-base font-medium tracking-wide text-ink-300 md:text-lg">Every vehicle. One ride.</p>
+
+      <div className="absolute bottom-[max(3.5rem,calc(env(safe-area-inset-bottom)+2.5rem))] h-[3px] w-[min(70vw,320px)] overflow-hidden rounded-full bg-white/10">
+        <div className={`ld-bar h-full w-full origin-left bg-brand-gradient ${state === "out" ? "ld-bar-full" : ""}`} />
+      </div>
+
       <button type="button" onClick={() => exitRef.current()} className="absolute bottom-[max(2rem,env(safe-area-inset-bottom))] right-6 rounded-full px-4 py-2 text-sm font-medium text-ink-300 transition-colors hover:text-white">
         Skip intro
       </button>
