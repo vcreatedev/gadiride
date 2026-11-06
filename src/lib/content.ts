@@ -15,6 +15,8 @@ import {
   type VehicleSeed,
 } from "@/data/vehicles";
 import { FAQ } from "@/data/faq";
+import { SAMPLE_DRIVERS } from "@/data/drivers";
+import { dataset } from "@/sanity/env";
 import { CAREER_ROLES, SERVICES, type FormKey, type Service } from "@/data/services";
 import type { ArtId } from "@/data/vehicleArt";
 import { footerDefaults, homeDefaults, pageDefaults, type HomeContent, type PageContent, type PageKey } from "@/content/defaults";
@@ -54,7 +56,7 @@ const QUERY = `{
   "faq": *[_type == "faq" && defined(question)] | order(coalesce(order, 100) asc, _createdAt asc){"q": question, "a": answer},
   "roles": *[_type == "careerRole" && defined(role)] | order(coalesce(order, 100) asc, _createdAt asc){role, detail},
   "drivers": *[_type == "driver" && available != false && defined(name)] | order(coalesce(order, 100) asc, name asc){
-    name, city, experience, drives, languages, about, verified, photo${IMG}
+    name, city, experience, licence, duty, drives, languages, about, verified, photo${IMG}
   },
   "testimonials": *[_type == "testimonial" && defined(quote)] | order(coalesce(order, 100) asc, _createdAt desc){quote, name, detail, rating, photo${IMG}}
 }`;
@@ -74,7 +76,7 @@ type Raw = {
   services?: { id: string; name: string; forWho?: string; offer?: string; points?: string[]; cta?: string; form?: FormKey; toConfirm?: boolean; image?: SanityImageDoc }[];
   faq?: { q: string; a: string }[];
   roles?: { role: string; detail: string }[];
-  drivers?: { name: string; city?: string; experience?: number; drives?: string[]; languages?: string[]; about?: string; verified?: boolean; photo?: SanityImageDoc }[];
+  drivers?: { name: string; city?: string; experience?: number; licence?: string; duty?: string; drives?: string[]; languages?: string[]; about?: string; verified?: boolean; photo?: SanityImageDoc }[];
   testimonials?: { quote: string; name: string; detail?: string; rating?: number; photo?: SanityImageDoc }[];
 };
 
@@ -295,12 +297,23 @@ export const getCareerRoles = cache(async (): Promise<CareerRole[]> => {
   return docs.length ? docs : CAREER_ROLES;
 });
 
-export type Driver = { name: string; city?: string; experience?: number; drives: string[]; languages: string[]; about?: string; verified: boolean; photo?: Photo };
+export type Driver = {
+  name: string; city?: string; experience?: number; licence?: string; duty?: string;
+  drives: string[]; languages: string[]; about?: string; verified: boolean; photo?: Photo;
+  /** Sample profile shown only on development / preview builds. */
+  sample?: boolean;
+};
 
-/** Real driver profiles from the admin only. No sample drivers are ever shown. */
-export const getDrivers = cache(async (): Promise<Driver[]> =>
-  ((await fetchRaw()).drivers ?? []).map((d) => ({ ...d, drives: d.drives ?? [], languages: d.languages ?? [], verified: !!d.verified, photo: toPhoto(d.photo, d.name) })),
-);
+/**
+ * Real driver profiles from the admin. While none are published, development and preview
+ * builds show labelled sample profiles; the production site never does.
+ */
+export const getDrivers = cache(async (): Promise<Driver[]> => {
+  const docs = (await fetchRaw()).drivers ?? [];
+  if (docs.length) return docs.map((d) => ({ ...d, drives: d.drives ?? [], languages: d.languages ?? [], verified: !!d.verified, photo: toPhoto(d.photo, d.name) }));
+  if (dataset === "production") return [];
+  return SAMPLE_DRIVERS.map((d) => ({ ...d, verified: false, sample: true }));
+});
 
 export type Testimonial = { quote: string; name: string; detail?: string; rating: number; photo?: Photo };
 

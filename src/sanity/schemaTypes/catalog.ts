@@ -91,6 +91,8 @@ export const driver = defineType({
     img("photo", "Photo"),
     str("city", "City / area", { description: "Drivers in the customer's pickup city are shown first." }),
     defineField({ name: "experience", title: "Experience (years)", type: "number", validation: (r) => r.min(0).max(60) }),
+    str("licence", "Licence", { description: "e.g. LMV, LMV + Transport, HMV" }),
+    str("duty", "Duty type", { description: "e.g. Local & outstation, City & airport, Monthly / corporate" }),
     defineField({ name: "drives", title: "Drives", type: "array", of: [{ type: "string" }], options: { layout: "tags" }, description: "e.g. Car, SUV, Tempo traveller, Bus, Truck" }),
     defineField({ name: "languages", title: "Languages", type: "array", of: [{ type: "string" }], options: { layout: "tags" } }),
     txt("about", "About", { rows: 2 }),
