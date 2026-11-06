@@ -130,7 +130,9 @@ export default function RequestForm({ formKey, idPrefix = formKey, preset, extra
     const shell = `group/f relative rounded-2xl bg-surface-50 ring-1 transition-all duration-200 hover:ring-ink-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-400 focus-within:shadow-[0_0_0_5px_rgba(244,122,22,0.12)] ${
       err ? "ring-err" : "ring-line"
     }`;
-    const pad = Icon ? (f.type === "date" || f.type === "time" ? "pl-10" : "pl-11") : "pl-4";
+    // Dates/times squeezed into a half-width column get a slightly smaller inset; full-width ones line up with the rest.
+    const picker = f.type === "date" || f.type === "time";
+    const pad = Icon ? (picker && halfWidth.has(f.name) ? "pl-10" : "pl-11") : "pl-4";
     const lbl = (
       <span id={`${id}-lbl`} className={`pointer-events-none absolute top-2.5 ${pad} text-[11px] font-semibold leading-none uppercase tracking-[0.06em] text-ink-400 transition-colors group-focus-within/f:text-brand-600`}>
         {label}
@@ -144,13 +146,14 @@ export default function RequestForm({ formKey, idPrefix = formKey, preset, extra
     switch (f.type) {
       case "segment":
         input = (
-          <div className={`${shell} flex h-[68px] flex-col justify-end px-2.5 pb-2.5`}>
+          // Buttons wrap onto a second line on very narrow screens instead of spilling out of the box.
+          <div className={`${shell} flex min-h-[68px] flex-col justify-end px-2.5 pb-2.5 pt-7`}>
             <span id={`${id}-lbl`} className="pointer-events-none absolute left-4 top-2.5 text-[11px] font-semibold leading-none uppercase tracking-[0.06em] text-ink-400">{f.label}</span>
-            <div role="radiogroup" aria-labelledby={`${id}-lbl`} className="flex gap-2">
+            <div role="radiogroup" aria-labelledby={`${id}-lbl`} className="flex flex-wrap gap-1.5">
               {f.options!.map((o) => (
                 <label
                   key={o}
-                  className={`flex h-[30px] flex-1 cursor-pointer select-none items-center justify-center gap-1 whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold transition-all active:scale-[0.97] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-brand-500 ${
+                  className={`flex h-[30px] min-w-fit flex-1 basis-0 cursor-pointer select-none items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-semibold transition-all active:scale-[0.97] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-1 has-[:focus-visible]:outline-brand-500 ${
                     values[f.name] === o
                       ? "bg-brand-gradient text-white shadow-[0_4px_12px_-4px_rgba(232,84,12,0.6)]"
                       : "bg-white text-ink-700 shadow-sm ring-1 ring-ink-300/70 hover:bg-brand-50 hover:text-brand-700 hover:ring-brand-400"
@@ -249,7 +252,9 @@ export default function RequestForm({ formKey, idPrefix = formKey, preset, extra
     // Compact (narrow side panel): places and notes full width, everything else in two columns.
     const colSpan = compact
       ? `col-span-12 ${halfWidth.has(f.name) ? "sm:col-span-6" : ""}`
-      : `col-span-12 ${f.type === "segment" || f.type === "select" ? "sm:col-span-6" : f.span === 3 ? "sm:col-span-6" : ""} ${spanCls[f.span ?? 12]}`;
+      : fullRow(f) && f.type === "segment"
+        ? "col-span-12"
+        : `col-span-12 ${f.type === "segment" || f.type === "select" ? "sm:col-span-6" : f.span === 3 ? "sm:col-span-6" : ""} ${spanCls[f.span ?? 12]}`;
 
     return (
       <div key={f.name} className={colSpan}>

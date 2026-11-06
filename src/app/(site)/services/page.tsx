@@ -36,7 +36,8 @@ export default async function ServicesPage() {
                 {s.toConfirm && <p className="mt-4 text-sm text-ink-400">{p.confirmNote}</p>}
                 <ExpandForm formKey={s.form} label={s.cta} dark={dark} />
               </div>
-              <div className={`relative aspect-[4/3] overflow-hidden rounded-card ${dark ? "bg-ink-800" : "bg-gradient-to-b from-white to-[#f3efe9]"} ${i % 2 ? "lg:order-1" : ""}`}>
+              {/* same framed card for every service; a wide frame keeps the whole vehicle in view */}
+              <div className={`relative aspect-[16/10] overflow-hidden rounded-card bg-white ${dark ? "" : "shadow-card ring-1 ring-black/5"} ${i % 2 ? "lg:order-1" : ""}`}>
                 <Photo
                   photo={s.photo}
                   alt={s.name}

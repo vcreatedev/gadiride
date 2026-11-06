@@ -1,5 +1,5 @@
 import type { ArtId } from "@/data/vehicleArt";
-import VehicleSvg from "./VehicleSvg";
+import HeroVehicle from "./HeroVehicle";
 import HeroCarousel from "./HeroCarousel";
 import type { HeroVariant } from "@/data/vehicles";
 import HeroScene, { type HeroTheme, type SceneId } from "./HeroScene";
@@ -78,12 +78,15 @@ export default async function PageHero({ title, intro, art, color = "#C9CDD3", c
     );
   }
   return (
-    <section className={`relative overflow-hidden pb-24 pt-32 md:pb-28 md:pt-40 ${dark ? "bg-ink-900 text-white" : "bg-[linear-gradient(180deg,#FFF4E6_0%,#FFFFFF_80%)] text-ink-900"}`}>
+    <section className={`relative overflow-hidden pt-28 md:pt-40 ${art ? "pb-40 md:pb-36 lg:pb-28" : "pb-24 md:pb-28"} ${dark ? "bg-ink-900 text-white" : "bg-[linear-gradient(180deg,#FFF4E6_0%,#FFFFFF_80%)] text-ink-900"}`}>
       <div aria-hidden className={`pointer-events-none absolute inset-0 ${dark ? "bg-[radial-gradient(50%_70%_at_85%_30%,rgba(244,122,22,0.14),transparent_70%)]" : "bg-[radial-gradient(50%_70%_at_85%_30%,rgba(253,176,34,0.16),transparent_70%)]"}`} />
       <Road theme={theme} compact />
       {art && (
-        <div aria-hidden className="pointer-events-none absolute bottom-10 right-[-6%] w-[70%] opacity-95 md:right-[4%] md:w-[42%]">
-          <VehicleSvg art={art} color={color} className="w-full" />
+        <div aria-hidden className="pointer-events-none absolute bottom-[30px] right-4 w-[62%] max-w-[300px] opacity-95 md:right-[6%] md:w-[34%] md:max-w-[440px]">
+          {/* drives in and parks; a large --h lets it fill this box, so its size is set by the box width */}
+          <div className="[--h:999px]">
+            <HeroVehicle art={art} color={color} />
+          </div>
         </div>
       )}
       <div className="container-x relative">

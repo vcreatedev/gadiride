@@ -111,20 +111,22 @@ export default function Header() {
             </Dialog.Trigger>
             <Dialog.Portal>
               <Dialog.Overlay className="fixed inset-0 z-[60] bg-ink-900/50" />
-              <Dialog.Content data-lenis-prevent className="fixed inset-y-0 right-0 z-[70] flex w-[min(380px,100vw)] flex-col overflow-y-auto bg-white p-6 pt-[max(1.5rem,env(safe-area-inset-top))] shadow-float">
-                <div className="mb-8 flex items-center justify-between">
+              <Dialog.Content data-lenis-prevent className="fixed inset-y-0 right-0 z-[70] flex w-full flex-col overflow-y-auto bg-white px-4 pb-6 pt-[env(safe-area-inset-top)] shadow-float sm:px-6 lg:px-8">
+                {/* same height and side padding as the header bar, so the logo and button don't move when the menu opens */}
+                <div className="mb-6 flex h-[60px] shrink-0 items-center justify-between md:h-[72px]">
                   <Dialog.Title asChild><span><Logo /></span></Dialog.Title>
                   <Dialog.Close className="grid h-11 w-11 place-items-center rounded-full hover:bg-surface-50" aria-label="Close menu"><X className="h-6 w-6" /></Dialog.Close>
                 </div>
                 <Dialog.Description className="sr-only">Site navigation</Dialog.Description>
-                <nav aria-label="Mobile" className="flex flex-col gap-1">
+                {/* -mx-3 cancels the links' own padding so icons and text line up with the logo */}
+                <nav aria-label="Mobile" className="-mx-3 flex flex-col gap-1">
                   {groups.map((g) => (
                     <Link key={g.id} href={`/vehicles/${g.id}/`} className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-semibold text-ink-900 hover:bg-surface-50">
                       <CategoryIcon id={g.id} className="h-6 w-8 text-brand-500" />{g.name}
                     </Link>
                   ))}
                   <Link href="/drivers/" className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-semibold text-ink-900 hover:bg-surface-50"><CategoryIcon id="driver" className="h-6 w-8 text-brand-500" />Drivers</Link>
-                  <hr className="my-3 border-line" />
+                  <hr className="mx-3 my-3 border-line" />
                   {MORE.map((m) => (
                     <Link key={m.href} href={m.href} className="rounded-field px-3 py-3 text-base font-medium text-ink-900 hover:bg-surface-50">{m.label}</Link>
                   ))}

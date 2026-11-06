@@ -50,7 +50,7 @@ export const SERVICES: Service[] = [
   {
     id: "driver-services", name: "Driver services", forWho: "Customers who need a driver",
     offer: "A driver for your own vehicle or for one of ours.",
-    points: ["Local and outstation", "Short and long term", "Details confirmed on WhatsApp"],
+    points: ["Local and outstation", "Short and long term", "Day, night or monthly duty"],
     cta: "Ask about a driver", form: "driver", art: "hatch", color: "#C9CDD3", toConfirm: true,
   },
 ];
