@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 :root {
   --brand: #f47a16;
   --brand-deep: #e35e0b;
