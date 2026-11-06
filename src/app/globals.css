@@ -13,7 +13,7 @@
   html { -webkit-text-size-adjust: 100%; scroll-behavior: auto; }
   body { @apply bg-surface-0 font-sans text-ink-600 antialiased; }
   h1, h2, h3, h4 { @apply text-ink-900; }
-  /* Keep site base styles out of the embedded Sanity Studio (/studio). */
+  /* Keep site base styles out of the embedded Sanity Studio (/admin). */
   #sanity h1, #sanity h2, #sanity h3, #sanity h4 { color: inherit; }
   #sanity :focus-visible { outline: revert; border-radius: revert; }
   ::selection { background: #f47a16; color: #fff; }

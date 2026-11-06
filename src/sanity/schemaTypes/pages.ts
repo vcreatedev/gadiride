@@ -1,5 +1,6 @@
 import { defineType, type FieldDefinition } from "sanity";
-import { HEADING_HINT, img, seo, str, strList, titleTextList, txt } from "./helpers";
+import { HEADING_HINT, img, sectionOrder, seo, str, strList, titleTextList, txt } from "./helpers";
+import { VEHICLE_PAGE_SECTIONS } from "@/data/sections";
 
 const content = { name: "content", title: "Content", default: true };
 const seoGroup = { name: "seo", title: "SEO" };
@@ -20,9 +21,13 @@ const page = (name: string, title: string, fields: FieldDefinition[]) =>
   });
 
 export const vehiclesPage = page("vehiclesPage", "Vehicles pages", [
+  sectionOrder(VEHICLE_PAGE_SECTIONS),
   str("quoteTitle", "Group page: quote heading"),
   txt("quoteText", "Group page: quote text", { rows: 2 }),
   str("faqTitle", "Group page: FAQ heading"),
+  str("offersTitle", "Group page: offers heading"),
+  str("listTitleCars", "Cars page: vehicle list heading"),
+  str("listTitle", "Other group pages: vehicle list heading", { description: "{group} becomes the group name, e.g. \"Our {group}.\"" }),
   str("emptyTitle", "No results: heading"),
   txt("emptyText", "No results: text", { rows: 2 }),
   str("detailQuoteTitle", "Vehicle page: quote heading"),

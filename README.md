@@ -1,13 +1,13 @@
 # Gadiride
 
-Vehicle rental website for cars, passenger vehicles, logistics vehicles and heavy equipment. Booking requests are sent through WhatsApp. Vehicles, FAQs, career roles and business details are managed in an admin panel (Sanity Studio) at `/studio`.
+Vehicle rental website for cars, passenger vehicles, logistics vehicles and heavy equipment. Booking requests are sent through WhatsApp. Vehicles, FAQs, career roles and business details are managed in an admin panel (Sanity Studio) at `/admin`.
 
 ## Quick start
 
 ```bash
 npm install
 cp .env.example .env.local   # uses the development dataset
-npm run dev                  # http://localhost:3000  (admin: http://localhost:3000/studio)
+npm run dev                  # http://localhost:3000  (admin: http://localhost:3000/admin)
 npm run build && npm start   # production build
 ```
 
@@ -16,14 +16,14 @@ The site works without Sanity content: anything missing falls back to the built-
 ## Stack
 
 - Next.js 15 (App Router, server build with ISR)
-- Sanity v4 (embedded Studio at `/studio`, content via `next-sanity`)
+- Sanity v4 (embedded Studio at `/admin`, content via `next-sanity`)
 - TypeScript, Tailwind CSS
 - GSAP + ScrollTrigger, Lenis
 - Radix (accordion, dialog), react-hook-form + zod, lucide-react
 
 ## Admin (Sanity)
 
-Everything a visitor reads or sees is editable at `/studio`:
+Everything a visitor reads or sees is editable at `/admin`:
 
 | Studio section | Controls |
 |---|---|
@@ -52,9 +52,9 @@ Not in Sanity on purpose: the animated SVG vehicle drawings (code), booking form
 
 | Where | Dataset | Studio workspace |
 |---|---|---|
-| Your computer (`npm run dev`) | `development` | `/studio/development` (labelled **DEV**) |
+| Your computer (`npm run dev`) | `development` | `/admin/development` (labelled **DEV**) |
 | Vercel **Preview** deployments | `development` | |
-| Vercel **Production** | `production` | `/studio/production` (labelled **LIVE**) |
+| Vercel **Production** | `production` | `/admin/production` (labelled **LIVE**) |
 
 The dataset is chosen by `NEXT_PUBLIC_SANITY_DATASET`. Edits in the DEV workspace never reach the live site. Whenever the site is showing development data, a yellow **DEV DATA** badge appears in the bottom-left corner.
 
@@ -78,8 +78,8 @@ In **Vercel → Settings → Environment Variables**:
 
 **Day-to-day workflow**
 
-1. Try changes in `/studio/development` and check them on `localhost:3000` or a Vercel preview.
-2. When happy, make the same edit in `/studio/production` (LIVE).
+1. Try changes in `/admin/development` and check them on `localhost:3000` or a Vercel preview.
+2. When happy, make the same edit in `/admin/production` (LIVE).
 3. To reset development to a copy of live: `npm run data:prod-to-dev` (overwrites development).
 
 The seed scripts never overwrite existing documents, so they are safe to re-run.
@@ -118,7 +118,7 @@ The header and footer use `src/components/Logo.tsx` (live text and SVG, works on
 
 ```
 src/app/(site)/        public pages (shared header/footer via SiteShell)
-src/app/studio/        embedded Sanity Studio
+src/app/admin/          embedded Sanity Studio
 src/app/api/revalidate Sanity webhook → cache refresh
 src/sanity/            client, schemas, Studio desk structure
 src/lib/content.ts     all content reads (one cached Sanity query, merged over defaults)
@@ -139,7 +139,7 @@ sanity.config.ts       Studio config
 | `/services/`, `/corporate/`, `/careers/`, `/about/`, `/contact/`, `/faq/` | Supporting pages |
 | `/search/` | Search results (vehicles or drivers for the entered trip) |
 | `/partner/` | Attach your vehicle |
-| `/studio/` | Admin |
+| `/admin/` | Admin |
 
 ## Still needed from the client
 

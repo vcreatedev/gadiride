@@ -60,3 +60,45 @@ export const section = (name: string, title: string, fields: ReturnType<typeof d
   defineField({ name, title, type: "object", group: group ?? name, options: { collapsible: true, collapsed: false }, fields });
 
 export const HEADING_HINT = 'End a heading with "." or "?" to show that character in brand orange.';
+
+/** Drag to reorder, switch off to hide. The page hero always stays on top. */
+export const sectionOrder = (list: readonly { key: string; title: string }[], group?: string) =>
+  defineField({
+    name: "layout",
+    title: "Section order",
+    type: "array",
+    group,
+    description: "Drag sections to reorder them. Switch off \"Show\" to hide one. The hero always stays at the top.",
+    of: [
+      defineArrayMember({
+        type: "object",
+        name: "section",
+        fields: [
+          defineField({ name: "key", title: "Section", type: "string", options: { list: list.map((s) => ({ title: s.title, value: s.key })) }, validation: (r) => r.required() }),
+          defineField({ name: "show", title: "Show", type: "boolean", initialValue: true }),
+        ],
+        preview: {
+          select: { key: "key", show: "show" },
+          prepare: ({ key, show }) => ({ title: list.find((s) => s.key === key)?.title ?? key, subtitle: show === false ? "Hidden" : "Shown" }),
+        },
+      }),
+    ],
+  });
+
+/** A list of links (label + page path or full URL). */
+export const linkList = (name: string, title: string, o: Opt = {}) =>
+  defineField({
+    name,
+    title,
+    type: "array",
+    group: o.group,
+    description: o.description,
+    of: [
+      defineArrayMember({
+        type: "object",
+        name: "link",
+        fields: [str("label", "Label", { required: true }), str("href", "Link", { required: true, description: "A page like /about/ or a full URL" })],
+        preview: { select: { title: "label", subtitle: "href" } },
+      }),
+    ],
+  });

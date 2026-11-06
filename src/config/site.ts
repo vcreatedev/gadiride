@@ -2,7 +2,7 @@ import type { ArtId } from "@/data/vehicleArt";
 
 /**
  * Default business details. Once Sanity is connected, these are overridden by
- * "Site settings" in the admin (/studio). Empty values are hidden on the site, never faked.
+ * "Site settings" in the admin (/admin). Empty values are hidden on the site, never faked.
  */
 export type BannerTone = "brand" | "dark" | "taxi" | "light";
 export type Banner = {
@@ -44,7 +44,18 @@ export type SiteSettings = {
   highlights: { title: string; text: string }[];
   /** Look of every page hero: "light" (daytime, default) or "dark" (night). */
   heroTheme: "light" | "dark";
+  /** Header label for the Drivers link. */
+  driversLabel: string;
+  /** Header "More" menu (and mobile menu) links, after the vehicle groups. */
+  navMore: NavLink[];
+  /** Footer link columns, in order. The contact column is added after them. */
+  footerColumns: { title: string; links: NavLink[] }[];
+  footerContactTitle: string;
+  /** "{year}" is replaced with the current year. */
+  copyright: string;
 };
+
+export type NavLink = { label: string; href: string };
 
 const PHONE = "+91 94915 44981";
 
@@ -121,6 +132,51 @@ export const site: SiteSettings = {
     "Dilsukhnagar", "Mehdipatnam", "Attapur", "Tolichowki", "Nizampet", "Bachupally", "ECIL", "Shamshabad (RGIA)",
   ],
   heroTheme: "light",
+  driversLabel: "Drivers",
+  navMore: [
+    { label: "All services", href: "/services/" },
+    { label: "Corporate", href: "/corporate/" },
+    { label: "Attach your vehicle", href: "/partner/" },
+    { label: "Careers", href: "/careers/" },
+    { label: "About us", href: "/about/" },
+    { label: "FAQ", href: "/faq/" },
+    { label: "Contact", href: "/contact/" },
+  ],
+  footerColumns: [
+    {
+      title: "Vehicles",
+      links: [
+        { label: "Cars", href: "/vehicles/cars/" },
+        { label: "Passenger vehicles", href: "/vehicles/passenger/" },
+        { label: "Logistics vehicles", href: "/vehicles/logistics/" },
+        { label: "Heavy equipment", href: "/vehicles/equipment/" },
+        { label: "Drivers", href: "/drivers/" },
+      ],
+    },
+    {
+      title: "Services",
+      links: [
+        { label: "Car rental", href: "/services/#car-rental" },
+        { label: "Passenger transport", href: "/services/#passenger-transport" },
+        { label: "Logistics and goods transport", href: "/services/#logistics" },
+        { label: "Heavy equipment hire", href: "/services/#heavy-equipment" },
+        { label: "Corporate transport and fleet", href: "/services/#corporate" },
+        { label: "Driver services", href: "/services/#driver-services" },
+      ],
+    },
+    {
+      title: "Company",
+      links: [
+        { label: "About us", href: "/about/" },
+        { label: "Attach your vehicle", href: "/partner/" },
+        { label: "Careers", href: "/careers/" },
+        { label: "Corporate", href: "/corporate/" },
+        { label: "FAQ", href: "/faq/" },
+      ],
+    },
+  ],
+  footerContactTitle: "Contact",
+  copyright: "© {year} Gadiride. All rights reserved.",
   highlights: [
     { title: "Zero deposit option", text: "On select cars, so more of your money stays with you." },
     { title: "Unlimited km plans", text: "Drive as far as the trip takes you, no meter anxiety." },

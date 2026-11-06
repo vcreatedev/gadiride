@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import { notFound } from "next/navigation";
+import { orderSections, VEHICLE_PAGE_SECTIONS } from "@/data/sections";
 import PageHero from "@/components/PageHero";
 import type { SceneId } from "@/components/HeroScene";
 import VehiclesBrowser from "@/components/VehiclesBrowser";
@@ -37,27 +39,34 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
     : faqData.items.slice(0, 6);
   const banners = site.banners.filter((b) => (b.group || "cars") === g.id);
   const isCars = g.id === "cars";
-  return (
-    <>
-      <PageHero full scene={SCENE[g.id as GroupId]} bgPhoto={g.heroPhoto} variants={HERO_VARIANTS[g.id as GroupId]} title={<>{g.name}<span className="text-brand-500">.</span></>} intro={g.blurb} art={g.art} color={g.color} bottom={<BookingCard lockTab={g.id as GroupId} />} />
-      <Marquee items={site.marquee} phone={site.phone} />
-      {banners.length > 0 && (
-        <section className="bg-surface-50 pt-14 md:pt-20" aria-label="Offers">
-          <div className="container-x"><OfferBanners banners={banners} title="Offers for you." /></div>
-        </section>
-      )}
+  const listTitle = isCars ? p.listTitleCars : p.listTitle.replace("{group}", g.name.toLowerCase());
+  // Sections under the hero, in the order set in Sanity (Vehicles pages → Section order).
+  const sections: Record<string, React.ReactNode> = {
+    marquee: <Marquee items={site.marquee} phone={site.phone} />,
+    offers: banners.length > 0 && (
+      <section className="bg-surface-50 pt-14 md:pt-20" aria-label="Offers">
+        <div className="container-x"><OfferBanners banners={banners} title={p.offersTitle} /></div>
+      </section>
+    ),
+    vehicles: (
       <section id="all" className="scroll-mt-20 bg-surface-50 py-14 md:py-20">
         <div className="container-x">
-          <h2 className="h2 mb-8">{accent(isCars ? "Pick your car." : `Our ${g.name.toLowerCase()}.`)}</h2>
+          <h2 className="h2 mb-8">{accent(listTitle)}</h2>
           <VehiclesBrowser vehicles={vehicles} lockGroup={g.id as GroupId} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText }} />
         </div>
       </section>
-      {isCars && <AreasServed title={site.areasTitle} text={site.areasText} areas={site.areas} highlights={site.highlights} phone={site.phone} />}
-      {faq.length > 0 && (
-        <section className={`section-y ${isCars ? "bg-surface-50" : "bg-white"}`}>
-          <div className="container-x"><h2 className="h2 mb-10">{accent(p.faqTitle)}</h2><FaqList items={faq} /></div>
-        </section>
-      )}
+    ),
+    areas: isCars && <AreasServed title={site.areasTitle} text={site.areasText} areas={site.areas} highlights={site.highlights} phone={site.phone} />,
+    faq: faq.length > 0 && (
+      <section className={`section-y ${isCars ? "bg-surface-50" : "bg-white"}`}>
+        <div className="container-x"><h2 className="h2 mb-10">{accent(p.faqTitle)}</h2><FaqList items={faq} /></div>
+      </section>
+    ),
+  };
+  return (
+    <>
+      <PageHero full scene={SCENE[g.id as GroupId]} bgPhoto={g.heroPhoto} variants={HERO_VARIANTS[g.id as GroupId]} title={<>{g.name}<span className="text-brand-500">.</span></>} intro={g.blurb} art={g.art} color={g.color} bottom={<BookingCard lockTab={g.id as GroupId} />} />
+      {orderSections(p.layout, VEHICLE_PAGE_SECTIONS).map((k) => <Fragment key={k}>{sections[k]}</Fragment>)}
     </>
   );
 }

@@ -7,7 +7,8 @@
  *   add -- --dry-run     -> only print what would be created
  *
  * Safe to re-run: documents are created only if they do not exist yet
- * (createIfNotExists), so edits made in the Studio are never overwritten.
+ * (createIfNotExists). Pages and Site settings that already exist only get their
+ * missing fields filled in (setIfMissing), so edits made in the Studio are never overwritten.
  */
 import { createReadStream, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -33,7 +34,7 @@ type Doc = { _id: string; _type: string; [k: string]: unknown };
 
 let keyN = 0;
 /** Array member type names, matching the schema. */
-const MEMBER: Record<string, string> = { slides: "slide", banners: "banner", highlights: "item", chapters: "chapter", promos: "promo", items: "item", steps: "item", uses: "item", specs: "spec", cities: "city", social: "socialLink" };
+const MEMBER: Record<string, string> = { layout: "section", navMore: "link", links: "link", footerColumns: "column", slides: "slide", banners: "banner", highlights: "item", chapters: "chapter", promos: "promo", items: "item", steps: "item", uses: "item", specs: "spec", cities: "city", social: "socialLink" };
 /** Arrays of objects need a _key and the member _type in Sanity. */
 function withKeys<T>(v: T, field = ""): T {
   if (Array.isArray(v))
@@ -42,6 +43,21 @@ function withKeys<T>(v: T, field = ""): T {
     ) as T;
   if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, withKeys(x, k)])) as T;
   return v;
+}
+
+/**
+ * Flattens nested objects to "a.b.c" paths so setIfMissing fills each empty field
+ * on its own, even inside sections that already exist. Arrays and images are set whole.
+ */
+function leafPaths(obj: Record<string, unknown>, prefix = ""): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${k}` : k;
+    const plain = v && typeof v === "object" && !Array.isArray(v) && !("_type" in (v as object));
+    if (plain) Object.assign(out, leafPaths(v as Record<string, unknown>, path));
+    else if (v !== undefined) out[path] = v;
+  }
+  return out;
 }
 
 const uploaded = new Map<string, string>();
@@ -67,8 +83,15 @@ async function main() {
   console.log(`${dryRun ? "[dry run] " : ""}Seeding dataset "${dataset}" of project ${client.config().projectId}`);
   const existing = new Set<string>(dryRun ? [] : await client.fetch<string[]>(`*[!(_id in path("drafts.**"))]._id`));
   const docs: Doc[] = [];
-  const add = async (id: string, make: () => Promise<Doc> | Doc) => {
-    if (existing.has(id)) return console.log(`  skip   ${id} (already exists)`);
+  const patches: { id: string; set: Record<string, unknown> }[] = [];
+  const add = async (id: string, make: () => Promise<Doc> | Doc, fill = false) => {
+    if (existing.has(id)) {
+      // Pages and settings: add fields that are new or still empty, never touching what was edited.
+      if (!fill) return console.log(`  skip   ${id} (already exists)`);
+      const { _id, _type, ...fields } = await make();
+      patches.push({ id, set: leafPaths(fields) });
+      return console.log(`  fill   ${id} (missing fields only)`);
+    }
     docs.push(await make());
     console.log(`  create ${id}`);
   };
@@ -93,12 +116,16 @@ async function main() {
     showIntro: true,
     logo: await image("brand/gadiride-logo.webp", "Gadiride"),
     shareImage: await image("brand/og.jpg", "Gadiride"),
-  }));
+    driversLabel: site.driversLabel,
+    ...withKeys({ navMore: site.navMore, footerColumns: site.footerColumns }),
+    footerContactTitle: site.footerContactTitle,
+    copyright: site.copyright,
+  }), true);
 
-  await add("homePage", () => ({ _id: "homePage", _type: "homePage", ...withKeys(homeDefaults) }));
+  await add("homePage", () => ({ _id: "homePage", _type: "homePage", ...withKeys(homeDefaults) }), true);
   for (const [key, value] of Object.entries(pageDefaults)) {
     const id = `${key}Page`;
-    await add(id, () => ({ _id: id, _type: id, ...withKeys(value) }));
+    await add(id, () => ({ _id: id, _type: id, ...withKeys(value) }), true);
   }
 
   for (const g of GROUPS) {
@@ -163,14 +190,15 @@ async function main() {
     await add(`role-${i + 1}`, () => ({ _id: `role-${i + 1}`, _type: "careerRole", role: r.role, detail: r.detail, order: (i + 1) * 10 }));
   }
 
-  if (dryRun) return console.log(`\n${docs.length} documents would be created.`);
-  if (!docs.length) return console.log("\nNothing to do: every document already exists.");
+  if (dryRun) return console.log(`\n${docs.length} documents would be created, ${patches.length} filled in.`);
+  if (!docs.length && !patches.length) return console.log("\nNothing to do: every document already exists.");
 
   // Types must exist before vehicles reference them, so commit in one transaction.
   const tx = client.transaction();
   docs.forEach((d) => tx.createIfNotExists(d));
+  patches.forEach((p) => tx.patch(p.id, (q) => q.setIfMissing(p.set)));
   await tx.commit({ visibility: "async" });
-  console.log(`\nDone: ${docs.length} documents created in "${dataset}".`);
+  console.log(`\nDone: ${docs.length} documents created and ${patches.length} filled in, in "${dataset}".`);
 }
 
 main().catch((e) => {

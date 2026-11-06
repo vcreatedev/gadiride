@@ -7,20 +7,12 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 import Logo from "./Logo";
+import Photo from "./Photo";
 import CategoryIcon from "./CategoryIcon";
 import { telHref } from "@/config/site";
 import { useSite } from "./SiteProvider";
 import { whatsappChatHref } from "@/lib/whatsapp";
 
-const MORE = [
-  { href: "/services/", label: "All services" },
-  { href: "/corporate/", label: "Corporate" },
-  { href: "/partner/", label: "Attach your vehicle" },
-  { href: "/careers/", label: "Careers" },
-  { href: "/about/", label: "About us" },
-  { href: "/faq/", label: "FAQ" },
-  { href: "/contact/", label: "Contact" },
-];
 
 export default function Header() {
   const { groups } = useCatalog();
@@ -31,6 +23,9 @@ export default function Header() {
   const moreRef = useRef<HTMLDivElement>(null);
   const home = path === "/";
   const site = useSite();
+  const MORE = site.navMore;
+  const brand = (light: boolean) =>
+    site.headerLogo ? <Photo photo={site.headerLogo} alt={site.headerLogo.alt ?? site.name} sizes="180px" priority className="h-9 w-auto md:h-10" /> : <Logo tone={light ? "light" : "dark"} />;
 
   useEffect(() => {
     const onScroll = () => {
@@ -63,7 +58,7 @@ export default function Header() {
     <header className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${solid ? "border-b border-line bg-white/95 backdrop-blur" : "bg-transparent"}`}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-ink-900">Skip to content</a>
       <div className="container-x flex h-[60px] items-center justify-between gap-4 md:h-[72px]">
-        <Link href="/" aria-label="Gadiride home"><Logo tone={dark ? "light" : "dark"} /></Link>
+        <Link href="/" aria-label="Gadiride home">{brand(dark)}</Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
           {groups.map((g) => (
@@ -73,7 +68,7 @@ export default function Header() {
             </Link>
           ))}
           <Link href="/drivers/" className={navCls(path.startsWith("/drivers"))}>
-            <CategoryIcon id="driver" className="h-5 w-6" />Drivers
+            <CategoryIcon id="driver" className="h-5 w-6" />{site.driversLabel}
           </Link>
           <div ref={moreRef} className="relative">
             <button type="button" aria-expanded={more} aria-controls="more-menu" onClick={() => setMore((m) => !m)} className={navCls(MORE.some((m) => path.startsWith(m.href.split("#")[0]) && m.href !== "/"))}>
@@ -114,7 +109,7 @@ export default function Header() {
               <Dialog.Content data-lenis-prevent className="fixed inset-y-0 right-0 z-[70] flex w-full flex-col overflow-y-auto bg-white px-4 pb-6 pt-[env(safe-area-inset-top)] shadow-float sm:px-6 lg:px-8">
                 {/* same height and side padding as the header bar, so the logo and button don't move when the menu opens */}
                 <div className="mb-6 flex h-[60px] shrink-0 items-center justify-between md:h-[72px]">
-                  <Dialog.Title asChild><span><Logo /></span></Dialog.Title>
+                  <Dialog.Title asChild><span>{brand(false)}</span></Dialog.Title>
                   <Dialog.Close className="grid h-11 w-11 place-items-center rounded-full hover:bg-surface-50" aria-label="Close menu"><X className="h-6 w-6" /></Dialog.Close>
                 </div>
                 <Dialog.Description className="sr-only">Site navigation</Dialog.Description>
@@ -125,7 +120,7 @@ export default function Header() {
                       <CategoryIcon id={g.id} className="h-6 w-8 text-brand-500" />{g.name}
                     </Link>
                   ))}
-                  <Link href="/drivers/" className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-semibold text-ink-900 hover:bg-surface-50"><CategoryIcon id="driver" className="h-6 w-8 text-brand-500" />Drivers</Link>
+                  <Link href="/drivers/" className="flex items-center gap-3 rounded-field px-3 py-3.5 font-head text-lg font-semibold text-ink-900 hover:bg-surface-50"><CategoryIcon id="driver" className="h-6 w-8 text-brand-500" />{site.driversLabel}</Link>
                   <hr className="mx-3 my-3 border-line" />
                   {MORE.map((m) => (
                     <Link key={m.href} href={m.href} className="rounded-field px-3 py-3 text-base font-medium text-ink-900 hover:bg-surface-50">{m.label}</Link>

@@ -11,7 +11,11 @@
 export type Seo = { title: string; description: string };
 export type TitleText = { title: string; text: string };
 
+import { defaultSlots, HOME_SECTIONS, VEHICLE_PAGE_SECTIONS } from "@/data/sections";
+
 export const homeDefaults = {
+  /** Order and visibility of the sections under the hero. */
+  layout: defaultSlots(HOME_SECTIONS),
   seo: {
     title: "Gadiride | Self drive car rental in Hyderabad, buses, trucks and JCBs",
     description:
@@ -81,7 +85,10 @@ export const homeDefaults = {
     title: "Popular right now.",
     text: "A few of the vehicles customers ask for most. Every request gets a quote from our team.",
     linkLabel: "View all vehicles",
+    /** Tab labels in "Popular right now". */
+    tabs: { cars: "Cars", passenger: "Tempo & buses", logistics: "Trucks", equipment: "JCB & equipment", drivers: "Drivers" },
   },
+  offers: { title: "Offers & deals." },
   story: {
     title: "From hatchback to JCB.",
     cta: "Get a quote",
@@ -146,12 +153,16 @@ export const homeDefaults = {
 
 export const pageDefaults = {
   vehicles: {
+    layout: defaultSlots(VEHICLE_PAGE_SECTIONS),
     seo: { title: "All vehicles", description: "Self drive cars, chauffeur cars, tempo travellers, buses, trucks and JCBs on rent in Hyderabad." },
     title: "All vehicles.",
     intro: "Filter by group and type, then request a quote for the one you need.",
     quoteTitle: "Get a quote.",
     quoteText: "Fill in the details and continue on WhatsApp. Our team replies with availability and price.",
     faqTitle: "Good to know.",
+    offersTitle: "Offers for you.",
+    listTitleCars: "Pick your car.",
+    listTitle: "Our {group}.",
     emptyTitle: "Nothing listed for this filter yet",
     emptyText: "Ask us on WhatsApp. We often have more than what is listed here.",
     detailQuoteTitle: "Request a quote",

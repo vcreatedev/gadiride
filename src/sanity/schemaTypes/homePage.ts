@@ -1,8 +1,10 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
 import { GROUPS } from "@/data/vehicles";
-import { HEADING_HINT, section, seo, str, strList, titleTextList, txt } from "./helpers";
+import { HEADING_HINT, section, sectionOrder, seo, str, strList, titleTextList, txt } from "./helpers";
+import { HOME_SECTIONS } from "@/data/sections";
 
 const G = [
+  { name: "layout", title: "Section order" },
   { name: "hero", title: "Hero" },
   { name: "styles", title: "Styles" },
   { name: "featured", title: "Popular" },
@@ -26,6 +28,7 @@ export const homePage = defineType({
   type: "document",
   groups: G,
   fields: [
+    sectionOrder(HOME_SECTIONS, "layout"),
     section("hero", "Hero", [
       str("title", "Headline"),
       str("highlight", "Highlighted words (orange gradient)", { description: "Shown after the headline." }),
@@ -89,7 +92,14 @@ export const homePage = defineType({
       str("title", "Heading", { description: HEADING_HINT }),
       txt("text", "Text", { rows: 2 }),
       str("linkLabel", "Link label"),
+      defineField({
+        name: "tabs",
+        title: "Tab labels",
+        type: "object",
+        fields: [str("cars", "Cars"), str("passenger", "Passenger"), str("logistics", "Logistics"), str("equipment", "Equipment"), str("drivers", "Drivers")],
+      }),
     ]),
+    section("offers", "Offers & deals", [str("title", "Heading", { description: "The banners themselves are in Site settings → Offers & banners." })], "featured"),
     section("story", "Scrolling story", [
       str("title", "Heading (mobile)", { description: HEADING_HINT }),
       str("cta", "Button in the last chapter"),

@@ -18,7 +18,10 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "gsap"],
   },
-  // The home page is hidden for now: the site opens on the Cars page.
+  // The admin moved from /studio to /admin; old bookmarks keep working.
+  async redirects() {
+    return [{ source: "/studio/:path*", destination: "/admin/:path*", permanent: true }];
+  },
   async headers() {
     return [
       {

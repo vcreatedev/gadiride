@@ -1,5 +1,5 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
-import { img, str, strList, titleTextList, txt } from "./helpers";
+import { img, linkList, str, strList, titleTextList, txt } from "./helpers";
 
 export const siteSettings = defineType({
   name: "siteSettings",
@@ -8,6 +8,7 @@ export const siteSettings = defineType({
   groups: [
     { name: "contact", title: "Contact", default: true },
     { name: "brand", title: "Brand" },
+    { name: "nav", title: "Header & footer" },
     { name: "offers", title: "Offers & banners" },
     { name: "areas", title: "Hyderabad areas" },
     { name: "display", title: "Display" },
@@ -62,6 +63,27 @@ export const siteSettings = defineType({
     img("logo", "Full logo", { group: "brand", description: "Shown in the footer. Wide image on white works best." }),
     txt("footerBlurb", "Footer text", { group: "brand", rows: 2 }),
     img("shareImage", "Default share image (1200 × 630)", { group: "brand", description: "Used when a page has no share image of its own." }),
+
+    img("headerLogo", "Header logo (optional)", { group: "nav", description: "Leave empty to use the built-in Gadiride wordmark. A wide logo on a transparent background works best." }),
+    str("driversLabel", "Header: Drivers link label", { group: "nav" }),
+    linkList("navMore", "Header: \"More\" menu links", { group: "nav", description: "Also listed in the mobile menu, in this order. Vehicle groups come first automatically." }),
+    defineField({
+      name: "footerColumns",
+      title: "Footer link columns",
+      type: "array",
+      group: "nav",
+      description: "Drag to reorder columns. The Contact column is built from the contact details.",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "column",
+          fields: [str("title", "Column heading", { required: true }), linkList("links", "Links")],
+          preview: { select: { title: "title" } },
+        }),
+      ],
+    }),
+    str("footerContactTitle", "Footer: contact column heading", { group: "nav" }),
+    str("copyright", "Footer: copyright line", { group: "nav", description: "{year} becomes the current year." }),
 
     strList("marquee", "Scrolling strip", { group: "offers", description: "Short lines that scroll under the service-page hero. The phone number is added automatically." }),
     defineField({

@@ -36,7 +36,7 @@ const REVALIDATE = 60;
 const PAGE_TYPES = ["vehiclesPage", "servicesPage", "corporatePage", "careersPage", "aboutPage", "contactPage", "faqPage", "searchPage", "driversPage", "partnerPage", "notFoundPage"] as const;
 
 const QUERY = `{
-  "settings": *[_id == "siteSettings"][0]{..., logo${IMG}, shareImage${IMG}},
+  "settings": *[_id == "siteSettings"][0]{..., logo${IMG}, headerLogo${IMG}, shareImage${IMG}},
   "home": *[_id == "homePage"][0]{..., seo{..., image${IMG}}},
   "pages": *[_id in $pageIds]{..., image${IMG}, seo{..., image${IMG}}},
   "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}},
@@ -115,7 +115,7 @@ function merge<T>(base: T, over: unknown): T {
 
 /* ---------------------------------------------------------------- settings */
 
-export type Settings = SiteSettings & { footerBlurb: string; logo?: Photo; shareImage?: Photo; showIntro: boolean };
+export type Settings = SiteSettings & { footerBlurb: string; logo?: Photo; headerLogo?: Photo; shareImage?: Photo; showIntro: boolean };
 
 export const getSettings = cache(async (): Promise<Settings> => {
   const s = (await fetchRaw()).settings ?? {};
@@ -132,7 +132,10 @@ export const getSettings = cache(async (): Promise<Settings> => {
     showPrices: typeof s.showPrices === "boolean" ? s.showPrices : settingsDefaults.showPrices,
     showIntro: typeof s.showIntro === "boolean" ? s.showIntro : true,
     heroTheme: s.heroTheme === "dark" || s.heroTheme === "light" ? s.heroTheme : settingsDefaults.heroTheme,
+    navMore: (m.navMore ?? []).filter((l) => l?.label && l?.href),
+    footerColumns: (m.footerColumns ?? []).filter((c) => c?.title).map((c) => ({ ...c, links: (c.links ?? []).filter((l) => l?.label && l?.href) })),
     logo: toPhoto(s.logo as SanityImageDoc, "Gadiride"),
+    headerLogo: toPhoto(s.headerLogo as SanityImageDoc, "Gadiride"),
     shareImage: toPhoto(s.shareImage as SanityImageDoc),
   };
 });

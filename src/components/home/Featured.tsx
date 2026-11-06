@@ -20,6 +20,7 @@ type Props = {
   content: HomeContent["featured"];
   groups: FeaturedGroup[];
   drivers: Driver[];
+  driversLabel: string;
   /** Shown in the Drivers tab while no driver profiles are published. */
   driversEmpty: string;
   showPrices: boolean;
@@ -31,11 +32,11 @@ const pillOn = "bg-brand-gradient text-white shadow-[0_6px_16px_-8px_rgba(232,84
 const pillOff = "bg-white text-ink-900 shadow-sm ring-1 ring-line hover:-translate-y-0.5 hover:ring-brand-400";
 
 /** Popular vehicles (and drivers), one service at a time, cars first, with a "View all" button for the open tab. */
-export default function Featured({ content: c, groups, drivers, driversEmpty, showPrices }: Props) {
+export default function Featured({ content: c, groups, drivers, driversLabel, driversEmpty, showPrices }: Props) {
   const [active, setActive] = useState<TabId>(groups[0]?.id ?? "driver");
   const tabs: { id: TabId; label: string; count: number }[] = [
     ...groups.map((g) => ({ id: g.id, label: g.label, count: g.vehicles.length })),
-    { id: "driver", label: "Drivers", count: drivers.length },
+    { id: "driver", label: driversLabel, count: drivers.length },
   ];
   const group = groups.find((g) => g.id === active);
   const allHref = active === "driver" ? "/drivers/" : `/vehicles/${active}/`;
