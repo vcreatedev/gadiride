@@ -24,6 +24,9 @@ export type SanityImageDoc = {
 /** GROQ projection used for every image field. */
 export const IMG = `{asset, crop, hotspot, alt, "lqip": asset->metadata.lqip, "dim": asset->metadata.dimensions{width, height}}`;
 
+/** How a hero photo fills the hero: "cover" crops to fill, "contain" shows it whole. */
+export type HeroFit = "cover" | "contain";
+
 export function toPhoto(img: SanityImageDoc | undefined, fallbackAlt?: string): Photo | undefined {
   if (!img?.asset?._ref) return undefined;
   const c = img.crop;

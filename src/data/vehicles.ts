@@ -63,7 +63,7 @@ export type Vehicle = VehicleSeed & {
   zoom: number;
 };
 
-export type Group = { id: GroupId; name: string; short: string; blurb: string; art: ArtId; color: string; photo?: Photo; heroPhoto?: Photo };
+export type Group = { id: GroupId; name: string; short: string; blurb: string; art: ArtId; color: string; photo?: Photo; heroPhoto?: Photo; heroPhotoMobile?: Photo; heroFit?: import("@/lib/images").HeroFit; listTitle?: string };
 export type VType = VehicleType & { photo: Photo };
 
 export type HeroVariant = { art: ArtId; color: string };

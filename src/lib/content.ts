@@ -23,7 +23,7 @@ import { dataset } from "@/sanity/env";
 import { CAREER_ROLES, SERVICES, type FormKey, type Service } from "@/data/services";
 import type { ArtId } from "@/data/vehicleArt";
 import { footerDefaults, homeDefaults, pageDefaults, type HomeContent, type PageContent, type PageKey } from "@/content/defaults";
-import { IMG, toPhoto, type Photo, type SanityImageDoc } from "./images";
+import { IMG, toPhoto, type HeroFit, type Photo, type SanityImageDoc } from "./images";
 
 /**
  * All site content comes through here. One GROQ query per render (cached),
@@ -41,8 +41,8 @@ const PAGE_TYPES = ["vehiclesPage", "servicesPage", "corporatePage", "careersPag
 const QUERY = `{
   "settings": *[_id == "siteSettings"][0]{..., logo${IMG}, headerLogo${IMG}, shareImage${IMG}},
   "home": *[_id == "homePage"][0]{..., seo{..., image${IMG}}},
-  "pages": *[_id in $pageIds]{..., image${IMG}, seo{..., image${IMG}}},
-  "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}},
+  "pages": *[_id in $pageIds]{..., image${IMG}, imageMobile${IMG}, seo{..., image${IMG}}},
+  "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}, heroImageMobile${IMG}, heroFit, listTitle},
   "types": *[_type == "vehicleType" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
     "id": key.current, name, group, art, image${IMG}
   },
@@ -68,7 +68,7 @@ type Raw = {
   settings?: Record<string, unknown> | null;
   home?: Record<string, unknown> | null;
   pages?: ({ _id: string } & Record<string, unknown>)[];
-  groups?: { key: GroupId; name?: string; short?: string; blurb?: string; image?: SanityImageDoc; heroImage?: SanityImageDoc }[];
+  groups?: { key: GroupId; name?: string; short?: string; blurb?: string; image?: SanityImageDoc; heroImage?: SanityImageDoc; heroImageMobile?: SanityImageDoc; heroFit?: HeroFit; listTitle?: string }[];
   types?: { id: string; name: string; group: GroupId; art?: ArtId; image?: SanityImageDoc }[];
   vehicles?: {
     slug: string; name: string; group: GroupId; type?: string; summary?: string;
@@ -192,14 +192,19 @@ export const getBanners = cache(async (): Promise<Banner[]> => {
   return merge(settingsDefaults.banners, raw).filter((b) => b?.title);
 });
 
-export async function getPage<K extends PageKey>(key: K): Promise<PageContent[K] & WithSeoImage & { image?: Photo }> {
+/** A page's hero photos: wide, plus an optional upright one for phones. */
+type HeroImages = { image?: Photo; imageMobile?: Photo; imageFit?: HeroFit };
+
+export async function getPage<K extends PageKey>(key: K): Promise<PageContent[K] & WithSeoImage & HeroImages> {
   const raw = (await fetchRaw()).pages?.find((p) => p._id === `${key}Page`) ?? {};
   const merged = merge(pageDefaults[key], raw) as PageContent[K];
   return {
     ...(merged as object),
     image: toPhoto((raw as { image?: SanityImageDoc }).image),
+    imageMobile: toPhoto((raw as { imageMobile?: SanityImageDoc }).imageMobile),
+    imageFit: (raw as { imageFit?: HeroFit }).imageFit,
     seoImage: toPhoto((raw as { seo?: { image?: SanityImageDoc } }).seo?.image),
-  } as unknown as PageContent[K] & WithSeoImage & { image?: Photo };
+  } as unknown as PageContent[K] & WithSeoImage & HeroImages;
 }
 
 /** Next.js metadata for a page, from its SEO fields. */
@@ -222,7 +227,7 @@ export const getGroups = cache(async (): Promise<Group[]> => {
   const raw = (await fetchRaw()).groups ?? [];
   return GROUPS.map((g) => {
     const r = raw.find((x) => x.key === g.id);
-    return { ...g, name: r?.name || g.name, short: r?.short || g.short, blurb: r?.blurb || g.blurb, photo: toPhoto(r?.image, r?.name || g.name), heroPhoto: toPhoto(r?.heroImage) };
+    return { ...g, name: r?.name || g.name, short: r?.short || g.short, blurb: r?.blurb || g.blurb, photo: toPhoto(r?.image, r?.name || g.name), heroPhoto: toPhoto(r?.heroImage), heroPhotoMobile: toPhoto(r?.heroImageMobile), heroFit: r?.heroFit, listTitle: r?.listTitle };
   });
 });
 

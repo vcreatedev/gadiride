@@ -61,11 +61,11 @@ export const siteSettings = defineType({
     }),
 
     str("tagline", "Tagline", { group: "brand" }),
-    img("logo", "Full logo", { group: "brand", description: "Shown in the footer. Wide image on white works best." }),
+    img("logo", "Full logo", { group: "brand", description: "Shown in the footer. Wide image on white works best. Best size: about 600 × 160 px (PNG or SVG)." }),
     txt("footerBlurb", "Footer text", { group: "brand", rows: 2 }),
-    img("shareImage", "Default share image (1200 × 630)", { group: "brand", description: "Used when a page has no share image of its own." }),
+    img("shareImage", "Default share image (1200 × 630)", { group: "brand", description: "Used when a page has no share image of its own. Size: 1200 × 630 px." }),
 
-    img("headerLogo", "Header logo (optional)", { group: "nav", description: "Leave empty to use the built-in Gadiride wordmark. A wide logo on a transparent background works best." }),
+    img("headerLogo", "Header logo (optional)", { group: "nav", description: "Leave empty to use the built-in Gadiride wordmark. A wide logo on a transparent background works best. Best size: about 480 × 120 px (PNG or SVG); it shows 40 px tall." }),
     sectionOrder(NAV_ITEMS, "nav", {
       name: "navOrder",
       title: "Header: menu order",

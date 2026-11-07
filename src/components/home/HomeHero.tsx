@@ -90,7 +90,7 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
       <div className="container-x relative grid min-h-0 flex-1 items-center gap-6 py-4 [--h:min(24svh,200px)] [--horizon:calc(var(--h)*0.45+1rem)] lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:[--h:min(30svh,280px)]">
         {/* scenes cross-fade; each sits on the horizon behind the vehicle */}
         {/* Only the current scene (and the one fading out) is in the page: each scene is hundreds of shapes. */}
-        <div aria-hidden className="pointer-events-none absolute bottom-[var(--horizon)] left-1/2 h-[min(56svh,520px)] w-screen -translate-x-1/2">
+        <div aria-hidden className="pointer-events-none absolute bottom-[var(--horizon)] left-1/2 h-[min(56svh,520px)] w-[var(--frame)] -translate-x-1/2">
           {slides.map((sl, n) =>
             n === i || n === prev ? (
               <div key={n} className={`absolute inset-0 transition-opacity duration-700 ${n === i ? "animate-[scene-in_.7s_ease-out_both]" : "opacity-0"}`}>
@@ -99,7 +99,7 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
             ) : null,
           )}
         </div>
-        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[calc(100%-var(--horizon))] h-[100svh] w-screen -translate-x-1/2">
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[calc(100%-var(--horizon))] h-[100svh] w-[var(--frame)] -translate-x-1/2">
           <Road theme={site.heroTheme} />
         </div>
 

@@ -39,7 +39,8 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
     : faqData.items.slice(0, 6);
   const banners = allBanners.filter((b) => (b.group || "cars") === g.id);
   const isCars = g.id === "cars";
-  const listTitle = isCars ? p.listTitleCars : p.listTitle.replace("{group}", g.name.toLowerCase());
+  // Each page's own heading; the old shared "Our {group}." text until one is set.
+  const listTitle = isCars ? p.listTitleCars : g.listTitle || p.listTitle.replace("{group}", g.name.toLowerCase());
   // Sections under the hero, in the order set in Sanity (Vehicles pages → Section order).
   const sections: Record<string, React.ReactNode> = {
     marquee: <Marquee items={site.marquee} phone={site.phone} />,
@@ -64,7 +65,7 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
   };
   return (
     <>
-      <PageHero full scene={SCENE[g.id as GroupId]} bgPhoto={g.heroPhoto} variants={HERO_VARIANTS[g.id as GroupId]} title={<>{g.name}<span className="text-brand-500">.</span></>} intro={g.blurb} art={g.art} color={g.color} bottom={<BookingCard lockTab={g.id as GroupId} />} />
+      <PageHero full scene={SCENE[g.id as GroupId]} bgPhoto={g.heroPhoto} bgPhotoMobile={g.heroPhotoMobile} bgFit={g.heroFit} variants={HERO_VARIANTS[g.id as GroupId]} title={<>{g.name}<span className="text-brand-500">.</span></>} intro={g.blurb} art={g.art} color={g.color} bottom={<BookingCard lockTab={g.id as GroupId} />} />
       {orderSections(p.layout, VEHICLE_PAGE_SECTIONS).map((k) => <Fragment key={k}>{sections[k]}</Fragment>)}
     </>
   );

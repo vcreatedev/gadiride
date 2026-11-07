@@ -9,7 +9,7 @@ export default async function CareersPage() {
   const [p, roles] = await Promise.all([getPage("careers"), getCareerRoles()]);
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} art="truck" color="#F47A16" />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} art="truck" color="#F47A16" />
       <section className="section-y bg-white">
         <div className="container-x grid gap-12 lg:grid-cols-2">
           <div>

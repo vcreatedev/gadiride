@@ -27,7 +27,7 @@ function Row({ item, selected, faded }: { item: SectionItem; selected: boolean; 
     childId: item.key,
     title: item.hint,
     childParameters: item.target.kind === "doc" && item.target.fields.length
-      ? { [SECTION_FIELDS_PARAM]: item.target.fields.join(","), ...(item.items && item.ref ? { [SECTION_REF_PARAM]: item.ref } : {}) }
+      ? { [SECTION_FIELDS_PARAM]: item.target.fields.map((f) => f.split(".")[0]).join(","), ...(item.ref ? { [SECTION_REF_PARAM]: item.ref } : {}) }
       : undefined,
   };
   return (

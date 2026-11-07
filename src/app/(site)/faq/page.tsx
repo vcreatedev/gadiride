@@ -9,7 +9,7 @@ export default async function FaqPage() {
   const [p, { items }] = await Promise.all([getPage("faq"), getFaq()]);
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} />
       <section className="section-y bg-white"><div className="container-x"><FaqList items={items} /></div></section>
     </>
   );

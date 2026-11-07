@@ -61,13 +61,13 @@ export const vehicle = defineType({
     }),
     defineField({ name: "summary", title: "Short description", type: "text", rows: 3, group: "main", validation: (r) => r.required().max(220) }),
 
-    { ...photo("image", "Main photo", "Leave empty to use the vehicle type's photo. Use the hotspot (crop icon) to mark the vehicle's centre."), components: { input: VehiclePhotoInput } },
+    { ...photo("image", "Main photo", "Leave empty to use the vehicle type's photo. Use the hotspot (crop icon) to mark the vehicle's centre. Best size: 1600 × 1000 px (16:10)."), components: { input: VehiclePhotoInput } },
     defineField({
       name: "gallery",
       title: "More photos",
       type: "array",
       group: "photos",
-      description: "Interior, boot, side, back. Shown as thumbnails on the vehicle page.",
+      description: "Interior, boot, side, back. Shown as thumbnails on the vehicle page. Best size: 1600 × 1000 px (16:10).",
       of: [
         defineArrayMember({
           type: "image",

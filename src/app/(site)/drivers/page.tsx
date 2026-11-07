@@ -12,7 +12,7 @@ export default async function DriversPage() {
   const [p, drivers, search] = await Promise.all([getPage("drivers"), getDrivers(), getPage("search")]);
   return (
     <>
-      <PageHero full driver scene="street" bgPhoto={p.image} variants={HERO_VARIANTS.driver} title={accent(p.title)} intro={p.intro} art="sedan" color="#FFC20E" bottom={<BookingCard lockTab="driver" />} />
+      <PageHero full driver scene="street" bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} variants={HERO_VARIANTS.driver} title={accent(p.title)} intro={p.intro} art="sedan" color="#FFC20E" bottom={<BookingCard lockTab="driver" />} />
       <section className="bg-surface-50 py-14 md:py-20">
         <div className="container-x">
           <h2 className="font-head text-2xl font-semibold text-ink-900 md:text-3xl">{p.listTitle}</h2>

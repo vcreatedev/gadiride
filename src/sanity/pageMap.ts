@@ -35,11 +35,13 @@ export type SectionItem = {
   target: Target;
   /** Section key from "Section order", so the list follows the editor's order. */
   slot?: string;
+  /** Extra pane parameters, e.g. which service's offer banners to list. */
+  params?: Record<string, string>;
   /** Settings-like entries (SEO, full form). */
   meta?: boolean;
   /** Lists shown under the fields, so a heading and its items are edited in one place. */
   items?: ItemList[];
-  /** "page/section", set by `withRefs`; lets the form find `items`. */
+  /** "page__section", set by `withRefs`; lets the form find this section. Letters, digits, "-" and "_" only: the admin drops other characters from pane addresses. */
   ref?: string;
 };
 
@@ -56,7 +58,8 @@ const doc = (type: string, fields: string | string[], id?: string): Target => ({
 const S = "siteSettings";
 
 const seo = (type: string): SectionItem => ({ key: "seo", title: "Search & sharing (SEO)", icon: SearchIcon, target: doc(type, "seo"), meta: true });
-const top = (type: string): SectionItem => ({ key: "top", title: "Page top", hint: "Heading & intro", icon: BlockElementIcon, target: doc(type, ["title", "intro", "image"]) });
+/** The banner at the top of a page, named after the page (e.g. "Drivers hero"). */
+const top = (type: string, page: string): SectionItem => ({ key: "top", title: `${page.replace(/ page$/, "")} hero`, hint: "Heading, intro & photo", icon: BlockElementIcon, target: doc(type, ["aboutPage", "searchPage"].includes(type) ? ["title", "intro"] : ["title", "intro", "image", "imageFit", "imageMobile"]) });
 const marquee: SectionItem = { key: "marquee", title: "Scrolling offers strip", hint: "Shared (Site settings)", icon: TagIcon, target: doc(S, "marquee"), slot: "marquee" };
 const areas: SectionItem = { key: "areas", title: "Hyderabad areas", hint: "Shared (Site settings)", icon: PinIcon, target: doc(S, ["areasTitle", "areasText", "areas", "highlights"]), slot: "areas" };
 const faqList: Target = { kind: "list", type: "faq" };
@@ -106,11 +109,14 @@ const groupPage = (g: (typeof GROUPS)[number]): PageMap => ({
   title: g.name,
   layoutDoc: "vehiclesPage",
   sections: [
-    { key: "top", title: "Page top", icon: BlockElementIcon, target: doc("vehicleGroup", ["name", "blurb", "heroImage", "image"], `group-${g.id}`) },
+    { key: "top", title: `${g.name} hero`, hint: "Heading, intro & photo", icon: BlockElementIcon, target: doc("vehicleGroup", ["name", "blurb", "heroImage", "heroFit", "heroImageMobile"], `group-${g.id}`) },
     marquee,
-    slotted("offers", field("offers", "Offers for you", "homePage", "offers", TagIcon)),
+    // Only this page's heading and the banners set to show on this page.
+    slotted("offers", { ...field("offers", "Offers for you", "homePage", ["offers.vehiclesTitle", "offers.banners"], TagIcon, `Banners shown on ${g.name}`), params: { offersFor: g.id } }),
     slotted("vehicles", withItems(
-      field("vehicles", "Vehicle list", "vehiclesPage", [...(g.id === "cars" ? ["listTitleCars", "listTitleMixed"] : ["listTitle"]), "emptyTitle", "emptyText", "outsideTitle", "outsideText"], ThListIcon),
+      (g.id === "cars"
+        ? field("vehicles", "Vehicle list", "vehiclesPage", ["listTitleCars", "listTitleMixed"], ThListIcon)
+        : { ...field("vehicles", "Vehicle list", "vehicleGroup", ["listTitle"], ThListIcon), target: doc("vehicleGroup", ["listTitle"], `group-${g.id}`) }),
       inGroup("Vehicles", "vehicle", "vehicle-by-group", g.id),
       inGroup("Filter chips (vehicle types)", "vehicleType", "type-by-group", g.id),
     )),
@@ -121,7 +127,7 @@ const groupPage = (g: (typeof GROUPS)[number]): PageMap => ({
 });
 
 const simple = (id: string, title: string, type: string, middle: SectionItem[]): PageMap => ({
-  id, title, sections: [top(type), ...middle, seo(type)],
+  id, title, sections: [top(type, title), ...middle, seo(type)],
 });
 
 /** Shown on every page; edited once (stored in Site settings). */
@@ -218,11 +224,11 @@ export const PAGES: PageMap[] = [
 
 /** Gives every section a "page/section" ref so its form can find the section's item lists. */
 function withRefs(page: PageMap): PageMap {
-  return { ...page, sections: page.sections.map((it) => ({ ...it, ref: `${page.id}/${it.key}` })) };
+  return { ...page, sections: page.sections.map((it) => ({ ...it, ref: `${page.id}__${it.key}` })) };
 }
 
 /** The section a form was opened from (see SectionInput.tsx). */
 export function findSection(ref: string): SectionItem | undefined {
-  const pageId = ref.split("/")[0];
+  const pageId = ref.split("__")[0];
   return PAGES.find((p) => p.id === pageId)?.sections.find((it) => it.ref === ref);
 }

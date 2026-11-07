@@ -11,7 +11,23 @@
 
 @layer base {
   html { -webkit-text-size-adjust: 100%; scroll-behavior: auto; }
+  /*
+    Boxed site: everything sits in one centred frame as wide as the content (1280px).
+    --frame is that width on the current screen, --frame-gap the empty space on each side.
+  */
+  :root { --frame: min(100vw, 1280px); --frame-gap: max(0px, calc((100vw - 1280px) / 2)); }
   body { @apply bg-surface-0 font-sans text-ink-600 antialiased; }
+  /* Wide screens: theme orange around the site frame, softly lit behind it. */
+  @media (min-width: 1280px) {
+    body {
+      background-color: #F47A16;
+      background-image:
+        radial-gradient(120% 90% at 50% 40%, rgba(255, 196, 120, 0.35) 0%, rgba(244, 122, 22, 0) 55%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(142, 55, 11, 0.35) 100%);
+      background-size: 100% 100%, 100% 100%;
+      background-attachment: fixed;
+    }
+  }
   h1, h2, h3, h4 { @apply text-ink-900; }
   /* Keep site base styles out of the embedded Sanity Studio (/admin). */
   #sanity h1, #sanity h2, #sanity h3, #sanity h4 { color: inherit; }
@@ -22,6 +38,7 @@
 }
 
 @layer components {
+  .site-frame { @apply relative mx-auto w-full max-w-container overflow-x-clip bg-surface-0; box-shadow: 0 0 0 1px rgba(16,17,20,0.04), 0 30px 80px -40px rgba(16,17,20,0.25); }
   .container-x { @apply mx-auto w-full max-w-container px-4 sm:px-6 lg:px-8; }
   .section-y { @apply py-16 md:py-24 lg:py-28; }
   .display { @apply font-display font-extrabold uppercase leading-[0.95] tracking-[-0.005em]; }

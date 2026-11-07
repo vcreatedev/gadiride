@@ -9,7 +9,7 @@ export default function WhatsAppFab() {
   const site = useSite();
 
   return (
-    <div className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-40 flex flex-col items-end gap-2.5">
+    <div className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[calc(var(--frame-gap)+1.25rem)] z-40 flex flex-col items-end gap-2.5">
       {/* Floating Call button positioned directly above the WhatsApp button */}
       {site.phone && <a
         href={telHref(site.phone)}

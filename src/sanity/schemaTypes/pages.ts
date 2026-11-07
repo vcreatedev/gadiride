@@ -1,9 +1,21 @@
 import { defineType, type FieldDefinition } from "sanity";
-import { HEADING_HINT, img, sectionOrder, seo, str, strList, titleTextList, txt } from "./helpers";
+import { HEADING_HINT, heroFitField, heroImg, heroPhoneImg, img, sectionOrder, seo, str, strList, titleTextList, txt } from "./helpers";
 import { VEHICLE_PAGE_SECTIONS } from "@/data/sections";
 
 const content = { name: "content", title: "Content", default: true };
 const seoGroup = { name: "seo", title: "SEO" };
+
+/** Pages without the usual banner hero photo (About shows its photo beside the story; Search has its own header). */
+const NO_HERO_PHOTO = ["aboutPage", "searchPage"];
+
+const heroPhotos = (name: string): FieldDefinition[] =>
+  NO_HERO_PHOTO.includes(name)
+    ? []
+    : [
+        heroImg("image", "Hero background photo (optional)", { description: "Wide photo behind the page title. Remove it to go back to the standard background." }),
+        heroFitField("imageFit"),
+        heroPhoneImg("imageMobile"),
+      ];
 
 const page = (name: string, title: string, fields: FieldDefinition[]) =>
   defineType({
@@ -14,7 +26,7 @@ const page = (name: string, title: string, fields: FieldDefinition[]) =>
     fields: [
       str("title", "Page heading", { group: "content", description: HEADING_HINT }),
       txt("intro", "Intro", { group: "content", rows: 2 }),
-      ...fields.map((f) => ({ ...f, group: "content" })),
+      ...[...heroPhotos(name), ...fields].map((f) => ({ ...f, group: "content" })),
       seo(),
     ],
     preview: { prepare: () => ({ title }) },
@@ -26,9 +38,9 @@ export const vehiclesPage = page("vehiclesPage", "Vehicles pages", [
   txt("quoteText", "Group page: quote text", { rows: 2 }),
   str("faqTitle", "Group page: FAQ heading"),
   { ...str("offersTitle", "Group page: offers heading", { description: "Moved to Home → Offers & deals." }), hidden: true },
-  str("listTitleCars", "Cars page: vehicle list heading"),
-  str("listTitle", "Other group pages: vehicle list heading", { description: "{group} becomes the group name, e.g. \"Our {group}.\"" }),
-  str("listTitleMixed", "Big group: vehicle list heading", { description: "Used instead when the search is for more people than any car seats, so the list shows tempo travellers and buses." }),
+  str("listTitleCars", "Heading"),
+  { ...str("listTitle", "Old shared list heading", { description: "Replaced by each page's own heading." }), hidden: true },
+  str("listTitleMixed", "Heading when buses are shown", { description: "When a search has more people than a car seats." }),
   str("outsideTitle", "Pickup outside Hyderabad: heading"),
   txt("outsideText", "Pickup outside Hyderabad: text", { rows: 2, description: "Shown instead of vehicles when the searched pickup place is outside Hyderabad." }),
   str("emptyTitle", "No results: heading"),
@@ -54,7 +66,7 @@ export const careersPage = page("careersPage", "Careers page", [
 export const aboutPage = page("aboutPage", "About page", [
   str("heading", "Section heading"),
   strList("paragraphs", "Paragraphs", { description: "One item per paragraph." }),
-  img("image", "Photo (optional)", { description: "Team, office or fleet photo." }),
+  img("image", "Photo (optional)", { description: "Team, office or fleet photo, shown beside the story. Best size: 1600 × 1200 px (4:3)." }),
 ]);
 
 export const contactPage = page("contactPage", "Contact page", [

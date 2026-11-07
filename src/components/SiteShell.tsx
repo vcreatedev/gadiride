@@ -18,14 +18,17 @@ export default async function SiteShell({ children }: { children: React.ReactNod
         <Loader enabled={settings.showIntro} />
         <SmoothScroll />
         <ScrollReveal />
-        <Header />
-        <main id="main">{children}</main>
-        <Footer settings={settings} groups={groups} services={services} />
+        {/* Boxed site: on screens wider than the content, everything stays inside this frame. */}
+        <div className="site-frame">
+          <Header />
+          <main id="main">{children}</main>
+          <Footer settings={settings} groups={groups} services={services} />
+        </div>
         <WhatsAppFab />
         {sanityEnabled && dataset !== "production" && (
           <a
             href="/admin/"
-            className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-5 z-40 rounded-full bg-taxi px-3 py-1.5 font-mono text-[11px] font-medium text-ink-900 shadow-lift"
+            className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-[calc(var(--frame-gap)+1.25rem)] z-40 rounded-full bg-taxi px-3 py-1.5 font-mono text-[11px] font-medium text-ink-900 shadow-lift"
             title="This site is showing the development dataset. gadiride.com is not affected."
           >
             DEV DATA · {dataset}

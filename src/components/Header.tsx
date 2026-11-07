@@ -64,7 +64,7 @@ export default function Header() {
     } ${dark ? "text-white hover:bg-white/10" : "text-ink-900 hover:bg-surface-50"}`;
 
   return (
-    <header className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${solid ? "border-b border-line bg-white/95 backdrop-blur" : "bg-transparent"}`}>
+    <header className={`fixed left-1/2 top-0 z-50 w-full max-w-container -translate-x-1/2 transition-colors duration-300 ${solid ? "border-b border-line bg-white/95 backdrop-blur" : "bg-transparent"}`}>
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-ink-900">Skip to content</a>
       <div className="container-x flex h-[60px] items-center justify-between gap-4 md:h-[72px]">
         <Link href="/" aria-label="Gadiride home" className="shrink-0">{brand(dark)}</Link>

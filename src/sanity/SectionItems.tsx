@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useMemo, useState, type ComponentType, type CSSP
 import { Preview, getPublishedId, useClient, useSchema, type SchemaType } from "sanity";
 import { usePaneRouter } from "sanity/structure";
 import { Box, Button, Card, Flex, Stack, Text, Tooltip, useToast } from "@sanity/ui";
-import { AddIcon, DragHandleIcon, EyeClosedIcon, EyeOpenIcon } from "@sanity/icons";
+import { AddIcon, DragHandleIcon, EyeClosedIcon, EyeOpenIcon, TrashIcon } from "@sanity/icons";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
@@ -76,7 +76,7 @@ function useEntries(list: ItemList, sort: string): Entry[] | null {
 
 const tip = (text: string) => <Box padding={2}><Text size={1}>{text}</Text></Box>;
 
-function ItemRow({ entry, type, schemaType, sortable, onToggle }: { entry: Entry; type: string; schemaType: SchemaType; sortable: boolean; onToggle: () => void }) {
+function ItemRow({ entry, type, schemaType, sortable, onToggle, onDelete }: { entry: Entry; type: string; schemaType: SchemaType; sortable: boolean; onToggle: () => void; onDelete?: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id, disabled: !sortable });
   const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition, position: "relative", zIndex: isDragging ? 2 : undefined };
   return (
@@ -93,6 +93,11 @@ function ItemRow({ entry, type, schemaType, sortable, onToggle }: { entry: Entry
         <Tooltip content={tip(entry.shown ? "Click to hide on the website" : "Hidden on the website. Click to show")} placement="top" portal>
           <Button mode="bleed" padding={2} icon={entry.shown ? EyeOpenIcon : EyeClosedIcon} aria-label={entry.shown ? "Hide" : "Show"} onClick={onToggle} />
         </Tooltip>
+        {onDelete && (
+          <Tooltip content={tip("Delete")} placement="top" portal>
+            <Button mode="bleed" tone="critical" padding={2} icon={TrashIcon} aria-label="Delete" onClick={onDelete} />
+          </Tooltip>
+        )}
       </Flex>
     </Card>
   );
@@ -130,6 +135,19 @@ export function ItemListBlock({ list }: { list: ItemList }) {
     const v = visibilityOf(list.type);
     commit([{ ids: e.ids, set: { [v.field]: e.shown ? v.hide : v.show } }], (entries ?? []).map((x) => (x.id === e.id ? { ...x, shown: !x.shown } : x)));
   };
+  // Deletes the item for good (published copy and any draft), after a confirm.
+  const onDelete = (e: Entry) => {
+    if (!window.confirm("Delete this for good? It disappears from the website and cannot be undone. (To only hide it, use the eye.)")) return;
+    setPending((entries ?? []).filter((x) => x.id !== e.id));
+    const tx = client.transaction();
+    for (const id of e.ids) tx.delete(id);
+    tx.commit()
+      .then(() => toast.push({ status: "success", title: "Deleted" }))
+      .catch((err: Error) => {
+        setPending(null);
+        toast.push({ status: "error", title: "Could not delete", description: err.message.includes("reference") ? "Something else still links to it. Remove that link first." : err.message });
+      });
+  };
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!entries || !over || active.id === over.id) return;
     const next = arrayMove(entries, ids.indexOf(String(active.id)), ids.indexOf(String(over.id)));
@@ -153,7 +171,7 @@ export function ItemListBlock({ list }: { list: ItemList }) {
           <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={onDragEnd}>
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
               <Stack space={1}>
-                {entries.map((e) => <ItemRow key={e.id} entry={e} type={list.type} schemaType={schemaType} sortable={sortable} onToggle={() => onToggle(e)} />)}
+                {entries.map((e) => <ItemRow key={e.id} entry={e} type={list.type} schemaType={schemaType} sortable={sortable} onToggle={() => onToggle(e)} onDelete={list.template === false ? undefined : () => onDelete(e)} />)}
               </Stack>
             </SortableContext>
           </DndContext>

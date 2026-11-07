@@ -9,7 +9,7 @@ const nextConfig = {
     // Sanity photos use Sanity's own CDN (see components/Photo.tsx).
     formats: ["image/avif", "image/webp"],
     // Fewer, well-spaced widths: smaller HTML (every image lists them) and better CDN cache hits.
-    deviceSizes: [384, 640, 828, 1080, 1440, 1920],
+    deviceSizes: [384, 640, 828, 1080, 1440, 1920, 2560],
     imageSizes: [64, 200, 380],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [{ protocol: "https", hostname: "cdn.sanity.io" }],

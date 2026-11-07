@@ -43,6 +43,7 @@ const shared: Omit<WorkspaceOptions, "name" | "title" | "basePath" | "dataset"> 
   },
   // Opened from a page section in the sidebar, a document shows only that section's fields.
   // List items (slides, cards, banners...) get an eye to show / hide them on the website.
+  // SectionInput also adds an image address box under every image field.
   form: { components: { input: SectionInput, item: VisibilityItem } },
   plugins: [structureTool({ structure }), visionTool({ defaultApiVersion: apiVersion })],
 };

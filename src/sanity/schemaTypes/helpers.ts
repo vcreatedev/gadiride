@@ -24,6 +24,65 @@ export const img = (name: string, title: string, o: Opt = {}) =>
     fields: [defineField({ name: "alt", title: "Alt text (describe the image)", type: "string" })],
   });
 
+/** Full-width photos need this many pixels across to stay sharp on large and high-density screens. */
+const HERO_MIN_WIDTH = 1920;
+
+/**
+ * A full-width background photo: warns (does not block) when the upload is too small to look sharp.
+ * The size is read from the asset id, e.g. image-abc-1248x518-webp.
+ */
+export const heroImg = (name: string, title: string, o: Opt = {}) =>
+  defineField({
+    ...img(name, title, {
+      ...o,
+      description: `${o.description ? `${o.description} ` : ""}Best size: 2400 × 960 px (wide, at least ${HERO_MIN_WIDTH} px across). Keep the top and left side plain: the header and the title sit there. On phones held upright it is cropped around the hotspot (crop icon), unless a phone photo is added below.`,
+    }),
+    validation: (Rule) =>
+      Rule.custom((value: { asset?: { _ref?: string } } | undefined) => {
+        const w = Number(value?.asset?._ref?.match(/-(\d+)x\d+-/)?.[1] ?? 0);
+        return !w || w >= HERO_MIN_WIDTH
+          ? true
+          : `This photo is ${w}px wide, so it will look blurry stretched across the screen. Upload one at least ${HERO_MIN_WIDTH}px wide (2400px or more is best).`;
+      }).warning(),
+  });
+
+/** How a hero photo fills the hero: cropped to fill it, or shown whole (posters, banners with text). */
+export const heroFitField = (name: string) =>
+  defineField({
+    name,
+    title: "How the photo fits",
+    type: "string",
+    options: {
+      layout: "radio",
+      list: [
+        { title: "Fill the hero (edges may be cropped; the hotspot decides what stays)", value: "cover" },
+        { title: "Show the whole photo (for posters and photos with text; blurred edges fill the gaps)", value: "contain" },
+      ],
+    },
+    initialValue: "cover",
+  });
+
+/** Size a portrait (phone) hero photo needs to stay sharp. */
+const PHONE_MIN_WIDTH = 1080;
+
+/** Optional upright version of a hero photo, for phones and tablets held upright. */
+export const heroPhoneImg = (name: string, o: Opt = {}) =>
+  defineField({
+    ...img(name, "Hero photo for phones (optional, portrait)", {
+      ...o,
+      description: "Shown instead of the wide photo on screens held upright (phones, tablets). Best size: 1080 × 1920 px (9:16). Keep the top half plain: the title sits there. Empty = the wide photo, cropped around its hotspot.",
+    }),
+    validation: (Rule) =>
+      Rule.custom((value: { asset?: { _ref?: string } } | undefined) => {
+        const m = value?.asset?._ref?.match(/-(\d+)x(\d+)-/);
+        if (!m) return true;
+        const w = Number(m[1]);
+        const h = Number(m[2]);
+        if (w > h) return `This photo is wider than it is tall (${w} × ${h}). Use an upright photo, about 1080 × 1920 px.`;
+        return w >= PHONE_MIN_WIDTH ? true : `This photo is ${w}px wide and may look blurry. Use one at least ${PHONE_MIN_WIDTH}px wide.`;
+      }).warning(),
+  });
+
 export const strList = (name: string, title: string, o: Opt = {}) =>
   defineField({ name, title, type: "array", group: o.group, description: o.description, of: [defineArrayMember({ type: "string" })] });
 
@@ -54,7 +113,7 @@ export const seo = (group = "seo") =>
     fields: [
       str("title", "Page title (browser tab and Google)"),
       txt("description", "Description (Google and social previews)", { rows: 2 }),
-      img("image", "Share image (1200 × 630)"),
+      img("image", "Share image (1200 × 630)", { description: "Shown when the page is shared on WhatsApp or social media. Size: 1200 × 630 px." }),
     ],
   });
 
