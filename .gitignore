@@ -36,3 +36,7 @@ next-env.d.ts
 
 # sanity dataset exports
 /.sanity-backup/
+
+.vercel
+.env*
+!.env.example
