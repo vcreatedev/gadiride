@@ -73,7 +73,7 @@ export default function Featured({ content: c, groups, drivers, driversLabel, dr
             <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {group.vehicles.map((v, i) => (
                 <li key={v.slug} className="flex h-full">
-                  <VehicleCard v={v} showPrices={showPrices} priority={group.id === groups[0].id && i < 3} />
+                  <VehicleCard v={v} showPrices={showPrices} />
                 </li>
               ))}
             </ul>

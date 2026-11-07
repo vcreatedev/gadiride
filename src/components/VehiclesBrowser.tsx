@@ -56,7 +56,7 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
         <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((v, i) => (
             <li key={v.slug} className="flex h-full">
-              <VehicleCard v={v} showPrices={showPrices} priority={i < 3} />
+              <VehicleCard v={v} showPrices={showPrices} />
             </li>
           ))}
         </ul>

@@ -2,6 +2,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import Loader from "./Loader";
 import SmoothScroll from "./SmoothScroll";
+import ScrollReveal from "./ScrollReveal";
 import QuoteFlow from "./QuoteFlow";
 import WhatsAppFab from "./WhatsAppFab";
 import { SiteProvider } from "./SiteProvider";
@@ -16,6 +17,7 @@ export default async function SiteShell({ children }: { children: React.ReactNod
       <QuoteFlow>
         <Loader enabled={settings.showIntro} />
         <SmoothScroll />
+        <ScrollReveal />
         <Header />
         <main id="main">{children}</main>
         <Footer settings={settings} groups={groups} services={services} />

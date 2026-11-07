@@ -30,6 +30,8 @@ export type Slide = {
 };
 
 const EVERY_MS = 7000;
+/** Scene cross-fade length (matches the scene-in keyframe). */
+const FADE_MS = 750;
 const SCENES: SceneId[] = ["city", "highway", "port", "site", "street"];
 const LABEL: Record<string, string> = { cars: "Cars", passenger: "Group travel", logistics: "Trucks", equipment: "JCB", driver: "Drivers", partner: "Earn with us" };
 const TABS = ["cars", "passenger", "logistics", "equipment", "driver"];
@@ -45,8 +47,19 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
   const dark = site.heroTheme === "dark";
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
+  // The slide fading out, kept mounted just long enough for the cross-fade.
+  const [prev, setPrev] = useState<number | null>(null);
+  const shown = useRef(0);
   const root = useRef<HTMLElement>(null);
   const s = slides[i];
+
+  useEffect(() => {
+    if (shown.current === i) return;
+    setPrev(shown.current);
+    shown.current = i;
+    const t = window.setTimeout(() => setPrev(null), FADE_MS);
+    return () => clearTimeout(t);
+  }, [i]);
 
   useEffect(() => {
     if (slides.length < 2 || paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -76,12 +89,15 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
 
       <div className="container-x relative grid min-h-0 flex-1 items-center gap-6 py-4 [--h:min(24svh,200px)] [--horizon:calc(var(--h)*0.45+1rem)] lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:[--h:min(30svh,280px)]">
         {/* scenes cross-fade; each sits on the horizon behind the vehicle */}
+        {/* Only the current scene (and the one fading out) is in the page: each scene is hundreds of shapes. */}
         <div aria-hidden className="pointer-events-none absolute bottom-[var(--horizon)] left-1/2 h-[min(56svh,520px)] w-screen -translate-x-1/2">
-          {slides.map((sl, n) => (
-            <div key={n} className={`absolute inset-0 transition-opacity duration-700 ${n === i ? "opacity-100" : "opacity-0"}`}>
-              <HeroScene id={sceneOf(sl.scene)} theme={site.heroTheme} />
-            </div>
-          ))}
+          {slides.map((sl, n) =>
+            n === i || n === prev ? (
+              <div key={n} className={`absolute inset-0 transition-opacity duration-700 ${n === i ? "animate-[scene-in_.7s_ease-out_both]" : "opacity-0"}`}>
+                <HeroScene id={sceneOf(sl.scene)} theme={site.heroTheme} />
+              </div>
+            ) : null,
+          )}
         </div>
         <div aria-hidden className="pointer-events-none absolute left-1/2 top-[calc(100%-var(--horizon))] h-[100svh] w-screen -translate-x-1/2">
           <Road theme={site.heroTheme} />

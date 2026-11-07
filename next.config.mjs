@@ -1,13 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Lets a production build run beside `npm run dev` (e.g. NEXT_DIST_DIR=.next-prod) for speed tests.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Server build so content published in Sanity appears without a redeploy
   // (cached for 60s, or instantly via /api/revalidate).
   images: {
     // Local photos in /public are resized and converted to AVIF/WebP by Next.
     // Sanity photos use Sanity's own CDN (see components/Photo.tsx).
     formats: ["image/avif", "image/webp"],
-    deviceSizes: [360, 480, 640, 828, 1080, 1280, 1600, 1920],
-    imageSizes: [40, 96, 200, 260, 380],
+    // Fewer, well-spaced widths: smaller HTML (every image lists them) and better CDN cache hits.
+    deviceSizes: [384, 640, 828, 1080, 1440, 1920],
+    imageSizes: [64, 200, 380],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [{ protocol: "https", hostname: "cdn.sanity.io" }],
   },
