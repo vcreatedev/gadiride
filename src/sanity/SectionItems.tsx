@@ -76,7 +76,7 @@ function useEntries(list: ItemList, sort: string): Entry[] | null {
 
 const tip = (text: string) => <Box padding={2}><Text size={1}>{text}</Text></Box>;
 
-function ItemRow({ entry, type, schemaType, sortable, onToggle, onDelete }: { entry: Entry; type: string; schemaType: SchemaType; sortable: boolean; onToggle: () => void; onDelete?: () => void }) {
+function ItemRow({ entry, type, schemaType, sortable, onToggle, onDelete }: { entry: Entry; type: string; schemaType: SchemaType; sortable: boolean; onToggle?: () => void; onDelete?: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id, disabled: !sortable });
   const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition, position: "relative", zIndex: isDragging ? 2 : undefined };
   return (
@@ -90,9 +90,11 @@ function ItemRow({ entry, type, schemaType, sortable, onToggle, onDelete }: { en
         <Card flex={1} as={OpenLink} childId={entry.id} childParameters={{ type }} radius={2} data-as="a" style={{ textDecoration: "none", minWidth: 0, opacity: entry.shown ? 1 : 0.5 }}>
           <Preview schemaType={schemaType} value={{ _id: entry.previewId, _type: type }} layout="default" />
         </Card>
-        <Tooltip content={tip(entry.shown ? "Click to hide on the website" : "Hidden on the website. Click to show")} placement="top" portal>
-          <Button mode="bleed" padding={2} icon={entry.shown ? EyeOpenIcon : EyeClosedIcon} aria-label={entry.shown ? "Hide" : "Show"} onClick={onToggle} />
-        </Tooltip>
+        {onToggle && (
+          <Tooltip content={tip(entry.shown ? "Click to hide on the website" : "Hidden on the website. Click to show")} placement="top" portal>
+            <Button mode="bleed" padding={2} icon={entry.shown ? EyeOpenIcon : EyeClosedIcon} aria-label={entry.shown ? "Hide" : "Show"} onClick={onToggle} />
+          </Tooltip>
+        )}
         {onDelete && (
           <Tooltip content={tip("Delete")} placement="top" portal>
             <Button mode="bleed" tone="critical" padding={2} icon={TrashIcon} aria-label="Delete" onClick={onDelete} />
@@ -171,7 +173,7 @@ export function ItemListBlock({ list }: { list: ItemList }) {
           <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={onDragEnd}>
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
               <Stack space={1}>
-                {entries.map((e) => <ItemRow key={e.id} entry={e} type={list.type} schemaType={schemaType} sortable={sortable} onToggle={() => onToggle(e)} onDelete={list.template === false ? undefined : () => onDelete(e)} />)}
+                {entries.map((e) => <ItemRow key={e.id} entry={e} type={list.type} schemaType={schemaType} sortable={sortable} onToggle={list.toggle === false ? undefined : () => onToggle(e)} onDelete={list.template === false ? undefined : () => onDelete(e)} />)}
               </Stack>
             </SortableContext>
           </DndContext>

@@ -26,7 +26,7 @@ export default async function PartnerPage() {
           <div className="rounded-card bg-white p-6 shadow-card ring-1 ring-line sm:p-8">
             <h2 className="font-head text-2xl font-semibold">{p.formTitle}</h2>
             <p className="mb-6 mt-2 text-sm text-ink-600">{p.formText}</p>
-            <RequestForm formKey="partner" compact />
+            <RequestForm formKey="partner" compact override={p.form} />
           </div>
         </div>
       </section>

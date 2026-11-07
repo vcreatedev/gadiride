@@ -41,7 +41,7 @@ const PAGE_TYPES = ["vehiclesPage", "servicesPage", "corporatePage", "careersPag
 const QUERY = `{
   "settings": *[_id == "siteSettings"][0]{..., logo${IMG}, headerLogo${IMG}, shareImage${IMG}},
   "home": *[_id == "homePage"][0]{..., seo{..., image${IMG}}},
-  "pages": *[_id in $pageIds]{..., image${IMG}, imageMobile${IMG}, seo{..., image${IMG}}},
+  "pages": *[_id in $pageIds]{..., image${IMG}, imageMobile${IMG}, heroImage${IMG}, heroImageMobile${IMG}, seo{..., image${IMG}}},
   "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}, heroImageMobile${IMG}, heroFit, listTitle},
   "types": *[_type == "vehicleType" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
     "id": key.current, name, group, art, image${IMG}
@@ -193,7 +193,8 @@ export const getBanners = cache(async (): Promise<Banner[]> => {
 });
 
 /** A page's hero photos: wide, plus an optional upright one for phones. */
-type HeroImages = { image?: Photo; imageMobile?: Photo; imageFit?: HeroFit };
+/** About keeps its hero photos under hero* names ("image" is its story photo). */
+type HeroImages = { image?: Photo; imageMobile?: Photo; imageFit?: HeroFit; heroImage?: Photo; heroImageMobile?: Photo; heroFit?: HeroFit };
 
 export async function getPage<K extends PageKey>(key: K): Promise<PageContent[K] & WithSeoImage & HeroImages> {
   const raw = (await fetchRaw()).pages?.find((p) => p._id === `${key}Page`) ?? {};
@@ -203,6 +204,9 @@ export async function getPage<K extends PageKey>(key: K): Promise<PageContent[K]
     image: toPhoto((raw as { image?: SanityImageDoc }).image),
     imageMobile: toPhoto((raw as { imageMobile?: SanityImageDoc }).imageMobile),
     imageFit: (raw as { imageFit?: HeroFit }).imageFit,
+    heroImage: toPhoto((raw as { heroImage?: SanityImageDoc }).heroImage),
+    heroImageMobile: toPhoto((raw as { heroImageMobile?: SanityImageDoc }).heroImageMobile),
+    heroFit: (raw as { heroFit?: HeroFit }).heroFit,
     seoImage: toPhoto((raw as { seo?: { image?: SanityImageDoc } }).seo?.image),
   } as unknown as PageContent[K] & WithSeoImage & HeroImages;
 }

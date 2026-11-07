@@ -89,6 +89,7 @@ export const siteSettings = defineType({
       ],
     }),
     str("footerContactTitle", "Footer: contact column heading", { group: "nav" }),
+    str("footerContactLink", "Footer: contact page link", { group: "nav", description: "e.g. Contact page. Empty = no link." }),
     str("copyright", "Footer: copyright line", { group: "nav", description: "{year} becomes the current year." }),
 
     strList("marquee", "Scrolling strip", { group: "offers", description: "Short lines that scroll under the service-page hero. The phone number is added automatically." }),

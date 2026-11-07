@@ -54,6 +54,8 @@ export type SiteSettings = {
   /** Footer link columns, in order. The contact column is added after them. */
   footerColumns: { title: string; links: NavLink[] }[];
   footerContactTitle: string;
+  /** Label of the contact-page link in the footer's contact column; empty hides it. */
+  footerContactLink: string;
   /** "{year}" is replaced with the current year. */
   copyright: string;
 };
@@ -179,6 +181,7 @@ export const site: SiteSettings = {
     },
   ],
   footerContactTitle: "Contact",
+  footerContactLink: "Contact page",
   copyright: "© {year} Gadiride. All rights reserved.",
   highlights: [
     { title: "Zero deposit option", text: "On select cars, so more of your money stays with you." },

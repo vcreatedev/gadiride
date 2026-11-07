@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Info, SearchX, Users, X } from "lucide-react";
+import { redirect } from "next/navigation";
+import { ArrowRight, Info, SearchX, X } from "lucide-react";
 import BookingCard from "@/components/BookingCard";
 import ResultCard from "@/components/search/ResultCard";
-import DriverCard from "@/components/search/DriverCard";
+
 import RequestButton from "@/components/search/RequestButton";
 import { accent } from "@/components/Accent";
 import { FORMS, applyFormOverride } from "@/data/forms";
 import type { GroupId, Vehicle } from "@/data/vehicles";
-import { getDrivers, getGroups, getPage, getSearchBar, getSettings, getVehicles, pageMetadata } from "@/lib/content";
+import { getGroups, getPage, getSearchBar, getSettings, getVehicles, pageMetadata } from "@/lib/content";
 import { bookedDays, pickFormValues, requestEntries, withFormDefaults } from "@/lib/request";
-import { TAB_IDS, matchDrivers, matchVehicles, type TabId } from "@/lib/search";
+import { TAB_IDS, matchVehicles, type TabId } from "@/lib/search";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { ...(await pageMetadata("search")), robots: { index: false, follow: true } };
@@ -32,6 +33,11 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
   const tab: TabId = TAB_IDS.includes(sp.tab as TabId) ? (sp.tab as TabId) : "cars";
   // Only what the visitor changed is in the link; the rest are the form's defaults.
   const picked = pickFormValues(tab, sp);
+  // Driver searches now filter the Drivers page itself; old links go there with the same details.
+  if (tab === "driver") {
+    const q = new URLSearchParams(Object.entries(picked).filter(([, v]) => v));
+    redirect(`/drivers/${q.size ? `?${q.toString()}` : ""}`);
+  }
   const [p, settings, groups, bar, vp] = await Promise.all([getPage("search"), getSettings(), getGroups(), getSearchBar(), getPage("vehicles")]);
   // The form as edited in the admin (labels and message title in the WhatsApp request).
   const form = applyFormOverride(FORMS[tab], bar.forms[tab]);
@@ -43,28 +49,12 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
   const requestLabel = `${p.requestCta} ${one}`;
   const filtered = Object.keys(picked).length > 0;
   const dark = settings.heroTheme === "dark";
-  const serviceHref = tab === "driver" ? "/drivers/" : `/vehicles/${tab}/`;
-  const browseHref = tab === "driver" ? "/drivers/" : `${serviceHref}#all`;
-  const heading =tab === "driver" ? "Drivers" : groups.find((g) => g.id === tab)?.name ?? p.title.replace(/\.$/, "");
+  const serviceHref = `/vehicles/${tab}/`;
+  const browseHref = `${serviceHref}#all`;
+  const heading = groups.find((g) => g.id === tab)?.name ?? p.title.replace(/\.$/, "");
 
   let results: React.ReactNode;
-  if (tab === "driver") {
-    const drivers = matchDrivers(values, await getDrivers());
-    results = drivers.length ? (
-      <>
-        <h2 className="font-head text-2xl font-semibold text-ink-900 md:text-3xl">{p.driversTitle}</h2>
-        <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {drivers.map((d) => (
-            <li key={d.name}><DriverCard d={d} title={title} entries={entries} requestLabel={requestLabel} /></li>
-          ))}
-        </ul>
-      </>
-    ) : (
-      <Empty title={p.driversTitle} text={p.driversEmpty} icon={Users}>
-        <RequestButton title={title} entries={entries} label={p.driversEmptyCta} className="mt-6" />
-      </Empty>
-    );
-  } else {
+  {
     const { exact, others, upsized, outside } = matchVehicles(tab as GroupId, values, await getVehicles(), settings.areas);
     // More people than any car seats: same page, listing the tempo travellers and buses that fit.
     if (upsized) [one, many] = NOUN.passenger;

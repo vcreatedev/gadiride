@@ -211,12 +211,14 @@ export const pageDefaults = {
     note: "Current openings are shared on WhatsApp. No listings are shown here until confirmed.",
     formTitle: "Send your details",
     formText: "Your details open in WhatsApp. Send the message to apply.",
+    form: noFormChanges(),
   },
   about: {
     seo: { title: "About us", description: "Gadiride is a Hyderabad vehicle rental company: self drive cars, chauffeur cars, passenger vehicles, trucks and JCBs." },
     title: "About Gadiride.",
     intro: "A Hyderabad rental company that brings every kind of vehicle together, so you find the right one with one call or message.",
     heading: "What we do.",
+    linksTitle: "Explore our services",
     paragraphs: [
       "Gadiride rents self drive cars across Hyderabad, from fuel-saving hatchbacks to seven-seat SUVs, with doorstep delivery, airport delivery at RGIA and unlimited km plans.",
       "We also provide chauffeur-driven cars for outstation trips and weddings, tempo travellers and buses for groups, trucks for goods and backhoe loaders for construction sites.",
@@ -272,6 +274,7 @@ export const pageDefaults = {
     ],
     formTitle: "Your vehicle",
     formText: "Send the details on WhatsApp. Nothing is listed until our team has verified it.",
+    form: noFormChanges(),
   },
   notFound: {
     title: "Wrong turn.",

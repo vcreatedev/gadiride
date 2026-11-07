@@ -24,7 +24,7 @@ export default async function CareersPage() {
           <div className="rounded-card bg-surface-50 p-6 sm:p-8">
             <h2 className="font-head text-2xl font-semibold">{p.formTitle}</h2>
             <p className="mb-6 mt-2 text-sm">{p.formText}</p>
-            <RequestForm formKey="careers" compact />
+            <RequestForm formKey="careers" compact override={p.form} />
           </div>
         </div>
       </section>

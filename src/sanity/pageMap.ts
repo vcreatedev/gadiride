@@ -24,6 +24,8 @@ export type ItemList = {
   sort?: string;
   /** Template for "Add" (defaults to a blank document of `type`); false hides the button. */
   template?: { id: string; params: Record<string, unknown> } | false;
+  /** false: no show/hide eye (e.g. the fixed list of services). */
+  toggle?: false;
 };
 
 export type SectionItem = {
@@ -59,7 +61,14 @@ const S = "siteSettings";
 
 const seo = (type: string): SectionItem => ({ key: "seo", title: "Search & sharing (SEO)", icon: SearchIcon, target: doc(type, "seo"), meta: true });
 /** The banner at the top of a page, named after the page (e.g. "Drivers hero"). */
-const top = (type: string, page: string): SectionItem => ({ key: "top", title: `${page.replace(/ page$/, "")} hero`, hint: "Heading, intro & photo", icon: BlockElementIcon, target: doc(type, ["aboutPage", "searchPage"].includes(type) ? ["title", "intro"] : ["title", "intro", "image", "imageFit", "imageMobile"]) });
+const top = (type: string, page: string): SectionItem => ({ key: "top", title: `${page.replace(/ page$/, "")} hero`, hint: "Heading, intro & photo", icon: BlockElementIcon, target: doc(type, HERO_FIELDS[type] ?? ["title", "intro", "image", "imageFit", "imageMobile"]) });
+/** Pages whose hero fields differ from the usual ones. */
+const HERO_FIELDS: Record<string, string[]> = { searchPage: ["title", "intro"], aboutPage: ["title", "intro", "heroImage", "heroFit", "heroImageMobile"] };
+/** The search bar under a page's hero: the shared badge and only this page's own tab (its fields and button). */
+const pageSearchBar = (tab: string, page: string): SectionItem => ({
+  ...field("search-bar", "Search bar", "homePage", ["searchBar.badge", `searchBar.${tab}`], SearchIcon, `The ${page} tab and its form`),
+});
+
 const marquee: SectionItem = { key: "marquee", title: "Scrolling offers strip", hint: "Shared (Site settings)", icon: TagIcon, target: doc(S, "marquee"), slot: "marquee" };
 const areas: SectionItem = { key: "areas", title: "Hyderabad areas", hint: "Shared (Site settings)", icon: PinIcon, target: doc(S, ["areasTitle", "areasText", "areas", "highlights"]), slot: "areas" };
 const faqList: Target = { kind: "list", type: "faq" };
@@ -110,6 +119,7 @@ const groupPage = (g: (typeof GROUPS)[number]): PageMap => ({
   layoutDoc: "vehiclesPage",
   sections: [
     { key: "top", title: `${g.name} hero`, hint: "Heading, intro & photo", icon: BlockElementIcon, target: doc("vehicleGroup", ["name", "blurb", "heroImage", "heroFit", "heroImageMobile"], `group-${g.id}`) },
+    pageSearchBar(g.id, g.name),
     marquee,
     // Only this page's heading and the banners set to show on this page.
     slotted("offers", { ...field("offers", "Offers for you", "homePage", ["offers.vehiclesTitle", "offers.banners"], TagIcon, `Banners shown on ${g.name}`), params: { offersFor: g.id } }),
@@ -152,8 +162,8 @@ export const FOOTER: PageMap = {
   sections: [
     field("brand", "Tagline & short description", S, ["tagline", "footerBlurb"], DocumentIcon, "Under the footer logo"),
     field("columns", "Link columns", S, "footerColumns", MenuIcon, "Vehicles, Services, Company…"),
-    field("contact-title", "Contact column heading", S, "footerContactTitle", EnvelopeIcon, "Phone & email come from Site settings"),
-    field("copyright", "Copyright line", S, "copyright", DocumentIcon, "{year} becomes the current year"),
+    field("contact", "Contact", S, ["footerContactTitle", "footerContactLink", "phone", "email", "address"], EnvelopeIcon, "Heading, link, phone, email, address"),
+    field("copyright", "Copyright & social links", S, ["copyright", "social"], DocumentIcon, "Bottom line; {year} becomes the current year"),
   ],
 };
 
@@ -188,6 +198,7 @@ export const PAGES: PageMap[] = [
     ],
   },
   simple("drivers", "Drivers", "driversPage", [
+    pageSearchBar("driver", "Drivers"),
     withItems(field("drivers", "Driver list", "driversPage", ["listTitle", "empty"], UsersIcon), all("Drivers", "driver")),
   ]),
   simple("services", "Services", "servicesPage", [
@@ -199,14 +210,18 @@ export const PAGES: PageMap[] = [
   ]),
   simple("partner", "Attach your vehicle", "partnerPage", [
     field("steps", "How it works (steps)", "partnerPage", "steps"),
-    field("form", "Form", "partnerPage", ["formTitle", "formText"], EnvelopeIcon),
+    field("form", "Form", "partnerPage", ["formTitle", "formText", "form"], EnvelopeIcon, "Heading, text and the form fields"),
   ]),
   simple("careers", "Careers", "careersPage", [
     withItems(field("roles", "Open roles", "careersPage", ["rolesTitle", "note"], UsersIcon), all("Roles", "careerRole")),
-    field("form", "Form", "careersPage", ["formTitle", "formText"], EnvelopeIcon),
+    field("form", "Form", "careersPage", ["formTitle", "formText", "form"], EnvelopeIcon, "Heading, text and the form fields"),
   ]),
   simple("about", "About", "aboutPage", [
-    field("story", "Our story", "aboutPage", ["heading", "image", "paragraphs"], DocumentIcon),
+    withItems(
+      field("story", "Our story", "aboutPage", ["heading", "image", "paragraphs", "linksTitle"], DocumentIcon),
+      // The service links under the story: each service's name and description, edited on that service.
+      { title: "Service links (click one to edit its name and description)", type: "vehicleGroup", template: false, toggle: false, sort: 'select(key == "cars" => 1, key == "passenger" => 2, key == "logistics" => 3, 4)' },
+    ),
   ]),
   simple("faq", "FAQ", "faqPage", [docs("questions", "Questions", "faq", HelpCircleIcon)]),
   simple("contact", "Contact", "contactPage", [
@@ -215,7 +230,7 @@ export const PAGES: PageMap[] = [
     field("other", "Other ways to reach us", "contactPage", ["otherTitle", "emptyText"]),
   ]),
   simple("search", "Search results", "searchPage", [
-    field("results", "Results", "searchPage", ["title", "intro", "resultsTitle", "requestCta", "detailsLabel", "editLabel", "othersTitle"], SearchIcon),
+    field("results", "Results", "searchPage", ["resultsTitle", "requestCta", "detailsLabel", "othersTitle"], SearchIcon),
     field("drivers", "Drivers results", "searchPage", ["driversTitle", "driversEmpty", "driversEmptyCta"], UsersIcon),
     field("no-match", "No match", "searchPage", ["noMatchTitle", "noMatchText", "availabilityNote"]),
   ]),

@@ -1,17 +1,26 @@
 import { defineType, type FieldDefinition } from "sanity";
-import { HEADING_HINT, heroFitField, heroImg, heroPhoneImg, img, sectionOrder, seo, str, strList, titleTextList, txt } from "./helpers";
+import { formSettings, HEADING_HINT, heroFitField, heroImg, heroPhoneImg, img, sectionOrder, seo, str, strList, titleTextList, txt } from "./helpers";
 import { VEHICLE_PAGE_SECTIONS } from "@/data/sections";
 
 const content = { name: "content", title: "Content", default: true };
 const seoGroup = { name: "seo", title: "SEO" };
 
-/** Pages without the usual banner hero photo (About shows its photo beside the story; Search has its own header). */
-const NO_HERO_PHOTO = ["aboutPage", "searchPage"];
+/** Search has its own header, so no hero photo. */
+const NO_HERO_PHOTO = ["searchPage"];
+
+/** About's "image" is the photo beside its story, so its hero photos use their own names. */
+const ABOUT_HERO: FieldDefinition[] = [
+  heroImg("heroImage", "Hero background photo (optional)", { description: "Wide photo behind the page title. Remove it to go back to the standard background." }),
+  heroFitField("heroFit"),
+  heroPhoneImg("heroImageMobile"),
+];
 
 const heroPhotos = (name: string): FieldDefinition[] =>
   NO_HERO_PHOTO.includes(name)
     ? []
-    : [
+    : name === "aboutPage"
+      ? ABOUT_HERO
+      : [
         heroImg("image", "Hero background photo (optional)", { description: "Wide photo behind the page title. Remove it to go back to the standard background." }),
         heroFitField("imageFit"),
         heroPhoneImg("imageMobile"),
@@ -61,11 +70,13 @@ export const careersPage = page("careersPage", "Careers page", [
   txt("note", "Note under the roles", { rows: 2 }),
   str("formTitle", "Form heading"),
   txt("formText", "Form text", { rows: 2 }),
+  formSettings("careers"),
 ]);
 
 export const aboutPage = page("aboutPage", "About page", [
   str("heading", "Section heading"),
   strList("paragraphs", "Paragraphs", { description: "One item per paragraph." }),
+  str("linksTitle", "Heading above the service links", { description: "e.g. Explore our services" }),
   img("image", "Photo (optional)", { description: "Team, office or fleet photo, shown beside the story. Best size: 1600 × 1200 px (4:3)." }),
 ]);
 
@@ -90,7 +101,7 @@ export const searchPage = page("searchPage", "Search results page", [
   str("driversTitle", "Drivers heading"),
   txt("driversEmpty", "Text when no drivers are listed", { rows: 2 }),
   str("driversEmptyCta", "Button when no drivers are listed"),
-  str("editLabel", "Edit search label"),
+  { ...str("editLabel", "Edit search label"), hidden: true },
 ]);
 
 export const driversPage = page("driversPage", "Drivers page", [
@@ -102,6 +113,7 @@ export const partnerPage = page("partnerPage", "Attach your vehicle page", [
   titleTextList("steps", "How it works"),
   str("formTitle", "Form heading"),
   txt("formText", "Form text", { rows: 2 }),
+  formSettings("partner"),
 ]);
 
 export const notFoundPage = defineType({

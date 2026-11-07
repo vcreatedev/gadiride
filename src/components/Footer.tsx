@@ -27,7 +27,7 @@ export default function Footer({ settings: site, groups, services }: { settings:
           <div>
             <h2 className="text-sm font-semibold text-white">{site.footerContactTitle}</h2>
             <ul className="mt-4 space-y-3 text-sm">
-              <li><Link href="/contact/" className="hover:text-white">Contact page</Link></li>
+              {site.footerContactLink && <li><Link href="/contact/" className="hover:text-white">{site.footerContactLink}</Link></li>}
               {site.phone && <li><a href={telHref(site.phone)} className="hover:text-white">{site.phone}</a></li>}
               {site.email && <li><a href={`mailto:${site.email}`} className="hover:text-white">{site.email}</a></li>}
               {site.address && <li className="whitespace-pre-line">{site.address}</li>}

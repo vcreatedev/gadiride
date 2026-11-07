@@ -47,15 +47,11 @@ export default function BookingCard({ onTabChange, onServiceChange, initialTab =
     setPreset(values ? { values, nonce: Date.now() } : undefined);
   };
 
-  // Vehicles: that service's own page, scrolled to its list and filtered there. Drivers: the results page.
+  // Every tab: that service's own page (vehicles or drivers), scrolled to its list and filtered there.
   const search = (values: Record<string, string>) => {
     const q = new URLSearchParams();
     Object.entries(values).forEach(([k, v]) => v && q.set(k, v));
-    if (tab === "driver") {
-      q.set("tab", "driver");
-      return router.push(`/search/?${q.toString()}`);
-    }
-    const path = `/vehicles/${tab}/`;
+    const path = tab === "driver" ? "/drivers/" : `/vehicles/${tab}/`;
     const url = `${path}${q.size ? `?${q.toString()}` : ""}#all`;
     if (window.location.pathname === path) {
       window.history.replaceState(null, "", url);
@@ -77,11 +73,11 @@ export default function BookingCard({ onTabChange, onServiceChange, initialTab =
     window.addEventListener(TRIP_EVENT, t);
     return () => { window.removeEventListener(CLEAR_EVENT, c); window.removeEventListener(TRIP_EVENT, t); };
   }, []);
-  const onVehiclePage = lockTab && lockTab !== "driver" && !initialValues;
+  const onVehiclePage = !!lockTab && !initialValues;
 
   // On a vehicle page opened from a search, show what was searched.
   useEffect(() => {
-    if (!lockTab || lockTab === "driver" || initialValues) return;
+    if (!lockTab || initialValues) return;
     const picked = pickFormValues(lockTab, Object.fromEntries(new URLSearchParams(window.location.search)));
     if (Object.keys(picked).length) setPreset({ values: picked, nonce: Date.now() });
   }, [lockTab, initialValues]);
