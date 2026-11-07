@@ -52,9 +52,9 @@ Not in Sanity on purpose: the animated SVG vehicle drawings (code), booking form
 
 | Where | Dataset | Studio workspace |
 |---|---|---|
-| Your computer (`npm run dev`) | `development` | `/admin/development` (labelled **DEV**) |
+| Your computer (`npm run dev`) | `development` | `/admin` (labelled **Development**) |
 | Vercel **Preview** deployments | `development` | |
-| Vercel **Production** | `production` | `/admin/production` (labelled **LIVE**) |
+| Vercel **Production** | `production` | `/admin` on gadiride.com (labelled **Production**) |
 
 The dataset is chosen by `NEXT_PUBLIC_SANITY_DATASET`. Edits in the DEV workspace never reach the live site. Whenever the site is showing development data, a yellow **DEV DATA** badge appears in the bottom-left corner.
 
@@ -78,8 +78,8 @@ In **Vercel → Settings → Environment Variables**:
 
 **Day-to-day workflow**
 
-1. Try changes in `/admin/development` and check them on `localhost:3000` or a Vercel preview.
-2. When happy, make the same edit in `/admin/production` (LIVE).
+1. Try changes at `localhost:3000/admin` or `dev.gadiride.com/admin` (development dataset) and check them there.
+2. When happy, make the same edit at `gadiride.com/admin` (production dataset).
 3. To reset development to a copy of live: `npm run data:prod-to-dev` (overwrites development).
 
 The seed scripts never overwrite existing documents, so they are safe to re-run.
