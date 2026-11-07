@@ -1,4 +1,6 @@
 import { defineField, defineType } from "sanity";
+import { TypePhotoInput } from "../FallbackPhotoInput";
+import { stockMedia, stockPhotoUrl } from "../stockPhoto";
 import { GROUPS } from "@/data/vehicles";
 import { ART_IDS } from "@/data/vehicleArt";
 import { img, str, strList, txt } from "./helpers";
@@ -37,7 +39,7 @@ export const vehicleType = defineType({
       validation: (r) => r.required(),
     }),
     defineField({ name: "group", title: "Group", type: "string", options: { ...groupList, layout: "radio" }, validation: (r) => r.required() }),
-    img("image", "Photo", { description: "Side or 3/4 view on a plain light background. Used in 'Pick a style', 'Meet the fleet' and as the default for vehicles of this type." }),
+    { ...img("image", "Photo", { description: "Side or 3/4 view on a plain light background. Used in 'Pick a style', 'Meet the fleet' and as the default for vehicles of this type." }), components: { input: TypePhotoInput } },
     defineField({
       name: "art",
       title: "Drawing style for animations",
@@ -50,8 +52,8 @@ export const vehicleType = defineType({
   ],
   orderings: [{ title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] }],
   preview: {
-    select: { title: "name", group: "group", media: "image" },
-    prepare: ({ title, group, media }) => ({ title, subtitle: GROUPS.find((g) => g.id === group)?.name, media }),
+    select: { title: "name", group: "group", key: "key.current", media: "image" },
+    prepare: ({ title, group, key, media }) => ({ title, subtitle: GROUPS.find((g) => g.id === group)?.name, media: media ?? stockMedia(stockPhotoUrl(key, group)) }),
   },
 });
 

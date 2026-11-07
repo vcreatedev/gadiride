@@ -15,7 +15,7 @@ const TARGETS = [
   "main > section:not(:first-child) article",
   "main [data-reveal]",
 ].join(", ");
-const SKIP = "[data-no-reveal], .marquee-track, form, [role=radiogroup], [role=tablist], [aria-hidden=true], nav";
+const SKIP = "[data-no-reveal], .marquee-track, .reviews-track, form, [role=radiogroup], [role=tablist], [aria-hidden=true], nav";
 
 export default function ScrollReveal() {
   const path = usePathname();

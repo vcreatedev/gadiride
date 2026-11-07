@@ -1,3 +1,4 @@
+import type { SectionSlot } from "@/data/sections";
 import type { ArtId } from "@/data/vehicleArt";
 
 /**
@@ -44,6 +45,8 @@ export type SiteSettings = {
   highlights: { title: string; text: string }[];
   /** Look of every page hero: "light" (daytime, default) or "dark" (night). */
   heroTheme: "light" | "dark";
+  /** Header menu order (vehicle groups and Drivers); empty = default order. */
+  navOrder?: SectionSlot[];
   /** Header label for the Drivers link. */
   driversLabel: string;
   /** Header "More" menu (and mobile menu) links, after the vehicle groups. */

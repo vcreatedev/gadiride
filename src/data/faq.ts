@@ -5,7 +5,7 @@
 export type FaqSeed = { q: string; a: string; group?: "cars" | "passenger" | "logistics" | "equipment" };
 
 export const FAQ: FaqSeed[] = [
-  { group: "cars", q: "How do I rent a self drive car in Hyderabad?", a: "Search with your pickup area, date, time and number of days, pick a car and send the request on WhatsApp, or call 94915 44981. Our team confirms availability, shares the pickup point or delivers the car to you." },
+  { group: "cars", q: "How do I rent a self drive car in Hyderabad?", a: "Search with your pickup area, date, time and number of passengers, pick a car and send the request on WhatsApp, or call 94915 44981. Our team confirms availability, shares the pickup point or delivers the car to you." },
   { group: "cars", q: "Is there a security deposit?", a: "Select cars come with a zero deposit option. For the rest, a refundable deposit applies and is returned after the car is checked in. Ask our team which option suits your booking." },
   { group: "cars", q: "Are the kilometres unlimited?", a: "Yes, unlimited km plans are available. Lower-priced plans with a daily km limit are also offered if you are only driving in the city." },
   { group: "cars", q: "What documents do I need?", a: "A valid driving licence and a government ID such as Aadhaar. You must be 18 or older. Documents are verified once before your first pickup; repeat bookings are quicker." },

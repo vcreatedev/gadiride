@@ -1,3 +1,4 @@
+import type { SchemaTypeDefinition } from "sanity";
 import { vehicle } from "./vehicle";
 import { siteSettings } from "./siteSettings";
 import { faq } from "./faq";
@@ -5,6 +6,7 @@ import { careerRole } from "./careerRole";
 import { homePage } from "./homePage";
 import { pageTypes } from "./pages";
 import { driver, service, testimonial, vehicleGroup, vehicleType } from "./catalog";
+import { withVisibility } from "./visibility";
 
 export const schemaTypes = [
   homePage,
@@ -18,7 +20,7 @@ export const schemaTypes = [
   faq,
   careerRole,
   siteSettings,
-];
+].map((t) => withVisibility(t as SchemaTypeDefinition));
 
 /** One document each, with a fixed ID. */
 export const SINGLETONS: Record<string, string> = {

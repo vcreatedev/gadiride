@@ -97,7 +97,7 @@ export default function Featured({ content: c, groups, drivers, driversLabel, dr
 
         <div className="mt-10 flex justify-center">
           <Link href={allHref} className="btn-primary h-12 rounded-full px-7 text-[15px]">
-            View all<ArrowRight className="h-4 w-4" />
+            {c.linkLabel || "View all"}<ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

@@ -6,10 +6,10 @@ import ResultCard from "@/components/search/ResultCard";
 import DriverCard from "@/components/search/DriverCard";
 import RequestButton from "@/components/search/RequestButton";
 import { accent } from "@/components/Accent";
-import { FORMS } from "@/data/forms";
+import { FORMS, applyFormOverride } from "@/data/forms";
 import type { GroupId, Vehicle } from "@/data/vehicles";
-import { getDrivers, getGroups, getPage, getSettings, getVehicles, pageMetadata } from "@/lib/content";
-import { bookedDays, pickFormValues, requestEntries } from "@/lib/request";
+import { getDrivers, getGroups, getPage, getSearchBar, getSettings, getVehicles, pageMetadata } from "@/lib/content";
+import { bookedDays, pickFormValues, requestEntries, withFormDefaults } from "@/lib/request";
 import { TAB_IDS, matchDrivers, matchVehicles, type TabId } from "@/lib/search";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,16 +26,22 @@ const NOUN: Record<TabId, [string, string]> = {
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
 
+
 export default async function SearchPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const tab: TabId = TAB_IDS.includes(sp.tab as TabId) ? (sp.tab as TabId) : "cars";
-  const values = pickFormValues(tab, sp);
-  const [p, settings, groups] = await Promise.all([getPage("search"), getSettings(), getGroups()]);
-  const entries = requestEntries(tab, values);
-  const title = FORMS[tab].title;
-  const [one, many] = NOUN[tab];
+  // Only what the visitor changed is in the link; the rest are the form's defaults.
+  const picked = pickFormValues(tab, sp);
+  const [p, settings, groups, bar, vp] = await Promise.all([getPage("search"), getSettings(), getGroups(), getSearchBar(), getPage("vehicles")]);
+  // The form as edited in the admin (labels and message title in the WhatsApp request).
+  const form = applyFormOverride(FORMS[tab], bar.forms[tab]);
+  // A plain link (no search yet) lists everything; a search fills in the defaults it left out.
+  const values = withFormDefaults(form.fields, picked);
+  const entries = requestEntries(tab, values, form.fields);
+  const title = form.title;
+  let [one, many] = NOUN[tab];
   const requestLabel = `${p.requestCta} ${one}`;
-  const filtered = Object.keys(values).length > 0;
+  const filtered = Object.keys(picked).length > 0;
   const dark = settings.heroTheme === "dark";
   const serviceHref = tab === "driver" ? "/drivers/" : `/vehicles/${tab}/`;
   const browseHref = tab === "driver" ? "/drivers/" : `${serviceHref}#all`;
@@ -59,7 +65,9 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
       </Empty>
     );
   } else {
-    const { exact, others } = matchVehicles(tab as GroupId, values, await getVehicles());
+    const { exact, others, upsized, outside } = matchVehicles(tab as GroupId, values, await getVehicles(), settings.areas);
+    // More people than any car seats: same page, listing the tempo travellers and buses that fit.
+    if (upsized) [one, many] = NOUN.passenger;
     const groupName = groups.find((g) => g.id === tab)?.name ?? many;
     const grid = (list: Vehicle[], first = false) => (
       <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -85,7 +93,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
       </>
     ) : (
       <>
-        <Empty title={p.noMatchTitle} text={p.noMatchText}>
+        <Empty title={outside ? vp.outsideTitle : p.noMatchTitle} text={outside ? vp.outsideText : p.noMatchText}>
           <RequestButton title={title} entries={entries} label={`${p.requestCta} ${one}`} className="mt-6" />
         </Empty>
         {others.length > 0 && (

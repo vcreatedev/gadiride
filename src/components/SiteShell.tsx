@@ -6,14 +6,14 @@ import ScrollReveal from "./ScrollReveal";
 import QuoteFlow from "./QuoteFlow";
 import WhatsAppFab from "./WhatsAppFab";
 import { SiteProvider } from "./SiteProvider";
-import { getGroups, getServices, getSettings, getTypes } from "@/lib/content";
+import { getGroups, getServices, getSettings, getTypes, getSearchBar } from "@/lib/content";
 import { dataset, sanityEnabled } from "@/sanity/env";
 
 /** Header, footer, intro loader and quote dialog shared by every public page. */
 export default async function SiteShell({ children }: { children: React.ReactNode }) {
-  const [settings, groups, types, services] = await Promise.all([getSettings(), getGroups(), getTypes(), getServices()]);
+  const [settings, groups, types, services, searchBar] = await Promise.all([getSettings(), getGroups(), getTypes(), getServices(), getSearchBar()]);
   return (
-    <SiteProvider value={{ settings, groups, types }}>
+    <SiteProvider value={{ settings, groups, types, searchBar }}>
       <QuoteFlow>
         <Loader enabled={settings.showIntro} />
         <SmoothScroll />

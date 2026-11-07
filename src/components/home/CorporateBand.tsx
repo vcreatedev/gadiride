@@ -17,7 +17,7 @@ export default function CorporateBand({ id = "corporate-enquiry", content: c }: 
           </ul>
         </div>
         <div className="rounded-card bg-white p-6 shadow-card sm:p-8">
-          <RequestForm formKey="corporate" idPrefix={id} compact />
+          <RequestForm formKey="corporate" idPrefix={id} compact override={c.form} />
         </div>
       </div>
     </section>

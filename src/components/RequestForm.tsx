@@ -3,12 +3,12 @@ import { useEffect, useMemo } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Minus, Plus, ArrowRight, MapPin, CalendarDays, Clock, Car, Building2, Users, Package, Briefcase, Search, X, Check, type LucideIcon } from "lucide-react";
-import { FORMS, type Field } from "@/data/forms";
+import { FORMS, applyFormOverride, type Field, type FormOverride } from "@/data/forms";
 import type { FormKey } from "@/data/services";
 import { buildSchema, isVisible, todayISO } from "@/lib/schema";
 import { buildDirectMessage, openWhatsApp } from "@/lib/whatsapp";
 import { requestEntries } from "@/lib/request";
-import { useCatalog, useSite } from "./SiteProvider";
+import { useCatalog, useSearchBar, useSite } from "./SiteProvider";
 import LocationInput from "./LocationInput";
 
 const PLACE = /pickup|drop|from|^to$|site|location|destination|route|city/i;
@@ -56,26 +56,33 @@ type Props = {
   hide?: string[];
   /** Bar layout colours: on a light card or a dark one. */
   tone?: "light" | "dark";
+  /** Texts, choices and field order set in the admin. */
+  override?: FormOverride | null;
 };
 
 /** Config-driven request form. Validates, then hands off to the WhatsApp quote flow. */
-export default function RequestForm({ formKey, idPrefix = formKey, preset, extra = [], ctaClass = "", compact = false, layout = "grid", onSearch, ctaLabel, onClear, hide, tone = "light" }: Props) {
+export default function RequestForm({ formKey, idPrefix = formKey, preset, extra = [], ctaClass = "", compact = false, layout = "grid", onSearch, ctaLabel, onClear, hide, tone = "light", override }: Props) {
   const site = useSite();
   const { types } = useCatalog();
+  // The admin's changes to this form (Home → Search bar, or passed in, e.g. Corporate).
+  const barForms = useSearchBar().forms;
+  const edits = override ?? barForms[formKey];
   // Vehicle dropdowns list the vehicle types managed in the admin.
   const def = useMemo(() => {
-    const base = FORMS[formKey];
+    const base = applyFormOverride(FORMS[formKey], edits);
     const typeNames = (g: string) => types.filter((t) => t.group === g).map((t) => t.name);
     return {
       ...base,
       fields: base.fields.filter((f) => !hide?.includes(f.name)).map((f) => {
         if (formKey === "cars" && f.name === "carType") return { ...f, options: ["Any", ...typeNames("cars")] };
         if (formKey === "passenger" && f.name === "vehicle") return { ...f, options: ["Any", ...typeNames("passenger")] };
+        // Searching: places and dates are optional (the quote forms still ask for them).
+        if (layout === "bar" && (isPlace(f) || f.type === "date")) return { ...f, required: false };
         return f;
       }),
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formKey, types, hide?.join()]);
+  }, [formKey, types, layout, hide?.join(), JSON.stringify(edits ?? null)]);
   const schema = useMemo(() => buildSchema(def.fields), [def]);
   const defaults = useMemo(() => Object.fromEntries(def.fields.map((f) => [f.name, f.defaultValue ?? ""])), [def]);
   const { register, handleSubmit, watch, setValue, reset, formState } = useForm<Record<string, string>>({
@@ -93,7 +100,8 @@ export default function RequestForm({ formKey, idPrefix = formKey, preset, extra
     // Fields not shown in the search bar keep their defaults; leave them out of the request.
     const shown = (layout === "bar" ? def.fields.filter((f) => f.bar !== false) : def.fields).filter((f) => isVisible(f, v));
     const sent = Object.fromEntries(Object.entries(v).filter(([k]) => shown.some((f) => f.name === k)));
-    if (onSearch) return onSearch(sent);
+    // Search links stay short: values left at their default are filled back in on the results page.
+    if (onSearch) return onSearch(Object.fromEntries(Object.entries(sent).filter(([k, val]) => val !== shown.find((f) => f.name === k)?.defaultValue)));
     openWhatsApp(buildDirectMessage(def.title, [...extra, ...requestEntries(formKey, sent, shown)]), site.whatsappNumber);
   };
 

@@ -1,6 +1,9 @@
+import type { SectionSlot } from "@/data/sections";
 import { cache } from "react";
 import { client } from "@/sanity/client";
-import { site as settingsDefaults, type SiteSettings } from "@/config/site";
+import { site as settingsDefaults, type Banner, type SiteSettings } from "@/config/site";
+import type { FormOverride } from "@/data/forms";
+import { TAB_IDS, type TabId } from "./search";
 import {
   GROUPS,
   TYPES,
@@ -40,25 +43,25 @@ const QUERY = `{
   "home": *[_id == "homePage"][0]{..., seo{..., image${IMG}}},
   "pages": *[_id in $pageIds]{..., image${IMG}, seo{..., image${IMG}}},
   "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}},
-  "types": *[_type == "vehicleType" && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
+  "types": *[_type == "vehicleType" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
     "id": key.current, name, group, art, image${IMG}
   },
   "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group)]
     | order(coalesce(order, 100) asc, name asc){
-      "slug": slug.current, name, group, summary, specs[]{label, value}, options, pricePerDay, featured,
+      "slug": slug.current, name, group, summary, specs[hidden != true]{label, value}, options, pricePerDay, featured,
       photoFit, photoBackground, photoZoom,
       "type": type->key.current,
-      image${IMG}, gallery[]${IMG}
+      image${IMG}, gallery[hidden != true]${IMG}
     },
-  "services": *[_type == "service" && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
+  "services": *[_type == "service" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
     "id": key.current, name, forWho, offer, points, cta, form, toConfirm, image${IMG}
   },
-  "faq": *[_type == "faq" && defined(question)] | order(coalesce(order, 100) asc, _createdAt asc){"q": question, "a": answer},
-  "roles": *[_type == "careerRole" && defined(role)] | order(coalesce(order, 100) asc, _createdAt asc){role, detail},
+  "faq": *[_type == "faq" && hidden != true && defined(question)] | order(coalesce(order, 100) asc, _createdAt asc){"q": question, "a": answer},
+  "roles": *[_type == "careerRole" && hidden != true && defined(role)] | order(coalesce(order, 100) asc, _createdAt asc){role, detail},
   "drivers": *[_type == "driver" && available != false && defined(name)] | order(coalesce(order, 100) asc, name asc){
     name, city, experience, licence, duty, drives, languages, about, verified, photo${IMG}
   },
-  "testimonials": *[_type == "testimonial" && defined(quote)] | order(coalesce(order, 100) asc, _createdAt desc){quote, name, detail, rating, photo${IMG}}
+  "testimonials": *[_type == "testimonial" && hidden != true && defined(quote)] | order(coalesce(order, 100) asc, _createdAt desc){quote, name, detail, rating, photo${IMG}}
 }`;
 
 type Raw = {
@@ -96,13 +99,21 @@ const fetchRaw = cache(async (): Promise<Raw> => {
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 
-/** Deep-merge: non-empty values from Sanity win, empty ones keep the default. Arrays are replaced when non-empty. */
+/** List items switched off with the eye in the Studio. */
+const isHidden = (v: unknown) => isObj(v) && v.hidden === true;
+
+/**
+ * Deep-merge: non-empty values from Sanity win, empty ones keep the default. Arrays are replaced
+ * when non-empty, without the items hidden in the Studio (all hidden = an empty list).
+ */
 function merge<T>(base: T, over: unknown): T {
   if (over === undefined || over === null || over === "") return base;
   if (Array.isArray(base)) {
     if (!Array.isArray(over) || over.length === 0) return base;
+    const shown = over.filter((o) => !isHidden(o));
+    if (shown.length === 0) return [] as T;
     const item = base[0];
-    return over.map((o, i) => (isObj(item) ? merge((base[i] ?? item) as unknown, o) : o)) as T;
+    return shown.map((o, i) => (isObj(item) ? merge((base[i] ?? item) as unknown, o) : o)) as T;
   }
   if (isObj(base)) {
     if (!isObj(over)) return base;
@@ -115,10 +126,14 @@ function merge<T>(base: T, over: unknown): T {
 
 /* ---------------------------------------------------------------- settings */
 
+/** Hero style is edited on Home → Hero; older datasets still have it in Site settings. */
+const themeOf = (v: unknown): SiteSettings["heroTheme"] | undefined => (v === "dark" || v === "light" ? v : undefined);
+
 export type Settings = SiteSettings & { footerBlurb: string; logo?: Photo; headerLogo?: Photo; shareImage?: Photo; showIntro: boolean };
 
 export const getSettings = cache(async (): Promise<Settings> => {
-  const s = (await fetchRaw()).settings ?? {};
+  const raw = await fetchRaw();
+  const s = raw.settings ?? {};
   const base = { ...settingsDefaults, footerBlurb: footerDefaults.blurb, showIntro: true };
   const m = merge(base, s);
   return {
@@ -131,8 +146,9 @@ export const getSettings = cache(async (): Promise<Settings> => {
     banners: (m.banners ?? []).filter((b) => b?.title),
     showPrices: typeof s.showPrices === "boolean" ? s.showPrices : settingsDefaults.showPrices,
     showIntro: typeof s.showIntro === "boolean" ? s.showIntro : true,
-    heroTheme: s.heroTheme === "dark" || s.heroTheme === "light" ? s.heroTheme : settingsDefaults.heroTheme,
+    heroTheme: themeOf(raw.home?.heroTheme) ?? themeOf(s.heroTheme) ?? settingsDefaults.heroTheme,
     navMore: (m.navMore ?? []).filter((l) => l?.label && l?.href),
+    navOrder: Array.isArray(s.navOrder) ? (s.navOrder as SectionSlot[]).filter((r) => r?.key) : undefined,
     footerColumns: (m.footerColumns ?? []).filter((c) => c?.title).map((c) => ({ ...c, links: (c.links ?? []).filter((l) => l?.label && l?.href) })),
     logo: toPhoto(s.logo as SanityImageDoc, "Gadiride"),
     headerLogo: toPhoto(s.headerLogo as SanityImageDoc, "Gadiride"),
@@ -147,6 +163,33 @@ type WithSeoImage = { seoImage?: Photo };
 export const getHome = cache(async (): Promise<HomeContent & WithSeoImage> => {
   const h = (await fetchRaw()).home ?? {};
   return { ...merge(homeDefaults, h), seoImage: toPhoto((h.seo as { image?: SanityImageDoc } | undefined)?.image) };
+});
+
+/** The search bar's texts and each service's form as edited in Home → Search bar. */
+export type SearchBar = {
+  badge: string;
+  tabs: Record<TabId, { label: string; search: string }>;
+  forms: Partial<Record<FormKey, FormOverride>>;
+};
+
+export const getSearchBar = cache(async (): Promise<SearchBar> => {
+  const home = await getHome();
+  const sb = home.searchBar;
+  return {
+    badge: sb.badge,
+    tabs: Object.fromEntries(TAB_IDS.map((t) => [t, { label: sb[t].label, search: sb[t].search }])) as SearchBar["tabs"],
+    forms: { ...Object.fromEntries(TAB_IDS.map((t) => [t, sb[t].form])), corporate: home.corporate.form },
+  };
+});
+
+/**
+ * Offer banners live on Home → Offers & deals. Datasets not migrated yet still have them in
+ * Site settings, so those are used until the home page has its own list.
+ */
+export const getBanners = cache(async (): Promise<Banner[]> => {
+  const raw = ((await fetchRaw()).home?.offers as { banners?: unknown } | undefined)?.banners;
+  if (!Array.isArray(raw)) return (await getSettings()).banners;
+  return merge(settingsDefaults.banners, raw).filter((b) => b?.title);
 });
 
 export async function getPage<K extends PageKey>(key: K): Promise<PageContent[K] & WithSeoImage & { image?: Photo }> {

@@ -36,6 +36,16 @@ export function requestEntries(formKey: FormKey, values: Record<string, string>,
     }));
 }
 
+/**
+ * A search's values: the ones in the link plus the defaults the link leaves out (search links only
+ * carry what the visitor changed). Fields hidden by another choice are dropped.
+ */
+export function withFormDefaults(fields: Field[], picked: Record<string, string>) {
+  if (!Object.keys(picked).length) return picked;
+  const all = { ...Object.fromEntries(fields.filter((f) => f.bar !== false && f.defaultValue).map((f) => [f.name, f.defaultValue!])), ...picked };
+  return Object.fromEntries(Object.entries(all).filter(([k]) => { const f = fields.find((x) => x.name === k); return !f || isVisible(f, all); }));
+}
+
 /** Only the field values a form knows about (used to build and read search URLs). */
 export function pickFormValues(formKey: FormKey, source: Record<string, string | string[] | undefined>) {
   const out: Record<string, string> = {};

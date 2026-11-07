@@ -27,6 +27,15 @@ export const VEHICLE_PAGE_SECTIONS = [
   { key: "faq", title: "FAQ" },
 ] as const;
 
+/** Header menu links (desktop and mobile). The "More" menu always stays last. */
+export const NAV_ITEMS = [
+  { key: "cars", title: "Cars" },
+  { key: "passenger", title: "Passenger vehicles" },
+  { key: "logistics", title: "Trucks (logistics)" },
+  { key: "equipment", title: "Heavy equipment" },
+  { key: "drivers", title: "Drivers" },
+] as const;
+
 export const defaultSlots = (list: readonly { key: string }[]): SectionSlot[] => list.map((s) => ({ key: s.key, show: true }));
 
 /**

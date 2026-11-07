@@ -1,5 +1,7 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
 import { GROUPS } from "@/data/vehicles";
+import { VehiclePhotoInput } from "../FallbackPhotoInput";
+import { stockMedia, stockPhotoUrl } from "../stockPhoto";
 
 const photo = (name: string, title: string, description?: string) =>
   defineField({
@@ -59,7 +61,7 @@ export const vehicle = defineType({
     }),
     defineField({ name: "summary", title: "Short description", type: "text", rows: 3, group: "main", validation: (r) => r.required().max(220) }),
 
-    photo("image", "Main photo", "Leave empty to use the vehicle type's photo. Use the hotspot (crop icon) to mark the vehicle's centre."),
+    { ...photo("image", "Main photo", "Leave empty to use the vehicle type's photo. Use the hotspot (crop icon) to mark the vehicle's centre."), components: { input: VehiclePhotoInput } },
     defineField({
       name: "gallery",
       title: "More photos",
@@ -160,11 +162,12 @@ export const vehicle = defineType({
     { title: "Name", name: "nameAsc", by: [{ field: "name", direction: "asc" }] },
   ],
   preview: {
-    select: { title: "name", group: "group", type: "type.name", media: "image", typeMedia: "type.image", available: "available", featured: "featured" },
-    prepare: ({ title, group, type, media, typeMedia, available, featured }) => ({
+    select: { title: "name", group: "group", type: "type.name", typeKey: "type.key.current", media: "image", typeMedia: "type.image", available: "available", featured: "featured" },
+    prepare: ({ title, group, type, typeKey, media, typeMedia, available, featured }) => ({
       title,
       subtitle: [GROUPS.find((g) => g.id === group)?.short, type, featured && "★ featured", available === false && "hidden"].filter(Boolean).join(" · "),
-      media: media ?? typeMedia,
+      // Same photo the website shows: own photo, else the type's, else the built-in one.
+      media: media ?? typeMedia ?? stockMedia(stockPhotoUrl(typeKey, group)),
     }),
   },
 });

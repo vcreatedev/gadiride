@@ -110,6 +110,16 @@ html.lenis, html.lenis body { height: auto; }
   .marquee { overflow-x: auto; }
 }
 
+/* ---------- Reviews: same endless loop, slower; pauses while a card is hovered or focused ---------- */
+.reviews-track { animation: marquee var(--reviews-duration, 60s) linear infinite; will-change: transform; }
+.reviews-marquee:hover .reviews-track,
+.reviews-marquee:focus-within .reviews-track { animation-play-state: paused; }
+.reviews-marquee { mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .reviews-track { animation: none; }
+  .reviews-marquee { overflow-x: auto; mask-image: none; }
+}
+
 /* ---------- Hero background scenes ---------- */
 .scene-twinkle { animation: scene-twinkle 3.2s ease-in-out infinite; }
 @keyframes scene-twinkle { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.2; } }

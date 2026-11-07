@@ -12,7 +12,7 @@ import Marquee from "@/components/Marquee";
 import OfferBanners from "@/components/OfferBanners";
 import AreasServed from "@/components/AreasServed";
 import { GROUPS, HERO_VARIANTS, type GroupId } from "@/data/vehicles";
-import { getFaq, getGroups, getPage, getSettings, getVehicles } from "@/lib/content";
+import { getBanners, getFaq, getGroups, getHome, getPage, getSettings, getVehicles } from "@/lib/content";
 
 const SCENE: Record<GroupId, SceneId> = { cars: "city", passenger: "highway", logistics: "port", equipment: "site" };
 
@@ -30,14 +30,14 @@ export async function generateMetadata({ params }: { params: Promise<{ group: st
 
 export default async function GroupPage({ params }: { params: Promise<{ group: string }> }) {
   const { group: key } = await params;
-  const [groups, vehicles, site, faqData, p] = await Promise.all([getGroups(), getVehicles(), getSettings(), getFaq(), getPage("vehicles")]);
+  const [groups, vehicles, site, faqData, p, allBanners, home] = await Promise.all([getGroups(), getVehicles(), getSettings(), getFaq(), getPage("vehicles"), getBanners(), getHome()]);
   const g = groups.find((x) => x.id === key);
   if (!g) notFound();
   // Sample FAQs are tagged per service; FAQs from Sanity show the first few.
   const faq = faqData.sample
     ? [...faqData.items.filter((f) => f.group === g.id), ...faqData.items.filter((f) => !f.group)].slice(0, g.id === "cars" ? 8 : 4)
     : faqData.items.slice(0, 6);
-  const banners = site.banners.filter((b) => (b.group || "cars") === g.id);
+  const banners = allBanners.filter((b) => (b.group || "cars") === g.id);
   const isCars = g.id === "cars";
   const listTitle = isCars ? p.listTitleCars : p.listTitle.replace("{group}", g.name.toLowerCase());
   // Sections under the hero, in the order set in Sanity (Vehicles pages → Section order).
@@ -45,14 +45,13 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
     marquee: <Marquee items={site.marquee} phone={site.phone} />,
     offers: banners.length > 0 && (
       <section className="bg-surface-50 pt-14 md:pt-20" aria-label="Offers">
-        <div className="container-x"><OfferBanners banners={banners} title={p.offersTitle} /></div>
+        <div className="container-x"><OfferBanners banners={banners} title={home.offers.vehiclesTitle || p.offersTitle} /></div>
       </section>
     ),
     vehicles: (
       <section id="all" className="scroll-mt-20 bg-surface-50 py-14 md:py-20">
         <div className="container-x">
-          <h2 className="h2 mb-8">{accent(listTitle)}</h2>
-          <VehiclesBrowser vehicles={vehicles} lockGroup={g.id as GroupId} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText }} />
+          <VehiclesBrowser title={listTitle} mixedTitle={p.listTitleMixed} vehicles={vehicles} lockGroup={g.id as GroupId} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText, outsideTitle: p.outsideTitle, outsideText: p.outsideText }} />
         </div>
       </section>
     ),
