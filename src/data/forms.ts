@@ -14,8 +14,8 @@ export type Field = {
   min?: number;
   max?: number;
   defaultValue?: string;
-  /** Only show when another field has this value. */
-  showIf?: { field: string; equals: string };
+  /** Only show when another field has this value (or one of these values). */
+  showIf?: { field: string; equals: string | string[] };
   /** false = not shown in the search bar (still in full forms). */
   bar?: false;
 };
@@ -26,14 +26,15 @@ export const FORMS: Record<FormKey, FormDef> = {
   cars: {
     key: "cars", title: "Car rental request", cta: "Get car quote",
     fields: [
-      { name: "mode", label: "Rental type", type: "segment", options: ["Self drive", "With driver"], defaultValue: "Self drive", span: 4 },
+      { name: "mode", label: "Rental type", type: "segment", options: ["Self drive", "With driver", "Today trip"], defaultValue: "Self drive", span: 4 },
       { name: "carType", label: "Car type", type: "select", options: ["Any", "Hatchback", "Sedan", "SUV", "Luxury"], defaultValue: "Any", span: 4, bar: false },
       // Self drive: book by number of days. With driver: a trip with drop-off and return.
-      { name: "days", label: "No. of days", type: "number", min: 1, max: 90, defaultValue: "1", required: true, span: 4, showIf: { field: "mode", equals: "Self drive" } },
+      // Seats needed: matching cars, or tempo travellers and buses when no car is big enough.
+      { name: "passengers", label: "No. of passengers", type: "number", min: 1, max: 60, defaultValue: "4", required: true, span: 4 },
       { name: "pickup", label: "Pickup location", type: "text", required: true, placeholder: "Area or airport", span: 6 },
-      { name: "drop", label: "Drop-off location", type: "text", placeholder: "Same as pickup", span: 6, showIf: { field: "mode", equals: "With driver" } },
+      { name: "drop", label: "Drop-off location", type: "text", placeholder: "Same as pickup", span: 6, showIf: { field: "mode", equals: ["With driver", "Today trip"] } },
       { name: "pickupDate", label: "Pickup date", type: "date", required: true, span: 3 },
-      { name: "pickupTime", label: "Pickup time", type: "time", required: true, defaultValue: "10:00", span: 3 },
+      { name: "pickupTime", label: "Pickup time", type: "time", required: true, defaultValue: "10:00", span: 3, showIf: { field: "mode", equals: ["Self drive", "With driver"] } },
       { name: "returnDate", label: "Return date", type: "date", required: true, notBefore: "pickupDate", span: 3, showIf: { field: "mode", equals: "With driver" } },
       { name: "returnTime", label: "Return time", type: "time", required: true, defaultValue: "20:00", span: 3, showIf: { field: "mode", equals: "With driver" } },
     ],
@@ -121,3 +122,44 @@ export const FORMS: Record<FormKey, FormDef> = {
     ],
   },
 };
+
+/** What the admin can change on a form: texts, choices, required, order and which fields show. */
+export type FormFieldOverride = { name?: string; label?: string; placeholder?: string; options?: string[]; required?: boolean };
+export type FormOverride = { title?: string; cta?: string; fields?: FormFieldOverride[] };
+
+const text = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
+
+/**
+ * The form with the admin's changes. Fields keep their code-defined type and rules; the admin's list
+ * sets their order (fields it hid are already left out). Fields added in code later are appended.
+ */
+export function applyFormOverride(base: FormDef, o?: FormOverride | null): FormDef {
+  if (!o) return base;
+  const listed = (o.fields ?? []).filter((f) => f?.name && base.fields.some((b) => b.name === f.name));
+  const fields = listed.length
+    ? [
+        ...listed.map((f): Field => {
+          const b = base.fields.find((x) => x.name === f.name)!;
+          const options = Array.isArray(f.options) ? f.options.filter((x) => text(x)) : [];
+          return {
+            ...b,
+            label: text(f.label) ?? b.label,
+            placeholder: text(f.placeholder) ?? b.placeholder,
+            options: b.options && options.length ? options : b.options,
+            required: typeof f.required === "boolean" ? f.required : b.required,
+          };
+        }),
+        ...base.fields.filter((b) => !(o.fields ?? []).some((f) => f?.name === b.name)),
+      ]
+    : base.fields;
+  // A default must still be one of the choices.
+  const safe = fields.map((f) => (f.options && f.defaultValue && !f.options.includes(f.defaultValue) ? { ...f, defaultValue: f.options[0] } : f));
+  return { ...base, title: text(o.title) ?? base.title, cta: text(o.cta) ?? base.cta, fields: safe };
+}
+
+/** A form's fields as the admin starts editing them (seed and defaults). */
+export const formOverrideDefaults = (key: FormKey): FormOverride => ({
+  title: FORMS[key].title,
+  cta: FORMS[key].cta,
+  fields: FORMS[key].fields.map(({ name, label, placeholder, options, required }) => ({ name, label, placeholder, options, required: !!required })),
+});

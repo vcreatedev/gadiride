@@ -17,7 +17,7 @@ export default async function ContactPage() {
   ].filter(Boolean) as { icon: typeof Phone; label: string; value: string; href?: string }[];
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} />
       <section className="section-y bg-white">
         <div className="container-x grid gap-8 lg:grid-cols-2">
           <div className="rounded-card bg-ink-900 p-8 text-white md:p-10">

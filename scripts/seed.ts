@@ -16,6 +16,9 @@ import { getCliClient } from "sanity/cli";
 import { homeDefaults, pageDefaults, footerDefaults } from "../src/content/defaults";
 import { GROUPS, TYPES, VEHICLES } from "../src/data/vehicles";
 import { SERVICES, CAREER_ROLES } from "../src/data/services";
+import { SAMPLE_DRIVERS } from "../src/data/drivers";
+import { formOverrideDefaults } from "../src/data/forms";
+import { TAB_IDS } from "../src/lib/search";
 import { FAQ } from "../src/data/faq";
 import { site } from "../src/config/site";
 
@@ -34,7 +37,7 @@ type Doc = { _id: string; _type: string; [k: string]: unknown };
 
 let keyN = 0;
 /** Array member type names, matching the schema. */
-const MEMBER: Record<string, string> = { layout: "section", navMore: "link", links: "link", footerColumns: "column", slides: "slide", banners: "banner", highlights: "item", chapters: "chapter", promos: "promo", items: "item", steps: "item", uses: "item", specs: "spec", cities: "city", social: "socialLink" };
+const MEMBER: Record<string, string> = { layout: "section", navOrder: "section", navMore: "link", links: "link", footerColumns: "column", slides: "slide", banners: "banner", fields: "formField", highlights: "item", chapters: "chapter", promos: "promo", items: "item", steps: "item", uses: "item", specs: "spec", cities: "city", social: "socialLink" };
 /** Arrays of objects need a _key and the member _type in Sanity. */
 function withKeys<T>(v: T, field = ""): T {
   if (Array.isArray(v))
@@ -107,12 +110,11 @@ async function main() {
     phone: site.phone,
     email: site.email,
     address: site.address,
-    ...withKeys({ cities: site.cities, banners: site.banners, highlights: site.highlights }),
+    ...withKeys({ cities: site.cities, highlights: site.highlights }),
     marquee: site.marquee,
     areasTitle: site.areasTitle,
     areasText: site.areasText,
     areas: site.areas,
-    heroTheme: site.heroTheme,
     showIntro: true,
     logo: await image("brand/gadiride-logo.webp", "Gadiride"),
     shareImage: await image("brand/og.jpg", "Gadiride"),
@@ -122,7 +124,7 @@ async function main() {
     copyright: site.copyright,
   }), true);
 
-  await add("homePage", () => ({ _id: "homePage", _type: "homePage", ...withKeys(homeDefaults) }), true);
+  await add("homePage", () => ({ _id: "homePage", _type: "homePage", ...withKeys({ ...homeDefaults, searchBar: { ...homeDefaults.searchBar, ...Object.fromEntries(TAB_IDS.map((t) => [t, { ...homeDefaults.searchBar[t], form: formOverrideDefaults(t) }])) }, corporate: { ...homeDefaults.corporate, form: formOverrideDefaults("corporate") }, heroTheme: site.heroTheme, offers: { ...homeDefaults.offers, vehiclesTitle: pageDefaults.vehicles.offersTitle, banners: site.banners } }) }), true);
   for (const [key, value] of Object.entries(pageDefaults)) {
     const id = `${key}Page`;
     await add(id, () => ({ _id: id, _type: id, ...withKeys(value) }), true);
@@ -188,6 +190,24 @@ async function main() {
   }
   for (const [i, r] of CAREER_ROLES.entries()) {
     await add(`role-${i + 1}`, () => ({ _id: `role-${i + 1}`, _type: "careerRole", role: r.role, detail: r.detail, order: (i + 1) * 10 }));
+  }
+  // Sample drivers and reviews so the test site and admin have something to check. Never on
+  // production: real ones are added by the team there.
+  if (dataset !== "production") {
+    for (const [i, d] of SAMPLE_DRIVERS.entries()) {
+      const id = `driver-sample-${i + 1}`;
+      await add(id, () => ({ _id: id, _type: "driver", ...d, verified: false, available: true, order: (i + 1) * 10 }));
+    }
+    // Placeholder reviews, clearly labelled, so the Reviews section can be tested. Replace with real ones.
+    const SAMPLE_REVIEWS = [
+      { quote: "Sample review: booking was quick and the car was clean and on time.", name: "Sample customer 1", rating: 5 },
+      { quote: "Sample review: the tempo traveller fit our whole group and the driver knew the route.", name: "Sample customer 2", rating: 5 },
+      { quote: "Sample review: clear price on WhatsApp before we confirmed. Smooth pickup.", name: "Sample customer 3", rating: 4 },
+    ];
+    for (const [i, r] of SAMPLE_REVIEWS.entries()) {
+      const id = `review-sample-${i + 1}`;
+      await add(id, () => ({ _id: id, _type: "testimonial", ...r, detail: "Test site only", order: (i + 1) * 10 }));
+    }
   }
 
   if (dryRun) return console.log(`\n${docs.length} documents would be created, ${patches.length} filled in.`);

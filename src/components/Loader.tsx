@@ -7,6 +7,18 @@ const WORD = "Gadiride".split("");
 const SHADES = ["#FDB022", "#FCA61F", "#FA9A1C", "#F78C19", "#F47A16", "#F06C13", "#EC6010", "#E8540C"];
 /** Length of the CSS intro (see .ld-* in globals.css). The loader never closes before this. */
 const INTRO_MS = 1800;
+/** Longest the loader may stay up on a slow connection. */
+const MAX_WAIT_MS = 6000;
+
+/** Resolves once every image visible in the first screen has decoded (so nothing pops in after the reveal). */
+function firstScreenImagesDecoded(): Promise<void> {
+  const fold = window.innerHeight;
+  const imgs = Array.from(document.images).filter((img) => {
+    const r = img.getBoundingClientRect();
+    return r.width > 0 && r.top < fold && r.bottom > 0;
+  });
+  return Promise.all(imgs.map((img) => img.decode().catch(() => undefined))).then(() => undefined);
+}
 
 /**
  * Logo intro on every full page load or reload (not on in-app navigation).
@@ -34,16 +46,20 @@ export default function Loader({ enabled = true }: { enabled?: boolean }) {
     };
     exitRef.current = exit;
 
-    // Close when both the intro has played (timed from first paint) and the page has loaded.
-    const whenLoaded = new Promise<void>((resolve) => {
+    // Close only when the site is really ready: the intro has played, the page has loaded,
+    // the fonts are in (no text jump) and every image in the first screen is decoded.
+    const pageLoaded = new Promise<void>((resolve) => {
       if (document.readyState === "complete") resolve();
       else window.addEventListener("load", () => resolve(), { once: true });
     });
-    whenLoaded.then(() => {
-      const wait = Math.max(0, INTRO_MS + 250 - performance.now());
-      timers.push(window.setTimeout(exit, wait));
-    });
-    timers.push(window.setTimeout(exit, 4000)); // never block longer than this
+    const fontsReady = document.fonts ? document.fonts.ready.then(() => undefined, () => undefined) : Promise.resolve();
+    Promise.all([pageLoaded, fontsReady])
+      .then(firstScreenImagesDecoded)
+      .then(() => {
+        const wait = Math.max(0, INTRO_MS + 250 - performance.now());
+        timers.push(window.setTimeout(exit, wait));
+      });
+    timers.push(window.setTimeout(exit, MAX_WAIT_MS)); // a slow network never keeps people waiting longer
 
     return () => { timers.forEach(clearTimeout); html.style.overflow = ""; };
   }, [enabled]);

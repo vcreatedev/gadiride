@@ -1,3 +1,8 @@
+import type { FormFieldOverride } from "@/data/forms";
+import { SEARCH_CTA, TAB_IDS, type TabId } from "@/lib/search";
+
+/** A form as the admin left it: empty = the form as built in code. */
+const noFormChanges = () => ({ title: "", cta: "", fields: [] as FormFieldOverride[] });
 /**
  * Default copy for every editable text on the site.
  *
@@ -84,11 +89,12 @@ export const homeDefaults = {
   featured: {
     title: "Popular right now.",
     text: "A few of the vehicles customers ask for most. Every request gets a quote from our team.",
-    linkLabel: "View all vehicles",
+    /** Button under the tabs; opens the open tab's full list. */
+    linkLabel: "View all",
     /** Tab labels in "Popular right now". */
     tabs: { cars: "Cars", passenger: "Tempo & buses", logistics: "Trucks", equipment: "JCB & equipment", drivers: "Drivers" },
   },
-  offers: { title: "Offers & deals." },
+  offers: { title: "Offers & deals.", vehiclesTitle: "" },
   story: {
     title: "From hatchback to JCB.",
     cta: "Get a quote",
@@ -133,6 +139,13 @@ export const homeDefaults = {
     title: "Moving a team or a fleet?",
     text: "Staff transport, guest cars, long-term vehicles, goods and machinery. Tell us what your company needs and we will put together one plan.",
     points: ["Monthly and long-term arrangements", "Mixed vehicles across all groups", "One contact for every request"],
+    /** Set in the admin (Home → Corporate → Form); empty = the form as built in code. */
+    form: noFormChanges(),
+  },
+  /** The search bar under the hero (and on each service page). Tab name empty = the Header menu name. */
+  searchBar: {
+    badge: "Confirmed on WhatsApp",
+    ...(Object.fromEntries(TAB_IDS.map((t) => [t, { label: "", search: SEARCH_CTA[t], form: noFormChanges() }])) as Record<TabId, { label: string; search: string; form: ReturnType<typeof noFormChanges> }>),
   },
   careers: { title: "Drive with us", text: "We work with drivers, heavy vehicle drivers, equipment operators and office and operations staff.", cta: "See careers" },
   partner: {
@@ -163,6 +176,13 @@ export const pageDefaults = {
     offersTitle: "Offers for you.",
     listTitleCars: "Pick your car.",
     listTitle: "Our {group}.",
+    listTitleMixed: "Pick your ride.",
+    tripsHeading: "Today trips.",
+    tripsEmptyTitle: "No shared trip on this route yet",
+    tripsEmpty: "Message us on WhatsApp with your route and date. We will find you a seat, or a car of your own.",
+    tripsOthersTitle: "Other upcoming trips",
+    outsideTitle: "Coming to your city soon!",
+    outsideText: "Right now we pick up across Hyderabad and Secunderabad, airport included, and we are growing fast. Choose a Hyderabad pickup point, or message us on WhatsApp and we will gladly help plan your trip.",
     emptyTitle: "Nothing listed for this filter yet",
     emptyText: "Ask us on WhatsApp. We often have more than what is listed here.",
     detailQuoteTitle: "Request a quote",
@@ -195,12 +215,14 @@ export const pageDefaults = {
     note: "Current openings are shared on WhatsApp. No listings are shown here until confirmed.",
     formTitle: "Send your details",
     formText: "Your details open in WhatsApp. Send the message to apply.",
+    form: noFormChanges(),
   },
   about: {
     seo: { title: "About us", description: "Gadiride is a Hyderabad vehicle rental company: self drive cars, chauffeur cars, passenger vehicles, trucks and JCBs." },
     title: "About Gadiride.",
     intro: "A Hyderabad rental company that brings every kind of vehicle together, so you find the right one with one call or message.",
     heading: "What we do.",
+    linksTitle: "Explore our services",
     paragraphs: [
       "Gadiride rents self drive cars across Hyderabad, from fuel-saving hatchbacks to seven-seat SUVs, with doorstep delivery, airport delivery at RGIA and unlimited km plans.",
       "We also provide chauffeur-driven cars for outstation trips and weddings, tempo travellers and buses for groups, trucks for goods and backhoe loaders for construction sites.",
@@ -256,6 +278,7 @@ export const pageDefaults = {
     ],
     formTitle: "Your vehicle",
     formText: "Send the details on WhatsApp. Nothing is listed until our team has verified it.",
+    form: noFormChanges(),
   },
   notFound: {
     title: "Wrong turn.",

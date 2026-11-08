@@ -9,7 +9,7 @@ export default async function CareersPage() {
   const [p, roles] = await Promise.all([getPage("careers"), getCareerRoles()]);
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} art="truck" color="#F47A16" />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} art="truck" color="#F47A16" />
       <section className="section-y bg-white">
         <div className="container-x grid gap-12 lg:grid-cols-2">
           <div>
@@ -24,7 +24,7 @@ export default async function CareersPage() {
           <div className="rounded-card bg-surface-50 p-6 sm:p-8">
             <h2 className="font-head text-2xl font-semibold">{p.formTitle}</h2>
             <p className="mb-6 mt-2 text-sm">{p.formText}</p>
-            <RequestForm formKey="careers" compact />
+            <RequestForm formKey="careers" compact override={p.form} />
           </div>
         </div>
       </section>

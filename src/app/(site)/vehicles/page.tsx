@@ -9,7 +9,7 @@ export default async function VehiclesPage() {
   const [p, vehicles, site] = await Promise.all([getPage("vehicles"), getVehicles(), getSettings()]);
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} art="suv" color="#2E2E34" />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} art="suv" color="#2E2E34" />
       <section className="section-y bg-surface-50">
         <div className="container-x">
           <VehiclesBrowser vehicles={vehicles} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText }} />

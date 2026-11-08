@@ -6,6 +6,8 @@ import { apiVersion, dataset as activeDataset, projectId } from "./src/sanity/en
 import { schemaTypes, SINGLETONS } from "./src/sanity/schemaTypes";
 import { structure } from "./src/sanity/structure";
 import { GadirideIcon, makeNavbar, studioTheme } from "./src/sanity/theme";
+import SectionInput from "./src/sanity/SectionInput";
+import VisibilityItem from "./src/sanity/VisibilityItem";
 
 /** Types that may not be created or deleted from the Studio (fixed set). */
 const FIXED = new Set([...Object.keys(SINGLETONS), "vehicleGroup"]);
@@ -23,7 +25,14 @@ const shared: Omit<WorkspaceOptions, "name" | "title" | "basePath" | "dataset"> 
         title: "Vehicle in group",
         schemaType: "vehicle",
         parameters: [{ name: "group", type: "string" }],
-        value: (p: { group: string }) => ({ group: p.group, available: true, featured: false, order: 100, photoFit: "cover", photoBackground: "studio", photoZoom: 100 }),
+        value: (p: { group: string }) => ({ group: p.group, available: true, featured: false, order: 0, photoFit: "cover", photoBackground: "studio", photoZoom: 100 }),
+      },
+      {
+        id: "type-by-group",
+        title: "Vehicle type in group",
+        schemaType: "vehicleType",
+        parameters: [{ name: "group", type: "string" }],
+        value: (p: { group: string }) => ({ group: p.group, order: 100 }),
       },
     ],
   },
@@ -32,6 +41,10 @@ const shared: Omit<WorkspaceOptions, "name" | "title" | "basePath" | "dataset"> 
       FIXED.has(ctx.schemaType) ? prev.filter((a) => a.action && ["publish", "discardChanges", "restore"].includes(a.action)) : prev,
     newDocumentOptions: (prev) => prev.filter((i) => !FIXED.has(i.templateId)),
   },
+  // Opened from a page section in the sidebar, a document shows only that section's fields.
+  // List items (slides, cards, banners...) get an eye to show / hide them on the website.
+  // SectionInput also adds an image address box under every image field.
+  form: { components: { input: SectionInput, item: VisibilityItem } },
   plugins: [structureTool({ structure }), visionTool({ defaultApiVersion: apiVersion })],
 };
 

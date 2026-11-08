@@ -73,7 +73,7 @@ export default function Featured({ content: c, groups, drivers, driversLabel, dr
             <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {group.vehicles.map((v, i) => (
                 <li key={v.slug} className="flex h-full">
-                  <VehicleCard v={v} showPrices={showPrices} priority={group.id === groups[0].id && i < 3} />
+                  <VehicleCard v={v} showPrices={showPrices} />
                 </li>
               ))}
             </ul>
@@ -97,7 +97,7 @@ export default function Featured({ content: c, groups, drivers, driversLabel, dr
 
         <div className="mt-10 flex justify-center">
           <Link href={allHref} className="btn-primary h-12 rounded-full px-7 text-[15px]">
-            View all<ArrowRight className="h-4 w-4" />
+            {c.linkLabel || "View all"}<ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import type { SectionSlot } from "@/data/sections";
 import type { ArtId } from "@/data/vehicleArt";
 
 /**
@@ -44,6 +45,8 @@ export type SiteSettings = {
   highlights: { title: string; text: string }[];
   /** Look of every page hero: "light" (daytime, default) or "dark" (night). */
   heroTheme: "light" | "dark";
+  /** Header menu order (vehicle groups and Drivers); empty = default order. */
+  navOrder?: SectionSlot[];
   /** Header label for the Drivers link. */
   driversLabel: string;
   /** Header "More" menu (and mobile menu) links, after the vehicle groups. */
@@ -51,6 +54,8 @@ export type SiteSettings = {
   /** Footer link columns, in order. The contact column is added after them. */
   footerColumns: { title: string; links: NavLink[] }[];
   footerContactTitle: string;
+  /** Label of the contact-page link in the footer's contact column; empty hides it. */
+  footerContactLink: string;
   /** "{year}" is replaced with the current year. */
   copyright: string;
 };
@@ -134,6 +139,7 @@ export const site: SiteSettings = {
   heroTheme: "light",
   driversLabel: "Drivers",
   navMore: [
+    { label: "All vehicles", href: "/vehicles/" },
     { label: "All services", href: "/services/" },
     { label: "Corporate", href: "/corporate/" },
     { label: "Attach your vehicle", href: "/partner/" },
@@ -176,6 +182,7 @@ export const site: SiteSettings = {
     },
   ],
   footerContactTitle: "Contact",
+  footerContactLink: "Contact page",
   copyright: "© {year} Gadiride. All rights reserved.",
   highlights: [
     { title: "Zero deposit option", text: "On select cars, so more of your money stays with you." },

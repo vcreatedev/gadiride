@@ -10,7 +10,7 @@ export default async function ServicesPage() {
   const [p, services] = await Promise.all([getPage("services"), getServices()]);
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} art="bus" color="#F4F5F7" />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} art="bus" color="#F4F5F7" />
       {services.map((s, i) => {
         const dark = i % 2 === 1;
         return (

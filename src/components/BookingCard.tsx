@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCatalog, useSite } from "./SiteProvider";
+import { useCatalog, useSearchBar, useSite } from "./SiteProvider";
 import type { GroupId } from "@/data/vehicles";
 import CategoryIcon from "./CategoryIcon";
 import RequestForm from "./RequestForm";
-import { TAB_EVENT } from "@/lib/events";
+import { CLEAR_EVENT, TAB_EVENT, TRIP_EVENT, announceClear, announceSearch } from "@/lib/events";
+import { pickFormValues } from "@/lib/request";
 import { gsap } from "@/lib/motion";
 import { SEARCH_CTA, type TabId } from "@/lib/search";
 
@@ -25,7 +26,12 @@ export default function BookingCard({ onTabChange, onServiceChange, initialTab =
   const router = useRouter();
   const { groups } = useCatalog();
   const dark = useSite().heroTheme === "dark";
-  const tabs: { id: TabId; short: string }[] = [...groups.map((g) => ({ id: g.id as TabId, short: g.short })), { id: "driver", short: "Drivers" }];
+  const bar = useSearchBar();
+  // Tab names from Home → Search bar; empty ones use the Header menu name.
+  const tabs: { id: TabId; short: string }[] = [...groups.map((g) => ({ id: g.id as TabId, short: g.short })), { id: "driver" as TabId, short: "Drivers" }].map((t) => ({
+    ...t,
+    short: bar.tabs[t.id]?.label || t.short,
+  }));
   const [tab, setTab] = useState<TabId>(lockTab ?? initialTab);
   const [preset, setPreset] = useState<{ values: Record<string, string>; nonce: number } | undefined>(
     initialValues ? { values: initialValues, nonce: 1 } : undefined,
@@ -41,11 +47,40 @@ export default function BookingCard({ onTabChange, onServiceChange, initialTab =
     setPreset(values ? { values, nonce: Date.now() } : undefined);
   };
 
+  // Every tab: that service's own page (vehicles or drivers), scrolled to its list and filtered there.
   const search = (values: Record<string, string>) => {
-    const q = new URLSearchParams({ tab });
+    const q = new URLSearchParams();
     Object.entries(values).forEach(([k, v]) => v && q.set(k, v));
-    router.push(`/search/?${q.toString()}`);
+    const path = tab === "driver" ? "/drivers/" : `/vehicles/${tab}/`;
+    const url = `${path}${q.size ? `?${q.toString()}` : ""}#all`;
+    if (window.location.pathname === path) {
+      window.history.replaceState(null, "", url);
+      announceSearch(values);
+    } else router.push(url);
   };
+
+  // Cleared from the vehicle list below: empty the fields too (a new form starts from its defaults).
+  const [formRound, setFormRound] = useState(0);
+  useEffect(() => {
+    const c = (e: Event) => {
+      if ((e as CustomEvent).detail !== "list") return;
+      setPreset(undefined);
+      setFormRound((n) => n + 1);
+    };
+    window.addEventListener(CLEAR_EVENT, c);
+    // Changed from the vehicle list (passengers + / -): show the new value here.
+    const t = (e: Event) => setPreset({ values: (e as CustomEvent<Record<string, string>>).detail, nonce: Date.now() });
+    window.addEventListener(TRIP_EVENT, t);
+    return () => { window.removeEventListener(CLEAR_EVENT, c); window.removeEventListener(TRIP_EVENT, t); };
+  }, []);
+  const onVehiclePage = !!lockTab && !initialValues;
+
+  // On a vehicle page opened from a search, show what was searched.
+  useEffect(() => {
+    if (!lockTab || initialValues) return;
+    const picked = pickFormValues(lockTab, Object.fromEntries(new URLSearchParams(window.location.search)));
+    if (Object.keys(picked).length) setPreset({ values: picked, nonce: Date.now() });
+  }, [lockTab, initialValues]);
 
   useEffect(() => {
     const h = (e: Event) => {
@@ -104,14 +139,14 @@ export default function BookingCard({ onTabChange, onServiceChange, initialTab =
           </div>
           <p className={`hidden shrink-0 items-center gap-2 text-sm xl:flex ${dark ? "text-white/60" : "text-ink-500"}`}>
             <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-whatsapp opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-whatsapp" /></span>
-            Confirmed on WhatsApp
+            {bar.badge}
           </p>
         </div>
         )}
         <div id="book-panel" role={lockTab ? undefined : "tabpanel"} aria-labelledby={lockTab ? undefined : `tab-${tab}`} ref={formWrap} className="relative">
-          <RequestForm key={tab} formKey={tab} idPrefix={`hero-${tab}`} preset={preset} layout="bar" tone={dark ? "dark" : "light"} onSearch={search} ctaLabel={SEARCH_CTA[tab]}
+          <RequestForm key={`${tab}-${formRound}`} formKey={tab} idPrefix={`hero-${tab}`} preset={preset} layout="bar" tone={dark ? "dark" : "light"} onSearch={search} ctaLabel={bar.tabs[tab]?.search || SEARCH_CTA[tab]}
             // On the results page, clearing goes back to the service's normal page.
-            onClear={initialValues && Object.keys(initialValues).length ? () => router.push(tab === "driver" ? "/drivers/" : `/vehicles/${tab}/`) : undefined} />
+            onClear={initialValues && Object.keys(initialValues).length ? () => router.push(tab === "driver" ? "/drivers/" : `/vehicles/${tab}/`) : onVehiclePage ? () => announceClear("bar") : undefined} />
         </div>
       </div>
     </div>

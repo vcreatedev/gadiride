@@ -109,6 +109,9 @@ function rng(seed: number) {
 function Skyline({ p, seed, minH, maxH, color, windows = true, from = 0, to = W, gap = 4 }: { p: Palette; seed: number; minH: number; maxH: number; color: string; windows?: boolean; from?: number; to?: number; gap?: number }) {
   const r = rng(seed);
   const out: React.ReactNode[] = [];
+  // Windows are merged into one path per brightness step (a handful of elements instead of
+  // hundreds); only twinkling night windows stay separate so they can animate.
+  const lit = new Map<number, string[]>();
   let x = from - 20;
   let i = 0;
   while (x < to) {
@@ -121,14 +124,23 @@ function Skyline({ p, seed, minH, maxH, color, windows = true, from = 0, to = W,
       for (let wy = y + 12; wy < H - 14; wy += 14) {
         for (let wx = x + 7; wx < x + w - 9; wx += 11) {
           const v = r();
-          if (v > 1 - p.windowChance)
-            out.push(<rect key={`w${i}-${wx}-${wy}`} x={wx} y={wy} width={4} height={6} fill={p.glass} opacity={p.glassMin + r() * 0.45} className={p.night && v > 0.97 ? "scene-twinkle" : undefined} />);
+          if (v <= 1 - p.windowChance) continue;
+          const alpha = p.glassMin + r() * 0.45;
+          if (p.night && v > 0.97) {
+            out.push(<rect key={`w${i}-${wx}-${wy}`} x={wx} y={wy} width={4} height={6} fill={p.glass} opacity={alpha} className="scene-twinkle" />);
+            continue;
+          }
+          const step = Math.round(alpha * 10) / 10;
+          const cells = lit.get(step) ?? [];
+          cells.push(`M${wx.toFixed(1)} ${wy.toFixed(1)}h4v6h-4z`);
+          lit.set(step, cells);
         }
       }
     }
     x += w + gap;
     i++;
   }
+  lit.forEach((cells, step) => out.push(<path key={`w${step}`} d={cells.join("")} fill={p.glass} opacity={step} />));
   return <g>{out}</g>;
 }
 

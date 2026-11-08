@@ -10,7 +10,7 @@ export default async function CorporatePage() {
   const [p, home, groups] = await Promise.all([getPage("corporate"), getHome(), getGroups()]);
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} art="suv" color="#2E2E34" />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} art="suv" color="#2E2E34" />
       <section className="section-y bg-white">
         <div className="container-x">
           <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

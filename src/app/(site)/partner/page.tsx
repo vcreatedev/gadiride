@@ -9,7 +9,7 @@ export default async function PartnerPage() {
   const p = await getPage("partner");
   return (
     <>
-      <PageHero title={accent(p.title)} intro={p.intro} art="van" color="#F47A16" />
+      <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} art="van" color="#F47A16" />
       <section className="section-y bg-white">
         <div className="container-x grid gap-12 lg:grid-cols-[0.9fr_1.1fr]">
           <ol className="space-y-4">
@@ -26,7 +26,7 @@ export default async function PartnerPage() {
           <div className="rounded-card bg-white p-6 shadow-card ring-1 ring-line sm:p-8">
             <h2 className="font-head text-2xl font-semibold">{p.formTitle}</h2>
             <p className="mb-6 mt-2 text-sm text-ink-600">{p.formText}</p>
-            <RequestForm formKey="partner" compact />
+            <RequestForm formKey="partner" compact override={p.form} />
           </div>
         </div>
       </section>

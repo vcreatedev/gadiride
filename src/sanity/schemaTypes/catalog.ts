@@ -1,7 +1,9 @@
 import { defineField, defineType } from "sanity";
+import { TypePhotoInput } from "../FallbackPhotoInput";
+import { stockMedia, stockPhotoUrl } from "../stockPhoto";
 import { GROUPS } from "@/data/vehicles";
 import { ART_IDS } from "@/data/vehicleArt";
-import { img, str, strList, txt } from "./helpers";
+import { heroFitField, heroImg, heroPhoneImg, img, str, strList, txt } from "./helpers";
 import { FORM_KEYS } from "@/data/services";
 
 const groupList = { list: GROUPS.map((g) => ({ title: g.name, value: g.id })) };
@@ -16,8 +18,12 @@ export const vehicleGroup = defineType({
     str("name", "Name", { required: true }),
     str("short", "Short name (menus and tabs)", { required: true }),
     txt("blurb", "Description", { rows: 2 }),
-    img("image", "Photo for menus and cards (optional)"),
-    img("heroImage", "Hero background photo (optional)", { description: "Wide photo behind the page title. Leave empty to show the illustrated scene." }),
+    // Not shown anywhere on the website; hidden (any photo already uploaded is kept).
+    { ...img("image", "Photo for menus and cards (optional)"), hidden: true },
+    heroImg("heroImage", "Hero background photo (optional)", { description: "Wide photo behind the page title. Remove it to go back to the standard illustrated scene." }),
+    heroFitField("heroFit"),
+    str("listTitle", "Heading", { description: "Above the vehicles on this page." }),
+    heroPhoneImg("heroImageMobile"),
   ],
   preview: { select: { title: "name", subtitle: "blurb", media: "image" } },
 });
@@ -37,7 +43,7 @@ export const vehicleType = defineType({
       validation: (r) => r.required(),
     }),
     defineField({ name: "group", title: "Group", type: "string", options: { ...groupList, layout: "radio" }, validation: (r) => r.required() }),
-    img("image", "Photo", { description: "Side or 3/4 view on a plain light background. Used in 'Pick a style', 'Meet the fleet' and as the default for vehicles of this type." }),
+    { ...img("image", "Photo", { description: "Side or 3/4 view on a plain light background. Used in 'Pick a style', 'Meet the fleet' and as the default for vehicles of this type. Best size: 1600 × 1000 px (16:10)." }), components: { input: TypePhotoInput } },
     defineField({
       name: "art",
       title: "Drawing style for animations",
@@ -50,8 +56,8 @@ export const vehicleType = defineType({
   ],
   orderings: [{ title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] }],
   preview: {
-    select: { title: "name", group: "group", media: "image" },
-    prepare: ({ title, group, media }) => ({ title, subtitle: GROUPS.find((g) => g.id === group)?.name, media }),
+    select: { title: "name", group: "group", key: "key.current", media: "image" },
+    prepare: ({ title, group, key, media }) => ({ title, subtitle: GROUPS.find((g) => g.id === group)?.name, media: media ?? stockMedia(stockPhotoUrl(key, group)) }),
   },
 });
 
@@ -74,7 +80,7 @@ export const service = defineType({
       initialValue: "cars",
       validation: (r) => r.required(),
     }),
-    img("image", "Photo"),
+    img("image", "Photo", { description: "Best size: 1600 × 1000 px (16:10). Keep the subject in the middle: Home crops it a little squarer." }),
     defineField({ name: "toConfirm", title: 'Show "details confirmed on WhatsApp" note', type: "boolean", initialValue: false }),
     defineField({ name: "order", title: "Sort order", type: "number", initialValue: 100 }),
   ],
@@ -87,18 +93,18 @@ export const driver = defineType({
   title: "Driver",
   type: "document",
   fields: [
-    str("name", "Name", { required: true }),
-    img("photo", "Photo"),
-    str("city", "City / area", { description: "Drivers in the customer's pickup city are shown first." }),
-    defineField({ name: "experience", title: "Experience (years)", type: "number", validation: (r) => r.min(0).max(60) }),
-    str("licence", "Licence", { description: "e.g. LMV, LMV + Transport, HMV" }),
-    str("duty", "Duty type", { description: "e.g. Local & outstation, City & airport, Monthly / corporate" }),
+    { ...str("name", "Name", { required: true }), placeholder: "e.g. Ramesh Kumar" },
+    img("photo", "Photo", { description: "Face photo. Best size: 600 × 600 px (square)." }),
+    { ...str("city", "City / area", { description: "Drivers in the customer's pickup city are shown first." }), placeholder: "e.g. Kukatpally, Hyderabad" },
+    defineField({ name: "experience", title: "Experience (years)", type: "number", placeholder: "e.g. 8", validation: (r) => r.min(0).max(60) }),
+    { ...str("licence", "Licence"), placeholder: "e.g. LMV + Transport" },
+    { ...str("duty", "Duty type"), placeholder: "e.g. Local & outstation" },
     defineField({ name: "drives", title: "Drives", type: "array", of: [{ type: "string" }], options: { layout: "tags" }, description: "e.g. Car, SUV, Tempo traveller, Bus, Truck" }),
     defineField({ name: "languages", title: "Languages", type: "array", of: [{ type: "string" }], options: { layout: "tags" } }),
-    txt("about", "About", { rows: 2 }),
+    { ...txt("about", "About", { rows: 2 }), placeholder: "e.g. Calm, punctual driver who knows Hyderabad and the routes to Srisailam and Tirupati." },
     defineField({ name: "verified", title: "Documents verified", type: "boolean", initialValue: false }),
     defineField({ name: "available", title: "Show on website", type: "boolean", initialValue: true }),
-    defineField({ name: "order", title: "Sort order", type: "number", initialValue: 100 }),
+    defineField({ name: "order", title: "Sort order", type: "number", description: "New ones start at 0, so they show first. Lower numbers show first.", initialValue: 0 }),
   ],
   orderings: [{ title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] }],
   preview: {
@@ -116,7 +122,7 @@ export const testimonial = defineType({
     str("name", "Customer name", { required: true }),
     str("detail", "Detail", { description: "e.g. Wedding trip, Hyderabad" }),
     defineField({ name: "rating", title: "Stars", type: "number", options: { list: [5, 4, 3] }, initialValue: 5 }),
-    img("photo", "Photo (optional)"),
+    img("photo", "Photo (optional)", { description: "Shown as a small round picture. Best size: 400 × 400 px (square)." }),
     defineField({ name: "order", title: "Sort order", type: "number", initialValue: 100 }),
   ],
   preview: { select: { title: "name", subtitle: "quote", media: "photo" } },

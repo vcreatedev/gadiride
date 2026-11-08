@@ -69,7 +69,8 @@ export default function OfferBanners({ banners, title }: { banners: Banner[]; ti
     >
       <div className="mb-6 flex items-end justify-between gap-4">
         {title && <h2 className="h2">{title}</h2>}
-        <div className="ml-auto hidden gap-2 sm:flex">
+        {/* Arrows only when there is more than one offer to move between. */}
+        <div className={`ml-auto hidden gap-2 ${banners.length > 1 ? "sm:flex" : ""}`}>
           <button type="button" onClick={() => step(-1)} disabled={atStart} aria-label="Previous offer" className="grid h-11 w-11 place-items-center rounded-full bg-white text-ink-900 ring-1 ring-line transition-colors hover:bg-ink-900 hover:text-white disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-ink-900">
             <ChevronLeft className="h-5 w-5" />
           </button>

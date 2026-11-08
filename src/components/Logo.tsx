@@ -6,9 +6,10 @@
  */
 export default function Logo({ className = "", tone = "dark" }: { className?: string; tone?: "dark" | "light" }) {
   const swooshTail = tone === "light" ? "#BABAC2" : "#4D4D55";
+  // pt = the swoosh's height, so the whole mark (swoosh + lettering) is what gets centred.
   return (
-    <span className={`relative inline-flex items-end font-brand text-[1.75rem] font-semibold leading-none tracking-[-0.01em] ${className}`}>
-      <svg viewBox="0 0 120 14" className="pointer-events-none absolute -top-[0.42em] left-[0.4em] h-[0.42em] w-[3.6em]" aria-hidden="true">
+    <span className={`relative inline-flex items-end pt-[0.42em] font-brand text-[1.75rem] font-semibold leading-none tracking-[-0.01em] ${className}`}>
+      <svg viewBox="0 0 120 14" className="pointer-events-none absolute left-[0.4em] top-0 h-[0.42em] w-[3.6em]" aria-hidden="true">
         <defs>
           <linearGradient id="logo-swoosh" x1="0" x2="1">
             <stop offset="0" stopColor="#FDB022" />

@@ -15,7 +15,7 @@ import AreasServed from "@/components/AreasServed";
 import FaqList from "@/components/FaqList";
 import SectionTitle from "@/components/SectionTitle";
 import { accent } from "@/components/Accent";
-import { getDrivers, getFaq, getHome, getPage, getSettings, getTestimonials, getVehicles, pageMetadata } from "@/lib/content";
+import { getBanners, getDrivers, getFaq, getHome, getPage, getSettings, getTestimonials, getVehicles, pageMetadata } from "@/lib/content";
 import { GROUPS, type Vehicle } from "@/data/vehicles";
 
 const POPULAR_MAX = 15;
@@ -36,7 +36,7 @@ export const generateMetadata = () => pageMetadata("home");
  * service at a glance, popular cars, areas we cover, how booking works and FAQs.
  */
 export default async function Home() {
-  const [home, settings, vehicles, reviews, { items: faq, sample }, drivers, search] = await Promise.all([
+  const [home, settings, vehicles, reviews, { items: faq, sample }, drivers, search, banners] = await Promise.all([
     getHome(),
     getSettings(),
     getVehicles(),
@@ -44,6 +44,7 @@ export default async function Home() {
     getFaq(),
     getDrivers(),
     getPage("search"),
+    getBanners(),
   ]);
   // Sample FAQs are tagged by service; on the home page show a mix led by car rental.
   const homeFaq = sample ? [...faq.filter((f) => f.group === "cars").slice(0, 5), ...faq.filter((f) => f.group !== "cars")].slice(0, 9) : faq.slice(0, 8);
@@ -51,9 +52,9 @@ export default async function Home() {
   const sections: Record<string, React.ReactNode> = {
     marquee: <Marquee items={settings.marquee} phone={settings.phone} />,
     services: <ServicesHub content={home.hub} />,
-    offers: settings.banners.length > 0 && (
+    offers: banners.length > 0 && (
       <section className="bg-surface-50 pt-16 md:pt-24" aria-label="Offers">
-        <div className="container-x"><OfferBanners banners={settings.banners} title={home.offers.title} /></div>
+        <div className="container-x"><OfferBanners banners={banners} title={home.offers.title} /></div>
       </section>
     ),
     popular: <Featured content={home.featured} groups={popularByGroup(vehicles, home.featured.tabs)} drivers={drivers} driversLabel={home.featured.tabs.drivers} driversEmpty={search.driversEmpty} showPrices={settings.showPrices} />,
