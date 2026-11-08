@@ -1,5 +1,10 @@
 import type { GroupId } from "@/data/vehicles";
 export const TAB_EVENT = "ga:tab";
+/** The Home hero is showing a banner (true) or not (false): the header stays solid over banners. */
+export const HERO_BANNER_EVENT = "ga:hero-banner";
+export function announceHeroBanner(on: boolean) {
+  window.dispatchEvent(new CustomEvent(HERO_BANNER_EVENT, { detail: on }));
+}
 /** A search run on the vehicle page it lists (the page filters its own list, no reload). */
 export const SEARCH_EVENT = "ga:search";
 /** A search cleared, from the list or from the search bar; the other one resets too. */

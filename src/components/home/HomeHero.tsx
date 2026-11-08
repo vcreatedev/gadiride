@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, PhoneCall } from "lucide-react";
 import HeroScene, { type SceneId } from "../HeroScene";
+import HeroPhotos from "../HeroPhotos";
+import type { HeroFit, Photo as PhotoData } from "@/lib/images";
 import Road from "../HeroRoad";
 import HeroVehicle from "../HeroVehicle";
 import BookingCard from "../BookingCard";
@@ -11,7 +13,7 @@ import WhatsAppIcon from "../WhatsAppIcon";
 import { useSite } from "../SiteProvider";
 import { telHref } from "@/config/site";
 import { whatsappChatHref } from "@/lib/whatsapp";
-import { selectTab } from "@/lib/events";
+import { announceHeroBanner, selectTab } from "@/lib/events";
 import type { ArtId } from "@/data/vehicleArt";
 import type { GroupId } from "@/data/vehicles";
 
@@ -27,6 +29,10 @@ export type Slide = {
   scene: string;
   art: string;
   color: string;
+  /** Background photo (wide), its phone version and how it fits; without one, the drawing shows. */
+  photo?: PhotoData;
+  photoMobile?: PhotoData;
+  photoFit?: HeroFit;
 };
 
 const EVERY_MS = 7000;
@@ -52,6 +58,11 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
   const shown = useRef(0);
   const root = useRef<HTMLElement>(null);
   const s = slides[i];
+  /** This slide is a banner: only the banner shows (no drawing, road, car or headline). */
+  const banner = !!s.photo;
+  // Tell the header (it turns solid over banners); back to normal when leaving the page.
+  useEffect(() => { announceHeroBanner(banner); }, [banner]);
+  useEffect(() => () => announceHeroBanner(false), []);
 
   useEffect(() => {
     if (shown.current === i) return;
@@ -74,6 +85,59 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
     if (TABS.includes(g)) selectTab(g as GroupId | "driver");
   };
 
+  const dots = (onBanner: boolean) => (
+    <div role="tablist" aria-label="Choose a service" className={`flex items-center gap-2 ${onBanner ? "w-fit rounded-full bg-black/40 px-3 py-2 backdrop-blur" : "mt-6"}`}>
+      {slides.map((sl, n) => (
+        <button
+          key={n}
+          type="button"
+          role="tab"
+          aria-selected={n === i}
+          aria-label={LABEL[sl.group] ?? sl.group}
+          title={LABEL[sl.group] ?? sl.group}
+          onClick={() => handleSelect(n)}
+          className={`relative h-2.5 overflow-hidden rounded-full transition-all duration-300 ${n === i ? "w-10" : `w-2.5 ${dark || onBanner ? "bg-white/40 hover:bg-white/70" : "bg-ink-900/15 hover:bg-ink-900/35"}`}`}
+        >
+          {n === i && (
+            <>
+              <span aria-hidden className={`absolute inset-0 ${dark || onBanner ? "bg-white/30" : "bg-ink-900/15"}`} />
+              <span key={`p${i}${paused}`} aria-hidden className={`absolute inset-0 origin-left bg-brand-gradient ${paused ? "" : "animate-[slide-progress_7s_linear_forwards]"}`} />
+            </>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+  const carousel = {
+    ref: root,
+    "aria-roledescription": "carousel",
+    "aria-label": "Gadiride services",
+    onMouseEnter: () => setPaused(true),
+    onMouseLeave: () => setPaused(false),
+    onFocusCapture: () => setPaused(true),
+    onBlurCapture: (e: React.FocusEvent) => { if (!root.current?.contains(e.relatedTarget as Node)) setPaused(false); },
+  };
+
+  // Banner slide: just the banner, edge to edge right under the header, in its own shape (no drawing,
+  // road, car or headline), never taller than the screen below the header (a tall banner is trimmed
+  // slightly around its hotspot instead), with the slide dots on it and the search bar below.
+  if (banner && s.photo) {
+    const ratio = (p?: { width?: number; height?: number }) => (p?.width && p?.height ? p.width / p.height : 12 / 5);
+    const shape = { "--ar": ratio(s.photo), "--ar-up": ratio(s.photoMobile ?? s.photo) } as React.CSSProperties;
+    return (
+      <section {...carousel} className={`relative pt-[60px] md:pt-[72px] ${dark ? "bg-ink-900" : "bg-surface-50"}`}>
+        <div key={`b${i}`} style={shape} className="relative w-full animate-[scene-in_.7s_ease-out_both] overflow-hidden h-[min(calc(var(--frame)/var(--ar)),calc(100svh-60px))] portrait:h-[min(calc(var(--frame)/var(--ar-up)),calc(100svh-60px))] md:h-[min(calc(var(--frame)/var(--ar)),calc(100svh-72px))] md:portrait:h-[min(calc(var(--frame)/var(--ar-up)),calc(100svh-72px))]">
+          <HeroPhotos wide={s.photo} upright={s.photoMobile} dark={dark} fit="cover" fade={false} clearLeft={false} />
+          {s.href && <Link href={s.href} className="absolute inset-0" aria-label={[s.title, s.highlight].filter(Boolean).join(" ") || "Open offer"} />}
+          {slides.length > 1 && <div className="absolute bottom-3 left-4 md:bottom-5 md:left-8">{dots(true)}</div>}
+        </div>
+        <div className="container-x relative py-5 md:py-6">
+          <BookingCard onServiceChange={(t) => { const n = slides.findIndex((sl) => sl.group === t); if (n >= 0) setI(n); }} />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
       ref={root}
@@ -87,12 +151,12 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
     >
       <div aria-hidden className={`pointer-events-none absolute inset-0 ${dark ? "bg-[radial-gradient(60%_60%_at_85%_40%,rgba(244,122,22,0.16),transparent_70%)]" : "bg-[radial-gradient(55%_55%_at_80%_45%,rgba(253,176,34,0.18),transparent_70%)]"}`} />
 
-      <div className="container-x relative grid min-h-0 flex-1 items-center gap-6 py-4 [--h:min(24svh,200px)] [--horizon:calc(var(--h)*0.45+1rem)] lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:[--h:min(30svh,280px)]">
+      <div className={`container-x relative grid min-h-0 flex-1 items-center gap-6 py-4 [--h:min(24svh,200px)] [--horizon:calc(var(--h)*0.45+1rem)] lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:[--h:min(30svh,280px)]`}>
         {/* scenes cross-fade; each sits on the horizon behind the vehicle */}
         {/* Only the current scene (and the one fading out) is in the page: each scene is hundreds of shapes. */}
         <div aria-hidden className="pointer-events-none absolute bottom-[var(--horizon)] left-1/2 h-[min(56svh,520px)] w-[var(--frame)] -translate-x-1/2">
           {slides.map((sl, n) =>
-            n === i || n === prev ? (
+            (n === i || n === prev) && !sl.photo ? (
               <div key={n} className={`absolute inset-0 transition-opacity duration-700 ${n === i ? "animate-[scene-in_.7s_ease-out_both]" : "opacity-0"}`}>
                 <HeroScene id={sceneOf(sl.scene)} theme={site.heroTheme} />
               </div>
@@ -135,27 +199,7 @@ export default function HomeHero({ slides }: { slides: Slide[] }) {
             )}
           </div>
           {/* slide dots: the active one fills up until the next slide */}
-          <div role="tablist" aria-label="Choose a service" className="mt-6 flex items-center gap-2">
-            {slides.map((sl, n) => (
-              <button
-                key={n}
-                type="button"
-                role="tab"
-                aria-selected={n === i}
-                aria-label={LABEL[sl.group] ?? sl.group}
-                title={LABEL[sl.group] ?? sl.group}
-                onClick={() => handleSelect(n)}
-                className={`relative h-2.5 overflow-hidden rounded-full transition-all duration-300 ${n === i ? "w-10" : `w-2.5 ${dark ? "bg-white/25 hover:bg-white/50" : "bg-ink-900/15 hover:bg-ink-900/35"}`}`}
-              >
-                {n === i && (
-                  <>
-                    <span aria-hidden className={`absolute inset-0 ${dark ? "bg-white/25" : "bg-ink-900/15"}`} />
-                    <span key={`p${i}${paused}`} aria-hidden className={`absolute inset-0 origin-left bg-brand-gradient ${paused ? "" : "animate-[slide-progress_7s_linear_forwards]"}`} />
-                  </>
-                )}
-              </button>
-            ))}
-          </div>
+          {dots(false)}
         </div>
 
         {/* the vehicle drives in on every slide */}

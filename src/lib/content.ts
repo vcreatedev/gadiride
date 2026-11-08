@@ -41,7 +41,7 @@ const PAGE_TYPES = ["vehiclesPage", "servicesPage", "corporatePage", "careersPag
 
 const QUERY = `{
   "settings": *[_id == "siteSettings"][0]{..., logo${IMG}, headerLogo${IMG}, shareImage${IMG}},
-  "home": *[_id == "homePage"][0]{..., seo{..., image${IMG}}},
+  "home": *[_id == "homePage"][0]{..., slides[]{..., image${IMG}, imageMobile${IMG}}, seo{..., image${IMG}}},
   "pages": *[_id in $pageIds]{..., image${IMG}, imageMobile${IMG}, heroImage${IMG}, heroImageMobile${IMG}, seo{..., image${IMG}}},
   "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}, heroImageMobile${IMG}, heroFit, listTitle},
   "types": *[_type == "vehicleType" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
@@ -167,7 +167,18 @@ type WithSeoImage = { seoImage?: Photo };
 
 export const getHome = cache(async (): Promise<HomeContent & WithSeoImage> => {
   const h = (await fetchRaw()).home ?? {};
-  return { ...merge(homeDefaults, h), seoImage: toPhoto((h.seo as { image?: SanityImageDoc } | undefined)?.image) };
+  const merged = merge(homeDefaults, h);
+  // Each slide's own background photo (same order as the visible slides).
+  type RawSlide = { image?: SanityImageDoc; imageMobile?: SanityImageDoc; imageFit?: HeroFit; imageUntil?: string };
+  const rawSlides = (Array.isArray(h.slides) ? (h.slides as RawSlide[]) : []).filter((s) => !isHidden(s));
+  // A photo past its "Show the photo until" time is dropped, so the slide shows its drawing again.
+  const now = Date.now();
+  const slides = merged.slides.map((s, i) => {
+    const r = rawSlides[i];
+    const live = !r?.imageUntil || Date.parse(r.imageUntil) > now;
+    return { ...s, photo: live ? toPhoto(r?.image) : undefined, photoMobile: live ? toPhoto(r?.imageMobile) : undefined, photoFit: r?.imageFit };
+  });
+  return { ...merged, slides, seoImage: toPhoto((h.seo as { image?: SanityImageDoc } | undefined)?.image) };
 });
 
 /** The search bar's texts and each service's form as edited in Home → Search bar. */

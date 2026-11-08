@@ -3,6 +3,7 @@ import { useCatalog } from "./SiteProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { HERO_BANNER_EVENT } from "@/lib/events";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
@@ -20,7 +21,10 @@ type NavItem = { id: GroupId | "driver"; href: string; short: string; name: stri
 export default function Header() {
   const { groups } = useCatalog();
   const path = usePathname();
-  const [solid, setSolid] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  // Over a banner slide the header is solid from the start, so the banner always begins under it.
+  const [overBanner, setOverBanner] = useState(false);
+  const solid = scrolled || overBanner;
   const [more, setMore] = useState(false);
   const [menu, setMenu] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -38,12 +42,19 @@ export default function Header() {
 
   useEffect(() => {
     const onScroll = () => {
-      setSolid(window.scrollY > 24);
+      setScrolled(window.scrollY > 24);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [home]);
+
+  useEffect(() => {
+    const h = (e: Event) => setOverBanner(!!(e as CustomEvent<boolean>).detail);
+    window.addEventListener(HERO_BANNER_EVENT, h);
+    return () => window.removeEventListener(HERO_BANNER_EVENT, h);
+  }, []);
+  useEffect(() => { if (!home) setOverBanner(false); }, [home]);
 
 
   useEffect(() => {
