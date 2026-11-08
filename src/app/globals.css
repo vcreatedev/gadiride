@@ -10,7 +10,10 @@
 }
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; scroll-behavior: auto; }
+  /* scrollbar-gutter: the scrollbar's space is always kept, so nothing shifts when the loader lets the page scroll. */
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: auto; scrollbar-gutter: stable; }
+  /* While the loader shows, the scrollbar's space is painted the loader's colour, so it is covered too. */
+  html:has(#ga-loader) { background-color: #16161A; }
   /*
     Boxed site: everything sits in one centred frame as wide as the content (1280px).
     --frame is that width on the current screen, --frame-gap the empty space on each side.
@@ -40,7 +43,8 @@
 @layer components {
   .site-frame { @apply relative mx-auto w-full max-w-container overflow-x-clip bg-surface-0; box-shadow: 0 0 0 1px rgba(16,17,20,0.04), 0 30px 80px -40px rgba(16,17,20,0.25); }
   .container-x { @apply mx-auto w-full max-w-container px-4 sm:px-6 lg:px-8; }
-  .section-y { @apply py-16 md:py-24 lg:py-28; }
+  /* Space above and below each section (tightened: was 64 / 96 / 112px). */
+  .section-y { @apply py-10 md:py-12 lg:py-14; }
   .display { @apply font-display font-extrabold uppercase leading-[0.95] tracking-[-0.005em]; }
   .h2 { @apply display text-[2.25rem] sm:text-5xl lg:text-[4rem]; }
   .lead { @apply max-w-[60ch] text-base leading-relaxed md:text-lg; }

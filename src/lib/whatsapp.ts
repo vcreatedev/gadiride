@@ -23,6 +23,17 @@ export function buildDirectMessage(title: string, entries: Entry[]) {
 }
 
 /** `number` comes from site settings (useSite() on the client, getSettings() on the server). */
+/** A vehicle's key facts for a WhatsApp message: type, specs, price and a link to its page. */
+export function vehicleEntries(v: { typeName?: string; specs: { label: string; value: string }[]; pricePerDay?: number; slug: string }, showPrice = false): Entry[] {
+  const link = typeof window !== "undefined" ? `${window.location.origin}/vehicle/${v.slug}/` : `/vehicle/${v.slug}/`;
+  return [
+    ...(v.typeName ? [{ label: "Type", value: v.typeName }] : []),
+    ...v.specs.slice(0, 4).map((s) => ({ label: s.label, value: s.value })),
+    ...(showPrice && v.pricePerDay ? [{ label: "Price", value: `₹${v.pricePerDay.toLocaleString("en-IN")} / day` }] : []),
+    { label: "Link", value: link },
+  ];
+}
+
 export function whatsappHref(message: string, number = "") {
   const text = encodeURIComponent(message);
   return number ? `https://wa.me/${number}?text=${text}` : `https://wa.me/?text=${text}`;

@@ -94,6 +94,7 @@ export const homeDefaults = {
     /** Tab labels in "Popular right now". */
     tabs: { cars: "Cars", passenger: "Tempo & buses", logistics: "Trucks", equipment: "JCB & equipment", drivers: "Drivers" },
   },
+  trips: { title: "Today trips.", text: "Shared seats on cars leaving Hyderabad soon. Pick a trip and book your seat on WhatsApp.", linkLabel: "See all trips" },
   offers: { title: "Offers & deals.", vehiclesTitle: "" },
   story: {
     title: "From hatchback to JCB.",

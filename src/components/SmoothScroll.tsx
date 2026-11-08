@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
 import { getLenis, setLenis } from "@/lib/lenis";
-import { isReady, onReady } from "@/lib/ready";
+import { isReady, onReady, whenIdle } from "@/lib/ready";
 
 /** Header height, so anchor jumps (e.g. #all) land below the fixed header. */
 const HEADER_OFFSET = -80;
@@ -24,17 +24,22 @@ export default function SmoothScroll() {
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (t: number) => lenis.raf(t * 1000);
     gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
+    // If the page stalls for a moment (images decoding, scripts), animations continue smoothly
+    // instead of jumping ahead to catch up.
+    gsap.ticker.lagSmoothing(500, 33);
 
     // No scrolling under the loader; release it once the site is ready.
     if (!isReady()) lenis.stop();
+    let cancelIdle = () => {};
     const off = onReady(() => {
       lenis.start();
-      ScrollTrigger.refresh();
+      // Measuring every scroll trigger is heavy: do it when idle, not during the car's drive-in.
+      cancelIdle = whenIdle(() => ScrollTrigger.refresh());
     });
 
     return () => {
       off();
+      cancelIdle();
       gsap.ticker.remove(tick);
       lenis.destroy();
       setLenis(null);

@@ -34,7 +34,7 @@ export default function StyleRail({ title }: { title: string }) {
           </div>
         </div>
       </div>
-      <ul ref={rail} data-lenis-prevent className="no-scrollbar container-x mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
+      <ul ref={rail} className="no-scrollbar container-x mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4">
         {types.map((t) => (
           <li key={t.id} className="snap-start">
             <Link

@@ -71,7 +71,7 @@ export function TripCard({ t, seats = 1 }: { t: Trip; seats?: number }) {
     <article className={`relative flex w-full flex-col overflow-hidden rounded-card bg-white shadow-card ring-1 ring-black/5 transition-all duration-300 ${full ? "opacity-80" : "hover:-translate-y-1 hover:shadow-lift hover:ring-brand-200"}`}>
       {/* The whole card opens the trip's details; the Book button sits above this link. */}
       <Link href={`/trip/${t.id}/${want > 1 ? `?seats=${want}` : ""}`} className="absolute inset-0 z-0" aria-label={`Trip details: ${t.from} to ${t.to}, ${tripDay(t.date)} ${tripTime(t.time)}`} />
-      <div className="relative aspect-[16/9] bg-surface-50">
+      <div className="pointer-events-none relative aspect-[16/9] bg-surface-50">
         {t.car.photo && <Photo photo={t.car.photo} fill sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 92vw" className={`object-cover ${full ? "grayscale" : ""}`} />}
         <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${full ? "bg-ink-900 text-white" : "bg-white text-ink-900 shadow-card"}`}>
           {full ? "Fully booked" : `${t.seats} ${t.seats === 1 ? "seat" : "seats"} left`}
@@ -100,7 +100,7 @@ export function TripCard({ t, seats = 1 }: { t: Trip; seats?: number }) {
           {full ? (
             <span className="inline-flex h-11 items-center rounded-xl bg-surface-100 px-4 text-sm font-semibold text-ink-400" aria-disabled="true">No seats left</span>
           ) : (
-            <RequestButton title="Today trip seat request" entries={entries} label={want > 1 ? `Book ${want} seats` : "Book a seat"} />
+            <RequestButton title="Today trip seat request" entries={entries} href={`/trip/${t.id}/`} label={want > 1 ? `Book ${want} seats` : "Book a seat"} />
           )}
         </div>
       </div>

@@ -13,7 +13,7 @@ export default async function DriversPage() {
     <>
       <PageHero full driver scene="street" bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} variants={HERO_VARIANTS.driver} title={accent(p.title)} intro={p.intro} art="sedan" color="#FFC20E" bottom={<BookingCard lockTab="driver" />} />
       {/* A search in the bar above filters this list in place (same as the vehicle pages). */}
-      <section id="all" className="scroll-mt-20 bg-surface-50 py-14 md:py-20">
+      <section id="all" className="scroll-mt-20 bg-surface-50 py-10 md:py-14">
         <div className="container-x">
           <DriversBrowser
             drivers={drivers}

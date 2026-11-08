@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { markReady } from "@/lib/ready";
+import { markReady, whenIdle } from "@/lib/ready";
 
 const WORD = "Gadiride".split("");
 /** Letter colours sampled along the logo gradient (#FDB022 → #F47A16 → #E8540C). */
@@ -8,7 +8,7 @@ const SHADES = ["#FDB022", "#FCA61F", "#FA9A1C", "#F78C19", "#F47A16", "#F06C13"
 /** Length of the CSS intro (see .ld-* in globals.css). The loader never closes before this. */
 const INTRO_MS = 1800;
 /** Longest the loader may stay up on a slow connection. */
-const MAX_WAIT_MS = 6000;
+const MAX_WAIT_MS = 8000;
 
 /** Resolves once every image visible in the first screen has decoded (so nothing pops in after the reveal). */
 function firstScreenImagesDecoded(): Promise<void> {
@@ -53,8 +53,10 @@ export default function Loader({ enabled = true }: { enabled?: boolean }) {
       else window.addEventListener("load", () => resolve(), { once: true });
     });
     const fontsReady = document.fonts ? document.fonts.ready.then(() => undefined, () => undefined) : Promise.resolve();
+    // ...and the browser has finished its start-up work (so the reveal and the car's drive-in are smooth).
     Promise.all([pageLoaded, fontsReady])
       .then(firstScreenImagesDecoded)
+      .then(() => new Promise<void>((resolve) => { whenIdle(resolve, 1500); }))
       .then(() => {
         const wait = Math.max(0, INTRO_MS + 250 - performance.now());
         timers.push(window.setTimeout(exit, wait));

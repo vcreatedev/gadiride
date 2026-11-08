@@ -29,7 +29,7 @@ const G = [
 /** Older fields the current home page no longer shows: kept (data is safe) but hidden. */
 const RETIRED = new Set(["hero", "styles", "story", "fleet", "services", "promos", "careers", "cities"]);
 /** Field order = the order sections appear on the page. */
-const ORDER = ["layout", "slides", "heroTheme", "searchBar", "hub", "offers", "featured", "why", "how", "testimonials", "partner", "corporate", "faq", "final", "seo"];
+const ORDER = ["layout", "slides", "heroTheme", "searchBar", "hub", "offers", "featured", "trips", "why", "how", "testimonials", "partner", "corporate", "faq", "final", "seo"];
 
 export const homePage = defineType({
   name: "homePage",
@@ -128,6 +128,11 @@ export const homePage = defineType({
         ],
       }),
     ], "services"),
+    section("trips", "Today trips", [
+      str("title", "Heading", { description: HEADING_HINT }),
+      txt("text", "Text", { rows: 2 }),
+      str("linkLabel", "Button under the trips", { description: "Opens all trips on the Cars page." }),
+    ], "featured"),
     section("styles", "Pick a style", [str("title", "Heading", { description: HEADING_HINT })]),
     section("featured", "Popular right now", [
       str("title", "Heading", { description: HEADING_HINT }),

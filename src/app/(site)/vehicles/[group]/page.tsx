@@ -45,12 +45,12 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
   const sections: Record<string, React.ReactNode> = {
     marquee: <Marquee items={site.marquee} phone={site.phone} />,
     offers: banners.length > 0 && (
-      <section className="bg-surface-50 pt-14 md:pt-20" aria-label="Offers">
+      <section className="bg-surface-50 pt-10 md:pt-14" aria-label="Offers">
         <div className="container-x"><OfferBanners banners={banners} title={home.offers.vehiclesTitle || p.offersTitle} /></div>
       </section>
     ),
     vehicles: (
-      <section id="all" className="scroll-mt-20 bg-surface-50 py-14 md:py-20">
+      <section id="all" className="scroll-mt-20 bg-surface-50 py-10 md:py-14">
         <div className="container-x">
           <VehiclesBrowser title={listTitle} mixedTitle={p.listTitleMixed} trips={isCars ? trips : undefined} tripTexts={{ heading: p.tripsHeading, title: p.tripsEmptyTitle, empty: p.tripsEmpty, othersTitle: p.tripsOthersTitle }} vehicles={vehicles} lockGroup={g.id as GroupId} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText, outsideTitle: p.outsideTitle, outsideText: p.outsideText }} />
         </div>
