@@ -10,8 +10,10 @@ export default function VehicleCard({ v, showPrices = false, priority = false }:
   const price = showPrices && v.pricePerDay;
   const href = `/vehicle/${v.slug}/`;
   return (
-    <article className="group relative flex h-full w-full flex-col rounded-card bg-white p-3 shadow-card ring-1 ring-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-lift hover:ring-brand-200">
-      <Link href={href} tabIndex={-1} aria-hidden className="block">
+    <article className="group relative flex h-full w-full cursor-pointer flex-col rounded-card bg-white p-3 shadow-card ring-1 ring-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-lift hover:ring-brand-200">
+      {/* The whole card opens the vehicle page; WhatsApp and Call sit above this link. */}
+      <Link href={href} className="absolute inset-0 z-0 rounded-card" aria-label={`${v.name} details`} />
+      <div className="pointer-events-none block">
         <VehiclePhoto
           photo={v.photo}
           fit={v.fit}
@@ -21,19 +23,19 @@ export default function VehicleCard({ v, showPrices = false, priority = false }:
           sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 92vw"
           className="aspect-[16/10] w-full shrink-0 rounded-[18px]"
         />
-      </Link>
+      </div>
 
       <div className="flex flex-1 flex-col px-2 pb-1 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">{v.typeName}</p>
             <h3 className="mt-1 line-clamp-1 font-head text-xl font-semibold text-ink-900" title={v.name}>
-              <Link href={href} className="hover:text-brand-600">{v.name}</Link>
+              <span className="group-hover:text-brand-600">{v.name}</span>
             </h3>
           </div>
-          <Link href={href} aria-label={`${v.name} details`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-50 text-ink-900 ring-1 ring-line transition-colors hover:bg-brand-gradient hover:text-white hover:ring-transparent">
+          <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-50 text-ink-900 ring-1 ring-line transition-colors group-hover:bg-brand-gradient group-hover:text-white group-hover:ring-transparent">
             <ArrowUpRight className="h-4 w-4" />
-          </Link>
+          </span>
         </div>
 
         <dl className="mt-3 flex min-h-[20px] flex-wrap content-start gap-x-4 gap-y-1.5 text-xs">
@@ -55,9 +57,9 @@ export default function VehicleCard({ v, showPrices = false, priority = false }:
             ) : (
               <p className="font-head text-base font-semibold text-ink-900">Price on request</p>
             )}
-            <Link href={href} className="text-sm font-semibold text-ink-600 underline-offset-4 hover:text-brand-600 hover:underline">Details</Link>
+            <span className="text-sm font-semibold text-ink-600 underline-offset-4 group-hover:text-brand-600 group-hover:underline">Details</span>
           </div>
-          <BookActions title={FORMS[v.group].title} vehicle={v.name} className="mt-3" />
+          <BookActions title={FORMS[v.group].title} vehicle={v.name} details={v} showPrice={showPrices} className="relative z-10 mt-3" />
         </div>
       </div>
     </article>

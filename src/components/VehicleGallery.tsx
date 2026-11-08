@@ -23,7 +23,7 @@ export default function VehicleGallery({ v }: { v: Vehicle }) {
         className="aspect-[16/10] w-full animate-[fade_.3s_ease-out] rounded-card shadow-card"
       />
       {shots.length > 1 && (
-        <ul data-lenis-prevent className="no-scrollbar mt-3 flex min-w-0 snap-x gap-2 overflow-x-auto" aria-label="Photos">
+        <ul className="no-scrollbar mt-3 flex min-w-0 snap-x gap-2 overflow-x-auto" aria-label="Photos">
           {shots.map((p, n) => (
             <li key={p.src + n} className="shrink-0 snap-start">
               <button

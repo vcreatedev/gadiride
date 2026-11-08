@@ -108,7 +108,7 @@ export default async function TripPage({ params, searchParams }: Params) {
                 {full ? (
                   <span className="inline-flex h-11 items-center rounded-xl bg-surface-100 px-5 text-sm font-semibold text-ink-400" aria-disabled="true">Fully booked · no seats left</span>
                 ) : (
-                  <RequestButton title="Today trip seat request" entries={entries} label={want > 1 ? `Book ${want} seats` : "Book a seat"} />
+                  <RequestButton title="Today trip seat request" entries={entries} href={`/trip/${t.id}/`} label={want > 1 ? `Book ${want} seats` : "Book a seat"} />
                 )}
               </div>
             </div>

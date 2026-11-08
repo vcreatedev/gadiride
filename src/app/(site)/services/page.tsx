@@ -17,7 +17,7 @@ export default async function ServicesPage() {
           <section
             key={s.id}
             id={s.id}
-            className={`scroll-mt-20 py-16 md:py-24 ${dark ? "bg-ink-900 text-ink-300" : i % 4 === 0 ? "bg-white" : "bg-surface-50"}`}
+            className={`scroll-mt-20 py-12 md:py-16 ${dark ? "bg-ink-900 text-ink-300" : i % 4 === 0 ? "bg-white" : "bg-surface-50"}`}
             aria-labelledby={`${s.id}-h`}
           >
             <div className="container-x grid items-center gap-10 lg:grid-cols-2">

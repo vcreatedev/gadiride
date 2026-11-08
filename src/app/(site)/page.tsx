@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import HomeHero from "@/components/home/HomeHero";
 import { HOME_SECTIONS, orderSections } from "@/data/sections";
 import ServicesHub from "@/components/home/ServicesHub";
+import HomeTrips from "@/components/home/HomeTrips";
 import Featured, { type FeaturedGroup } from "@/components/home/Featured";
 import WhyBand from "@/components/home/WhyBand";
 import HowItWorks from "@/components/home/HowItWorks";
@@ -15,9 +16,10 @@ import AreasServed from "@/components/AreasServed";
 import FaqList from "@/components/FaqList";
 import SectionTitle from "@/components/SectionTitle";
 import { accent } from "@/components/Accent";
-import { getBanners, getDrivers, getFaq, getHome, getPage, getSettings, getTestimonials, getVehicles, pageMetadata } from "@/lib/content";
+import { getBanners, getDrivers, getFaq, getHome, getPage, getSettings, getTestimonials, getVehicles, pageMetadata, getTrips } from "@/lib/content";
 import { GROUPS, type Vehicle } from "@/data/vehicles";
 
+/** Cards per tab in "Popular right now"; Today trips on Home shows the same number. */
 const POPULAR_MAX = 15;
 
 /** Up to 15 vehicles per service, featured ones first; services with no vehicles are skipped. */
@@ -36,7 +38,7 @@ export const generateMetadata = () => pageMetadata("home");
  * service at a glance, popular cars, areas we cover, how booking works and FAQs.
  */
 export default async function Home() {
-  const [home, settings, vehicles, reviews, { items: faq, sample }, drivers, search, banners] = await Promise.all([
+  const [home, settings, vehicles, reviews, { items: faq, sample }, drivers, search, banners, trips] = await Promise.all([
     getHome(),
     getSettings(),
     getVehicles(),
@@ -45,6 +47,7 @@ export default async function Home() {
     getDrivers(),
     getPage("search"),
     getBanners(),
+    getTrips(),
   ]);
   // Sample FAQs are tagged by service; on the home page show a mix led by car rental.
   const homeFaq = sample ? [...faq.filter((f) => f.group === "cars").slice(0, 5), ...faq.filter((f) => f.group !== "cars")].slice(0, 9) : faq.slice(0, 8);
@@ -53,11 +56,12 @@ export default async function Home() {
     marquee: <Marquee items={settings.marquee} phone={settings.phone} />,
     services: <ServicesHub content={home.hub} />,
     offers: banners.length > 0 && (
-      <section className="bg-surface-50 pt-16 md:pt-24" aria-label="Offers">
+      <section className="bg-surface-50 pt-12 md:pt-16" aria-label="Offers">
         <div className="container-x"><OfferBanners banners={banners} title={home.offers.title} /></div>
       </section>
     ),
     popular: <Featured content={home.featured} groups={popularByGroup(vehicles, home.featured.tabs)} drivers={drivers} driversLabel={home.featured.tabs.drivers} driversEmpty={search.driversEmpty} showPrices={settings.showPrices} />,
+    trips: <HomeTrips content={home.trips} trips={trips} max={POPULAR_MAX} />,
     areas: <AreasServed title={settings.areasTitle} text={settings.areasText} areas={settings.areas} highlights={settings.highlights} phone={settings.phone} />,
     why: <WhyBand content={home.why} />,
     how: <HowItWorks content={home.how} />,

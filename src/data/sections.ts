@@ -9,6 +9,7 @@ export const HOME_SECTIONS = [
   { key: "services", title: "Everything on wheels (services overview)" },
   { key: "offers", title: "Offers & deals" },
   { key: "popular", title: "Popular right now" },
+  { key: "trips", title: "Today trips" },
   { key: "areas", title: "Hyderabad areas" },
   { key: "why", title: "Why rent with us" },
   { key: "how", title: "How booking works" },
@@ -47,6 +48,13 @@ export function orderSections(saved: SectionSlot[] | undefined, list: readonly {
   const known = new Set(list.map((s) => s.key));
   const rows = (saved ?? []).filter((s) => s && known.has(s.key));
   const seen = new Set(rows.map((s) => s.key));
-  const all = [...rows, ...list.filter((s) => !seen.has(s.key)).map((s) => ({ key: s.key, show: true }))];
+  // Sections added later (not in the saved order yet) go right after the one before them in the list.
+  const all = [...rows];
+  list.forEach((s, i) => {
+    if (seen.has(s.key)) return;
+    const prev = i > 0 ? all.findIndex((r) => r.key === list[i - 1].key) : -1;
+    all.splice(prev + 1, 0, { key: s.key, show: true });
+    seen.add(s.key);
+  });
   return all.filter((s) => s.show !== false).map((s) => s.key);
 }

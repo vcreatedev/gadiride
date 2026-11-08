@@ -13,7 +13,7 @@ export default function WhyBand({ content: c }: { content: HomeContent["why"] })
         <div className="absolute inset-0 bg-gradient-to-r from-ink-900 via-ink-900/80 to-ink-900/30" />
       </div>
       <div className="container-x relative">
-        <ul data-lenis-prevent className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0">
+        <ul className="no-scrollbar -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 lg:mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0">
           <li className="flex w-[78vw] shrink-0 snap-start items-end rounded-card bg-ink-800 p-7 sm:w-[340px] lg:w-auto">
             <h2 id="why-title" className="display text-[2.6rem] leading-[0.95] md:text-5xl">
               <span className="text-gradient block">{c.titleTop}</span>

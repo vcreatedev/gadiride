@@ -81,7 +81,7 @@ export default function ResultCard({
         )}
 
         <div className="mt-auto pt-5">
-          <BookActions title={title} vehicle={v.name} entries={entries} />
+          <BookActions title={title} vehicle={v.name} details={v} entries={entries} />
           <Link href={`/vehicle/${v.slug}/`} className="mt-3 block text-center text-sm font-semibold text-ink-600 underline-offset-4 hover:text-brand-600 hover:underline">
             {detailsLabel}
           </Link>

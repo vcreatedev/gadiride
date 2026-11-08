@@ -3,7 +3,8 @@ import { PhoneCall } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 import { useSite } from "./SiteProvider";
 import { telHref } from "@/config/site";
-import { buildDirectMessage, openWhatsApp, type Entry } from "@/lib/whatsapp";
+import { buildDirectMessage, openWhatsApp, vehicleEntries, type Entry } from "@/lib/whatsapp";
+import type { Vehicle } from "@/data/vehicles";
 
 /**
  * Booking buttons used on every vehicle card: WhatsApp (message pre-filled with the
@@ -13,12 +14,17 @@ export default function BookActions({
   title,
   vehicle,
   entries = [],
+  details,
+  showPrice = false,
   size = "md",
   className = "",
 }: {
   title: string;
   vehicle: string;
   entries?: Entry[];
+  /** The vehicle itself: its type, specs, price and page link go into the message. */
+  details?: Pick<Vehicle, "typeName" | "specs" | "pricePerDay" | "slug">;
+  showPrice?: boolean;
   size?: "md" | "lg";
   className?: string;
 }) {
@@ -29,7 +35,7 @@ export default function BookActions({
     <div className={`grid gap-2.5 ${site.phone ? "grid-cols-2" : "grid-cols-1"} ${className}`}>
       <button
         type="button"
-        onClick={() => openWhatsApp(buildDirectMessage(title, [{ label: "Vehicle", value: vehicle }, ...entries]), site.whatsappNumber)}
+        onClick={() => openWhatsApp(buildDirectMessage(title, [{ label: "Vehicle", value: vehicle }, ...(details ? vehicleEntries(details, showPrice) : []), ...entries]), site.whatsappNumber)}
         className={`${btn} bg-whatsapp hover:bg-whatsapp-dark`}
         aria-label={`Book ${vehicle} on WhatsApp`}
       >

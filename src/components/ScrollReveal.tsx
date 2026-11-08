@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
-import { onReady } from "@/lib/ready";
+import { isReady, onReady, whenIdle } from "@/lib/ready";
 
 /**
  * Site-wide scroll reveal: cards, list items and marked blocks below the hero rise and fade in
@@ -33,6 +33,10 @@ export default function ScrollReveal() {
         for (let p = el.parentElement; p; p = p.parentElement) if (set.has(p)) return false;
         return true;
       });
+      // Only what is still below the screen fades in later; anything already visible is left
+      // exactly as it is, so nothing on screen moves when the loader closes or a page opens.
+      const fold = window.innerHeight;
+      items = items.filter((el) => el.getBoundingClientRect().top > fold);
       if (!items.length) return;
       gsap.set(items, { autoAlpha: 0, y: 28 });
       triggers = ScrollTrigger.batch(items, {
@@ -47,10 +51,17 @@ export default function ScrollReveal() {
     };
 
     // Wait for the loader (first visit) and for the new page's DOM (navigation).
+    // First visit: wait until the browser is idle, so the hero car's drive-in stays smooth.
     let raf = 0;
-    const off = onReady(() => { raf = requestAnimationFrame(start); });
+    let cancelIdle = () => {};
+    const firstLoad = !isReady();
+    const off = onReady(() => {
+      if (firstLoad) cancelIdle = whenIdle(start);
+      else raf = requestAnimationFrame(start);
+    });
     return () => {
       off();
+      cancelIdle();
       cancelAnimationFrame(raf);
       triggers.forEach((t) => t.kill());
       if (items.length) gsap.set(items, { clearProps: "transform,opacity,visibility" });

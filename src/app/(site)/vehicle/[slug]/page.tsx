@@ -80,7 +80,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
                   )}
                 </p>
                 <p className="mt-1 text-sm text-ink-400">Book instantly on WhatsApp or call our team.</p>
-                <BookActions title={FORMS[v.group].title} vehicle={v.name} size="lg" className="mt-4" />
+                <BookActions title={FORMS[v.group].title} vehicle={v.name} details={v} showPrice={site.showPrices} size="lg" className="mt-4" />
               </div>
               <div className="mt-6 rounded-card bg-white p-6 shadow-card">
                 <h2 className="font-head text-xl font-semibold">{p.detailQuoteTitle}</h2>

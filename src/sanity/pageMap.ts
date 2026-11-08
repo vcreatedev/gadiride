@@ -101,6 +101,10 @@ const HOME: PageMap = {
     slotted("services", field("hub", "Everything on wheels", "homePage", "hub", WrenchIcon)),
     slotted("offers", field("offers", "Offers & deals", "homePage", "offers", TagIcon)),
     slotted("popular", field("popular", "Popular right now", "homePage", "featured", StarIcon)),
+    slotted("trips", withItems(
+      field("trips", "Today trips", "homePage", "trips", CalendarIcon, "Shared seats; same number as Popular right now"),
+      { title: "Trips (latest date first; past ones hide on the website)", type: "trip", sort: "date desc, time desc" },
+    )),
     areas,
     slotted("why", field("why", "Why rent with us", "homePage", "why")),
     slotted("how", field("how", "How booking works", "homePage", "how")),
