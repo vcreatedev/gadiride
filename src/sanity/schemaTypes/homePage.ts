@@ -1,6 +1,6 @@
 import { defineArrayMember, defineField, defineType, type FieldDefinition } from "sanity";
 import { GROUPS } from "@/data/vehicles";
-import { HEADING_HINT, formSettings, offerBanners, section, sectionOrder, seo, str, strList, titleTextList, txt } from "./helpers";
+import { HEADING_HINT, formSettings, offerBanners, section, sectionOrder, seo, str, strList, titleTextList, txt, heroFitField, heroImg, heroPhoneImg } from "./helpers";
 import { HOME_SECTIONS } from "@/data/sections";
 import TabField from "../TabField";
 
@@ -96,7 +96,17 @@ export const homePage = defineType({
             strList("points", "Key points (3 work best)"),
             str("cta", "Button label"),
             str("href", "Button link", { description: "e.g. /vehicles/cars/" }),
-            defineField({ name: "scene", title: "Background", type: "string", options: { list: ["city", "highway", "port", "site", "street"] } }),
+            defineField({ name: "scene", title: "Background drawing", type: "string", options: { list: ["city", "highway", "port", "site", "street"] }, description: "Shown when this slide has no background photo." }),
+            heroImg("image", "Background photo (optional)", { description: "Replaces the drawing behind this slide. Remove it to go back to the drawing." }),
+            heroFitField("imageFit"),
+            heroPhoneImg("imageMobile"),
+            defineField({
+              name: "imageUntil",
+              title: "Show the photo until (date & time)",
+              type: "datetime",
+              options: { dateFormat: "DD MMM YYYY", timeFormat: "hh:mm A", timeStep: 15 },
+              description: "After this, the slide goes back to its drawing on its own (the photo stays saved here). Empty = no end.",
+            }),
             defineField({ name: "art", title: "Vehicle drawing", type: "string", options: { list: ["hatch", "sedan", "suv", "van", "bus", "pickup", "truck", "jcb"] } }),
             str("color", "Vehicle colour", { description: "Hex, e.g. #FFC20E" }),
           ],
