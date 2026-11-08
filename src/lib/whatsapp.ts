@@ -11,11 +11,17 @@ export function buildMessage(
     `Hello ${site.name}, I would like a quote.`,
     "",
     `*${title}*`,
-    ...entries.filter((e) => e.value).map((e) => `• ${e.label}: ${e.value}`),
+    // A value like "/vehicle/swift/" (a page on this site) becomes a full, tappable link.
+    ...entries.filter((e) => e.value).map((e) => `• ${e.label}: ${absoluteLink(e.value)}`),
   ];
   if (contact?.name) lines.push("", `Name: ${contact.name}`);
   if (contact?.phone) lines.push(`Phone: ${contact.phone}`);
   return lines.join("\n");
+}
+
+/** "/vehicle/swift/" -> "https://gadiride.com/vehicle/swift/" (in the browser); anything else unchanged. */
+function absoluteLink(value: string) {
+  return value.startsWith("/") && typeof window !== "undefined" ? `${window.location.origin}${value}` : value;
 }
 
 export function buildDirectMessage(title: string, entries: Entry[]) {

@@ -91,7 +91,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
                   // The vehicle is already chosen, so no type picker; chauffeur-only cars start on "With driver".
                   hide={["carType", "vehicle", "machine"]}
                   preset={v.group === "cars" && !v.options.some((o) => /self/i.test(o)) ? { values: { mode: "With driver" }, nonce: 1 } : undefined}
-                  extra={[{ label: "Requested model", value: v.name }]}
+                  extra={[{ label: "Requested model", value: v.name }, { label: "Link", value: `/vehicle/${v.slug}/` }]}
                   compact
                 />
               </div>
