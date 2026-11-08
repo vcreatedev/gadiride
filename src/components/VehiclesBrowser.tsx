@@ -11,6 +11,8 @@ import { useCatalog, useSearchBar, useSite } from "./SiteProvider";
 import VehicleCard from "./VehicleCard";
 import CategoryIcon from "./CategoryIcon";
 import { accent } from "./Accent";
+import TripsList, { type TripTexts } from "./TripsList";
+import { TRIP_MODE, type Trip } from "@/lib/trips";
 
 /**
  * Filterable listing. Filters are kept in the URL query so results can be shared. On a vehicle
@@ -28,9 +30,12 @@ type Props = {
   title?: string;
   /** Heading when a big group gets tempo travellers and buses instead, e.g. "Pick your ride." */
   mixedTitle?: string;
+  /** Cars only: shared trips, shown when the search's rental type is "Today trip". */
+  trips?: Trip[];
+  tripTexts?: TripTexts & { heading: string };
 };
 
-export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = false, empty, title, mixedTitle }: Props) {
+export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = false, empty, title, mixedTitle, trips, tripTexts }: Props) {
   const { areas } = useSite();
   const { groups: GROUPS, types: TYPES } = useCatalog();
   const [group, setGroup] = useState<GroupId | "all">(lockGroup ?? "all");
@@ -98,6 +103,22 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
     [match, vehicles, group, type],
   );
   const sample = vehicles.some((v) => v.sample);
+
+  // "Today trip": shared trips for the searched pickup, drop and date instead of the car list.
+  if (trips && tripTexts && searching && tripValues.mode === TRIP_MODE) {
+    const tripSearch = { from: trip.pickup, to: trip.drop, date: trip.pickupDate, seats: Number(trip.passengers) || 1 };
+    return (
+      <div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <h2 className="h2">{accent(tripTexts.heading)}</h2>
+          <button type="button" onClick={clearSearch} className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold text-ink-700 ring-1 ring-line transition-colors hover:bg-white">
+            <X className="h-4 w-4" />Clear search
+          </button>
+        </div>
+        <TripsList trips={trips} search={tripSearch} texts={tripTexts} onClear={clearSearch} />
+      </div>
+    );
+  }
 
   return (
     <div>

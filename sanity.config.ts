@@ -25,7 +25,7 @@ const shared: Omit<WorkspaceOptions, "name" | "title" | "basePath" | "dataset"> 
         title: "Vehicle in group",
         schemaType: "vehicle",
         parameters: [{ name: "group", type: "string" }],
-        value: (p: { group: string }) => ({ group: p.group, available: true, featured: false, order: 100, photoFit: "cover", photoBackground: "studio", photoZoom: 100 }),
+        value: (p: { group: string }) => ({ group: p.group, available: true, featured: false, order: 0, photoFit: "cover", photoBackground: "studio", photoZoom: 100 }),
       },
       {
         id: "type-by-group",

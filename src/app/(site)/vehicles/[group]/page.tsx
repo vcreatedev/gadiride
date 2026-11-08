@@ -12,7 +12,7 @@ import Marquee from "@/components/Marquee";
 import OfferBanners from "@/components/OfferBanners";
 import AreasServed from "@/components/AreasServed";
 import { GROUPS, HERO_VARIANTS, type GroupId } from "@/data/vehicles";
-import { getBanners, getFaq, getGroups, getHome, getPage, getSettings, getVehicles } from "@/lib/content";
+import { getBanners, getFaq, getGroups, getHome, getPage, getSettings, getTrips, getVehicles } from "@/lib/content";
 
 const SCENE: Record<GroupId, SceneId> = { cars: "city", passenger: "highway", logistics: "port", equipment: "site" };
 
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ group: st
 
 export default async function GroupPage({ params }: { params: Promise<{ group: string }> }) {
   const { group: key } = await params;
-  const [groups, vehicles, site, faqData, p, allBanners, home] = await Promise.all([getGroups(), getVehicles(), getSettings(), getFaq(), getPage("vehicles"), getBanners(), getHome()]);
+  const [groups, vehicles, site, faqData, p, allBanners, home, trips] = await Promise.all([getGroups(), getVehicles(), getSettings(), getFaq(), getPage("vehicles"), getBanners(), getHome(), key === "cars" ? getTrips() : Promise.resolve([])]);
   const g = groups.find((x) => x.id === key);
   if (!g) notFound();
   // Sample FAQs are tagged per service; FAQs from Sanity show the first few.
@@ -52,7 +52,7 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
     vehicles: (
       <section id="all" className="scroll-mt-20 bg-surface-50 py-14 md:py-20">
         <div className="container-x">
-          <VehiclesBrowser title={listTitle} mixedTitle={p.listTitleMixed} vehicles={vehicles} lockGroup={g.id as GroupId} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText, outsideTitle: p.outsideTitle, outsideText: p.outsideText }} />
+          <VehiclesBrowser title={listTitle} mixedTitle={p.listTitleMixed} trips={isCars ? trips : undefined} tripTexts={{ heading: p.tripsHeading, title: p.tripsEmptyTitle, empty: p.tripsEmpty, othersTitle: p.tripsOthersTitle }} vehicles={vehicles} lockGroup={g.id as GroupId} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText, outsideTitle: p.outsideTitle, outsideText: p.outsideText }} />
         </div>
       </section>
     ),

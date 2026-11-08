@@ -8,7 +8,9 @@ export const todayISO = () => {
 };
 
 export function isVisible(f: Field, values: Record<string, string>) {
-  return !f.showIf || values[f.showIf.field] === f.showIf.equals;
+  if (!f.showIf) return true;
+  const v = values[f.showIf.field];
+  return Array.isArray(f.showIf.equals) ? f.showIf.equals.includes(v) : v === f.showIf.equals;
 }
 
 export function buildSchema(fields: Field[]) {

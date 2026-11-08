@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import {
-  BlockElementIcon, CogIcon, CommentIcon, DocumentIcon, EnvelopeIcon, HelpCircleIcon, ImageIcon,
+  BlockElementIcon, CalendarIcon, CogIcon, CommentIcon, DocumentIcon, EnvelopeIcon, HelpCircleIcon, ImageIcon,
   LinkIcon, MenuIcon, PinIcon, SearchIcon, StarIcon, TagIcon, ThListIcon, UsersIcon, WrenchIcon,
 } from "@sanity/icons";
 import { GROUPS } from "@/data/vehicles";
@@ -130,6 +130,13 @@ const groupPage = (g: (typeof GROUPS)[number]): PageMap => ({
       inGroup("Vehicles", "vehicle", "vehicle-by-group", g.id),
       inGroup("Filter chips (vehicle types)", "vehicleType", "type-by-group", g.id),
     )),
+    // Cars only: shared trips ("Today trip" in the search bar).
+    ...(g.id === "cars"
+      ? [withItems(
+          field("trips", "Today trips", "vehiclesPage", ["tripsHeading", "tripsEmptyTitle", "tripsEmpty", "tripsOthersTitle"], CalendarIcon, "Shared seats on a route, like BlaBlaCar"),
+          { title: "Trips (latest date first; past ones hide on the website)", type: "trip", sort: "date desc, time desc" },
+        )]
+      : []),
     ...(g.id === "cars" ? [areas] : []),
     slotted("faq", withItems(field("faq", "FAQ", "vehiclesPage", "faqTitle", HelpCircleIcon), all("Questions", "faq"))),
     seo("vehiclesPage"),
@@ -184,6 +191,7 @@ export const SETTINGS: PageMap = {
 export const PAGES: PageMap[] = [
   HOME,
   ...GROUPS.map(groupPage),
+  // Linked from the More menu ("All vehicles").
   simple("all-vehicles", "All vehicles page", "vehiclesPage", [
     withItems(field("vehicles", "Vehicle list", "vehiclesPage", ["emptyTitle", "emptyText"], ThListIcon), all("Vehicles", "vehicle")),
   ]),

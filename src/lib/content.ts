@@ -23,6 +23,7 @@ import { dataset } from "@/sanity/env";
 import { CAREER_ROLES, SERVICES, type FormKey, type Service } from "@/data/services";
 import type { ArtId } from "@/data/vehicleArt";
 import { footerDefaults, homeDefaults, pageDefaults, type HomeContent, type PageContent, type PageKey } from "@/content/defaults";
+import { tripEndsAt, type Trip } from "./trips";
 import { IMG, toPhoto, type HeroFit, type Photo, type SanityImageDoc } from "./images";
 
 /**
@@ -47,8 +48,8 @@ const QUERY = `{
     "id": key.current, name, group, art, image${IMG}
   },
   "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group)]
-    | order(coalesce(order, 100) asc, name asc){
-      "slug": slug.current, name, group, summary, specs[hidden != true]{label, value}, options, pricePerDay, featured,
+    | order(coalesce(order, 100) asc, _createdAt desc){
+      "slug": slug.current, name, group, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, featured,
       photoFit, photoBackground, photoZoom,
       "type": type->key.current,
       image${IMG}, gallery[hidden != true]${IMG}
@@ -58,8 +59,11 @@ const QUERY = `{
   },
   "faq": *[_type == "faq" && hidden != true && defined(question)] | order(coalesce(order, 100) asc, _createdAt asc){"q": question, "a": answer},
   "roles": *[_type == "careerRole" && hidden != true && defined(role)] | order(coalesce(order, 100) asc, _createdAt asc){role, detail},
-  "drivers": *[_type == "driver" && available != false && defined(name)] | order(coalesce(order, 100) asc, name asc){
+  "drivers": *[_type == "driver" && available != false && defined(name)] | order(coalesce(order, 100) asc, _createdAt desc){
     name, city, experience, licence, duty, drives, languages, about, verified, photo${IMG}
+  },
+  "trips": *[_type == "trip" && available != false && defined(from) && defined(to) && defined(date)] | order(date asc, time asc){
+    "id": _id, from, to, via, date, time, expiresAt, seats, full, pricePerSeat, notes, rules, "car": vehicle->{"slug": slug.current, name}
   },
   "testimonials": *[_type == "testimonial" && hidden != true && defined(quote)] | order(coalesce(order, 100) asc, _createdAt desc){quote, name, detail, rating, photo${IMG}}
 }`;
@@ -70,9 +74,10 @@ type Raw = {
   pages?: ({ _id: string } & Record<string, unknown>)[];
   groups?: { key: GroupId; name?: string; short?: string; blurb?: string; image?: SanityImageDoc; heroImage?: SanityImageDoc; heroImageMobile?: SanityImageDoc; heroFit?: HeroFit; listTitle?: string }[];
   types?: { id: string; name: string; group: GroupId; art?: ArtId; image?: SanityImageDoc }[];
+  trips?: { id: string; from: string; to: string; via?: string[]; date: string; time?: string; expiresAt?: string; seats?: number; full?: boolean; pricePerSeat?: number; notes?: string; rules?: string[]; car?: { slug?: string; name?: string } }[];
   vehicles?: {
     slug: string; name: string; group: GroupId; type?: string; summary?: string;
-    specs?: { label: string; value: string }[]; options?: string[]; pricePerDay?: number; featured?: boolean;
+    specs?: { label: string; value: string }[]; mileage?: string; options?: string[]; pricePerDay?: number; featured?: boolean;
     photoFit?: PhotoFit; photoBackground?: PhotoBg; photoZoom?: number;
     image?: SanityImageDoc; gallery?: SanityImageDoc[];
   }[];
@@ -284,7 +289,11 @@ export const getVehicles = cache(async (): Promise<Vehicle[]> => {
         group: d.group,
         art: t.art,
         color: t.color,
-        specs: (d.specs ?? []).filter((s) => s?.label && s?.value),
+        // Mileage has its own field; it joins the specs (unless a spec already says Mileage).
+        specs: [
+          ...(d.specs ?? []).filter((s) => s?.label && s?.value),
+          ...(d.mileage?.trim() && !(d.specs ?? []).some((s) => /mileage/i.test(s?.label ?? "")) ? [{ label: "Mileage", value: d.mileage.trim() }] : []),
+        ],
         summary: d.summary ?? "",
         options: d.options ?? [],
         pricePerDay: d.pricePerDay ?? undefined,
@@ -363,6 +372,36 @@ export type Driver = {
  * Real driver profiles from the admin. While none are published, development and preview
  * builds show labelled sample profiles; the production site never does.
  */
+/** Shared car trips ("Today trip") from today on, soonest first, each with its car's photo and specs. */
+export const getTrips = cache(async (): Promise<Trip[]> => {
+  const [raw, vehicles] = await Promise.all([fetchRaw(), getVehicles()]);
+  const now = Date.now();
+  return (raw.trips ?? [])
+    .filter((t) => Date.parse(tripEndsAt(t.date, t.time, t.expiresAt)) > now)
+    .map((t) => {
+      const v = vehicles.find((x) => x.slug === t.car?.slug);
+      const seats = Math.max(0, t.seats ?? 0);
+      return {
+        id: t.id,
+        from: t.from,
+        to: t.to,
+        via: (t.via ?? []).filter(Boolean),
+        date: t.date,
+        time: t.time ?? "",
+        endsAt: tripEndsAt(t.date, t.time, t.expiresAt),
+        seats,
+        full: !!t.full || seats === 0,
+        pricePerSeat: t.pricePerSeat ?? undefined,
+        notes: t.notes ?? undefined,
+        rules: (t.rules ?? []).filter(Boolean),
+        car: { name: v?.name ?? t.car?.name ?? "Car", slug: v?.slug ?? t.car?.slug ?? "", photo: v?.photo, specs: v?.specs ?? [] },
+      };
+    });
+});
+
+/** One upcoming trip, for its details page. */
+export const getTrip = cache(async (id: string): Promise<Trip | undefined> => (await getTrips()).find((t) => t.id === id));
+
 export const getDrivers = cache(async (): Promise<Driver[]> => {
   const docs = (await fetchRaw()).drivers ?? [];
   if (docs.length) return docs.map((d) => ({ ...d, drives: d.drives ?? [], languages: d.languages ?? [], verified: !!d.verified, photo: toPhoto(d.photo, d.name) }));

@@ -25,7 +25,7 @@ export const vehicle = defineType({
     { name: "listing", title: "Listing" },
   ],
   fields: [
-    defineField({ name: "name", title: "Name", type: "string", group: "main", validation: (r) => r.required().max(60) }),
+    defineField({ name: "name", title: "Name", type: "string", group: "main", placeholder: "e.g. Maruti Swift (Manual)", validation: (r) => r.required().max(60) }),
     defineField({
       name: "slug",
       title: "URL slug",
@@ -59,7 +59,7 @@ export const vehicle = defineType({
       },
       validation: (r) => r.required(),
     }),
-    defineField({ name: "summary", title: "Short description", type: "text", rows: 3, group: "main", validation: (r) => r.required().max(220) }),
+    defineField({ name: "summary", title: "Short description", type: "text", rows: 3, group: "main", placeholder: "e.g. Easy to drive and park, great mileage for city trips. 5 seats, AC, music system.", validation: (r) => r.required().max(220) }),
 
     { ...photo("image", "Main photo", "Leave empty to use the vehicle type's photo. Use the hotspot (crop icon) to mark the vehicle's centre. Best size: 1600 × 1000 px (16:10)."), components: { input: VehiclePhotoInput } },
     defineField({
@@ -123,14 +123,14 @@ export const vehicle = defineType({
       title: "Specifications",
       type: "array",
       group: "details",
-      description: "Label and value pairs, e.g. Seats: 7. The first three show on cards.",
+      description: "Label and value pairs, e.g. Seats: 7, Fuel: CNG, Mileage: 34 km/kg. All show on the vehicle page; the first three also show on cards.",
       of: [
         defineArrayMember({
           type: "object",
           name: "spec",
           fields: [
-            defineField({ name: "label", title: "Label", type: "string", validation: (r) => r.required() }),
-            defineField({ name: "value", title: "Value", type: "string", validation: (r) => r.required() }),
+            defineField({ name: "label", title: "Label", type: "string", placeholder: "e.g. Seats", validation: (r) => r.required() }),
+            defineField({ name: "value", title: "Value", type: "string", placeholder: "e.g. 5", validation: (r) => r.required() }),
           ],
           preview: { select: { title: "label", subtitle: "value" } },
         }),
@@ -146,16 +146,25 @@ export const vehicle = defineType({
       description: "e.g. Self drive, With driver, With operator",
     }),
     defineField({
+      name: "mileage",
+      title: "Mileage",
+      type: "string",
+      group: "details",
+      placeholder: "e.g. 20 km/l  ·  CNG: 31 km/kg  ·  JCB: 5 litres/hour",
+      description: "Shown with the specifications on the vehicle page. Empty = not shown.",
+    }),
+    defineField({
       name: "pricePerDay",
       title: "Price per day (₹)",
       type: "number",
+      placeholder: "e.g. 1499",
       group: "details",
       description: 'Only shown when "Show prices" is on in Site settings.',
       validation: (r) => r.min(0),
     }),
     defineField({ name: "available", title: "Show on website", type: "boolean", group: "listing", initialValue: true }),
     defineField({ name: "featured", title: 'Show in "Popular right now" on the home page', type: "boolean", group: "listing", initialValue: false }),
-    defineField({ name: "order", title: "Sort order", type: "number", group: "listing", description: "Lower numbers show first.", initialValue: 100 }),
+    defineField({ name: "order", title: "Sort order", type: "number", group: "listing", description: "New ones start at 0, so they show first. Lower numbers show first.", initialValue: 0 }),
   ],
   orderings: [
     { title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }, { field: "name", direction: "asc" }] },

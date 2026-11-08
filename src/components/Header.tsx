@@ -78,7 +78,7 @@ export default function Header() {
             </Link>
           ))}
           <div ref={moreRef} className="relative">
-            <button type="button" aria-expanded={more} aria-controls="more-menu" onClick={() => setMore((m) => !m)} className={navCls(MORE.some((m) => path.startsWith(m.href.split("#")[0]) && m.href !== "/"))}>
+            <button type="button" aria-expanded={more} aria-controls="more-menu" onClick={() => setMore((m) => !m)} className={navCls(MORE.some((m) => m.href !== "/" && path === m.href.split("#")[0]))}>
               More <ChevronDown className={`h-4 w-4 transition-transform ${more ? "rotate-180" : ""}`} />
             </button>
             {more && (

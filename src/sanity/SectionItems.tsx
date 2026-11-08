@@ -24,16 +24,18 @@ const OpenLink = forwardRef<HTMLAnchorElement, LinkProps>(function OpenLink(prop
 const VISIBILITY: Record<string, { field: string; shown: string; hide: unknown; show: unknown }> = {
   vehicle: { field: "available", shown: "available != false", hide: false, show: true },
   driver: { field: "available", shown: "available != false", hide: false, show: true },
+  trip: { field: "available", shown: "available != false", hide: false, show: true },
 };
 const visibilityOf = (type: string) => VISIBILITY[type] ?? { field: "hidden", shown: "hidden != true", hide: true, show: false };
 
 /** The same order the website uses for each type. */
 const SITE_SORT: Record<string, string> = {
-  vehicle: "coalesce(order, 100) asc, name asc",
+  vehicle: "coalesce(order, 100) asc, _createdAt desc",
   vehicleType: "coalesce(order, 100) asc, name asc",
   service: "coalesce(order, 100) asc, name asc",
-  driver: "coalesce(order, 100) asc, name asc",
+  driver: "coalesce(order, 100) asc, _createdAt desc",
   testimonial: "coalesce(order, 100) asc, _createdAt desc",
+  trip: "date desc, time desc",
 };
 const DEFAULT_SORT = "coalesce(order, 100) asc, _createdAt asc";
 

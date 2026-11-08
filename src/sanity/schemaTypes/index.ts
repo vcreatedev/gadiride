@@ -7,6 +7,7 @@ import { homePage } from "./homePage";
 import { pageTypes } from "./pages";
 import { driver, service, testimonial, vehicleGroup, vehicleType } from "./catalog";
 import { withVisibility } from "./visibility";
+import { trip } from "./trip";
 
 export const schemaTypes = [
   homePage,
@@ -16,6 +17,7 @@ export const schemaTypes = [
   vehicleGroup,
   service,
   driver,
+  trip,
   testimonial,
   faq,
   careerRole,

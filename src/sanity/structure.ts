@@ -1,12 +1,14 @@
 import type { StructureBuilder, StructureResolver } from "sanity/structure";
 import {
+  AddCircleIcon, CalendarIcon,
   CaseIcon, CogIcon, DocumentIcon, EarthGlobeIcon, EnvelopeIcon, HelpCircleIcon, HomeIcon, InfoOutlineIcon,
   LinkIcon, MenuIcon, PackageIcon, SearchIcon, TagIcon, ThListIcon, UserIcon, WarningOutlineIcon, WrenchIcon,
 } from "@sanity/icons";
 import type { ComponentType } from "react";
 import { GROUPS } from "@/data/vehicles";
-import { FOOTER, HEADER, PAGES, SETTINGS, type PageMap, type SectionItem } from "./pageMap";
+import { FOOTER, HEADER, PAGES, SETTINGS, type ItemList, type PageMap, type SectionItem } from "./pageMap";
 import SectionsPane from "./SectionsPane";
+import QuickAddPane from "./QuickAddPane";
 
 /**
  * The admin sidebar mirrors the website: one entry per page, in the header's order. Each page
@@ -57,10 +59,56 @@ const pageItem = (S: StructureBuilder, page: PageMap) =>
 const byId = (id: string) => PAGES.find((p) => p.id === id)!;
 const groupIds = new Set<string>(GROUPS.map((g) => g.id));
 
+/** A quick-add pane: the list with Add, reorder, show / hide and delete; rows open to the right. */
+const quickPane = (S: StructureBuilder, id: string, list: ItemList) =>
+  S.component(QuickAddPane)
+    .id(`add-list-${id}`)
+    .title(list.title)
+    .options({ list })
+    .child((docId: string, ctx) => S.document().documentId(docId).schemaType(ctx.params?.type ?? list.type));
+
+/** Quick add: each service's vehicles (and drivers), with "Add" creating one in the right place. */
+const quickAdd = (S: StructureBuilder) =>
+  S.listItem()
+    .id("add-vehicles")
+    .title("Add vehicles")
+    .icon(AddCircleIcon)
+    .child(
+      S.list()
+        .title("Add vehicles")
+        .items([
+          ...GROUPS.map((g) =>
+            S.listItem()
+              .id(`add-${g.id}`)
+              .title(g.short)
+              .icon(PackageIcon)
+              .child(quickPane(S, g.id, {
+                title: g.name,
+                type: "vehicle",
+                filter: "group == $group",
+                params: { group: g.id },
+                template: { id: "vehicle-by-group", params: { group: g.id } },
+              })),
+          ),
+          S.listItem()
+            .id("add-trips")
+            .title("Today trips (shared seats)")
+            .icon(CalendarIcon)
+            .child(quickPane(S, "trips", { title: "Today trips: latest date first", type: "trip", sort: "date desc, time desc" })),
+          S.listItem()
+            .id("add-drivers")
+            .title("Drivers")
+            .icon(UserIcon)
+            .child(quickPane(S, "drivers", { title: "Drivers", type: "driver" })),
+        ]),
+    );
+
 export const structure: StructureResolver = (S) =>
   S.list()
     .title("Website")
     .items([
+      quickAdd(S),
+      S.divider(),
       pageItem(S, HEADER),
       S.divider(),
       pageItem(S, byId("home")),

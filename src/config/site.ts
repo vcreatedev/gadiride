@@ -139,6 +139,7 @@ export const site: SiteSettings = {
   heroTheme: "light",
   driversLabel: "Drivers",
   navMore: [
+    { label: "All vehicles", href: "/vehicles/" },
     { label: "All services", href: "/services/" },
     { label: "Corporate", href: "/corporate/" },
     { label: "Attach your vehicle", href: "/partner/" },

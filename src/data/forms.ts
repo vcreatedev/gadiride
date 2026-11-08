@@ -14,8 +14,8 @@ export type Field = {
   min?: number;
   max?: number;
   defaultValue?: string;
-  /** Only show when another field has this value. */
-  showIf?: { field: string; equals: string };
+  /** Only show when another field has this value (or one of these values). */
+  showIf?: { field: string; equals: string | string[] };
   /** false = not shown in the search bar (still in full forms). */
   bar?: false;
 };
@@ -26,15 +26,15 @@ export const FORMS: Record<FormKey, FormDef> = {
   cars: {
     key: "cars", title: "Car rental request", cta: "Get car quote",
     fields: [
-      { name: "mode", label: "Rental type", type: "segment", options: ["Self drive", "With driver"], defaultValue: "Self drive", span: 4 },
+      { name: "mode", label: "Rental type", type: "segment", options: ["Self drive", "With driver", "Today trip"], defaultValue: "Self drive", span: 4 },
       { name: "carType", label: "Car type", type: "select", options: ["Any", "Hatchback", "Sedan", "SUV", "Luxury"], defaultValue: "Any", span: 4, bar: false },
       // Self drive: book by number of days. With driver: a trip with drop-off and return.
       // Seats needed: matching cars, or tempo travellers and buses when no car is big enough.
       { name: "passengers", label: "No. of passengers", type: "number", min: 1, max: 60, defaultValue: "4", required: true, span: 4 },
       { name: "pickup", label: "Pickup location", type: "text", required: true, placeholder: "Area or airport", span: 6 },
-      { name: "drop", label: "Drop-off location", type: "text", placeholder: "Same as pickup", span: 6, showIf: { field: "mode", equals: "With driver" } },
+      { name: "drop", label: "Drop-off location", type: "text", placeholder: "Same as pickup", span: 6, showIf: { field: "mode", equals: ["With driver", "Today trip"] } },
       { name: "pickupDate", label: "Pickup date", type: "date", required: true, span: 3 },
-      { name: "pickupTime", label: "Pickup time", type: "time", required: true, defaultValue: "10:00", span: 3 },
+      { name: "pickupTime", label: "Pickup time", type: "time", required: true, defaultValue: "10:00", span: 3, showIf: { field: "mode", equals: ["Self drive", "With driver"] } },
       { name: "returnDate", label: "Return date", type: "date", required: true, notBefore: "pickupDate", span: 3, showIf: { field: "mode", equals: "With driver" } },
       { name: "returnTime", label: "Return time", type: "time", required: true, defaultValue: "20:00", span: 3, showIf: { field: "mode", equals: "With driver" } },
     ],
