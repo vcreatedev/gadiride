@@ -46,22 +46,28 @@ export default function Loader({ enabled = true }: { enabled?: boolean }) {
     };
     exitRef.current = exit;
 
-    // Close only when the site is really ready: the intro has played, the page has loaded,
-    // the fonts are in (no text jump) and every image in the first screen is decoded.
+    // 1. The intro always plays to the end: wait for every one of its animations to finish
+    //    (measured from when they really started, however slow the first paint was).
+    const root = document.getElementById("ga-loader");
+    const introDone = new Promise<void>((resolve) => {
+      const anims = (root?.getAnimations?.({ subtree: true }) ?? []).filter((an) => an.effect?.getTiming().iterations !== Infinity);
+      if (!anims.length) { timers.push(window.setTimeout(resolve, INTRO_MS)); return; }
+      Promise.all(anims.map((an) => an.finished.catch(() => undefined))).then(() => resolve());
+    });
+    // 2. ...and the site is really ready behind it: page loaded, fonts in (no text jump), every image
+    //    in the first screen decoded, and the browser idle (so the reveal and the car's drive-in are smooth).
     const pageLoaded = new Promise<void>((resolve) => {
       if (document.readyState === "complete") resolve();
       else window.addEventListener("load", () => resolve(), { once: true });
     });
     const fontsReady = document.fonts ? document.fonts.ready.then(() => undefined, () => undefined) : Promise.resolve();
-    // ...and the browser has finished its start-up work (so the reveal and the car's drive-in are smooth).
-    Promise.all([pageLoaded, fontsReady])
+    const siteReady = Promise.all([pageLoaded, fontsReady])
       .then(firstScreenImagesDecoded)
-      .then(() => new Promise<void>((resolve) => { whenIdle(resolve, 1500); }))
-      .then(() => {
-        const wait = Math.max(0, INTRO_MS + 250 - performance.now());
-        timers.push(window.setTimeout(exit, wait));
-      });
-    timers.push(window.setTimeout(exit, MAX_WAIT_MS)); // a slow network never keeps people waiting longer
+      .then(() => new Promise<void>((resolve) => { whenIdle(resolve, 1500); }));
+    // A very slow network still gets in, but never before the intro has finished.
+    introDone
+      .then(() => Promise.race([siteReady, new Promise<void>((resolve) => { timers.push(window.setTimeout(resolve, MAX_WAIT_MS - INTRO_MS)); })]))
+      .then(() => timers.push(window.setTimeout(exit, 150)));
 
     return () => { timers.forEach(clearTimeout); html.style.overflow = ""; };
   }, [enabled]);
@@ -112,11 +118,12 @@ export default function Loader({ enabled = true }: { enabled?: boolean }) {
 
       <p className="ld-tag mt-6 font-head text-base font-medium tracking-wide text-ink-300 md:text-lg">Every vehicle. One ride.</p>
 
-      <div className="absolute bottom-[max(3.5rem,calc(env(safe-area-inset-bottom)+2.5rem))] h-[3px] w-[min(70vw,320px)] overflow-hidden rounded-full bg-white/10">
+      <div className="absolute bottom-[max(5rem,calc(env(safe-area-inset-bottom)+4.25rem))] h-[3px] sm:bottom-[max(3.5rem,calc(env(safe-area-inset-bottom)+2.5rem))] w-[min(70vw,320px)] overflow-hidden rounded-full bg-white/10">
         <div className={`ld-bar h-full w-full origin-left bg-brand-gradient ${state === "out" ? "ld-bar-full" : ""}`} />
       </div>
 
-      <button type="button" onClick={() => exitRef.current()} className="absolute bottom-[max(2rem,env(safe-area-inset-bottom))] right-6 rounded-full px-4 py-2 text-sm font-medium text-ink-300 transition-colors hover:text-white">
+      {/* Centred under the progress bar on phones; bottom-right on larger screens. */}
+      <button type="button" onClick={() => exitRef.current()} className="absolute bottom-[max(1rem,calc(env(safe-area-inset-bottom)+0.5rem))] left-1/2 -translate-x-1/2 rounded-full px-5 py-2.5 text-sm font-medium text-ink-300 ring-1 ring-white/15 transition-colors hover:text-white hover:ring-white/30 sm:bottom-[max(2rem,env(safe-area-inset-bottom))] sm:left-auto sm:right-6 sm:translate-x-0 sm:ring-0">
         Skip intro
       </button>
     </div>
