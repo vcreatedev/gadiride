@@ -37,8 +37,14 @@ export default function Header() {
     const g = groups.find((x) => x.id === key);
     return g ? [{ id: g.id, href: `/vehicles/${g.id}/`, short: g.short, name: g.name }] : [];
   });
+  // The name from the brand logo (swoosh, "Gadiride" and pin, without the taxi and truck),
+  // unless a Header logo is set in Site settings.
+  const logoImg = site.headerLogo ?? { src: "/brand/gadiride-wordmark.webp", alt: site.name, width: 681, height: 200 };
   const brand = (light: boolean) =>
-    site.headerLogo ? <Photo photo={site.headerLogo} alt={site.headerLogo.alt ?? site.name} sizes="180px" priority className="h-9 w-auto md:h-10" /> : <Logo tone={light ? "light" : "dark"} />;
+    logoImg ? (
+      // The built-in name logo is served as is (no re-compression), so its edges stay sharp.
+      <Photo photo={logoImg} alt={logoImg.alt ?? site.name} sizes="200px" priority unoptimized={!site.headerLogo} quality={100} className="h-11 w-auto md:h-12" />
+    ) : <Logo tone={light ? "light" : "dark"} />;
 
   useEffect(() => {
     const onScroll = () => {

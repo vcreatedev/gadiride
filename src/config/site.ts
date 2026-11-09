@@ -58,6 +58,15 @@ export type SiteSettings = {
   footerContactLink: string;
   /** "{year}" is replaced with the current year. */
   copyright: string;
+  /** Footer heading above the social icons, and whether the icons show. */
+  socialTitle: string;
+  showSocial: boolean;
+  /** Whether the "Website developed by" credit shows. */
+  showCredit: boolean;
+  /** Footer credit, e.g. "Website developed by" + a linked name. Empty name hides it. */
+  creditLabel: string;
+  creditName: string;
+  creditUrl: string;
 };
 
 export type NavLink = { label: string; href: string };
@@ -77,7 +86,7 @@ export const site: SiteSettings = {
     { name: "Warangal", note: "Cars on request." },
     { name: "Vijayawada", note: "Cars on request." },
   ],
-  social: [],
+  social: [{ label: "Instagram", href: "https://www.instagram.com/gadirideofficial/" }],
   // Sample prices are listed; local and preview builds show them, the live site waits for Site settings.
   showPrices: process.env.NEXT_PUBLIC_SANITY_DATASET !== "production",
   marquee: [
@@ -184,6 +193,12 @@ export const site: SiteSettings = {
   footerContactTitle: "Contact",
   footerContactLink: "Contact page",
   copyright: "© {year} Gadiride. All rights reserved.",
+  socialTitle: "Follow us",
+  showSocial: true,
+  showCredit: true,
+  creditLabel: "Website developed by",
+  creditName: "Vcreate",
+  creditUrl: "https://www.vcreateofficial.com/",
   highlights: [
     { title: "Zero deposit option", text: "On select cars, so more of your money stays with you." },
     { title: "Unlimited km plans", text: "Drive as far as the trip takes you, no meter anxiety." },
