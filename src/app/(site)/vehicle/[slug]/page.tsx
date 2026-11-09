@@ -9,6 +9,9 @@ import RequestForm from "@/components/RequestForm";
 import BookActions from "@/components/BookActions";
 import { FORMS } from "@/data/forms";
 import { getPage, getSettings, getVehicle, getVehicles } from "@/lib/content";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbLd, vehicleLd } from "@/lib/structuredData";
+import { buildMetadata } from "@/lib/seo";
 
 /** Pre-render known vehicles; vehicles added later in the admin render on first visit. */
 export const dynamicParams = true;
@@ -17,10 +20,18 @@ export async function generateStaticParams() {
 }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug: key } = await params;
-  const v = await getVehicle(key);
+  const [v, site] = await Promise.all([getVehicle(key), getSettings()]);
   if (!v) return {};
   const img = v.photo.src.startsWith("https://cdn.sanity.io/") ? `${v.photo.src}${v.photo.src.includes("?") ? "&" : "?"}w=1200&h=630&fit=fill&bg=ffffff&auto=format` : v.photo.src;
-  return { title: v.name, description: v.summary, openGraph: { images: [img] } };
+  // "Maruti Swift on rent in Kukatpally, Hyderabad": the words people search for.
+  const price = site.showPrices && v.pricePerDay ? ` From ₹${v.pricePerDay.toLocaleString("en-IN")} a day.` : "";
+  return buildMetadata({
+    title: `${v.name} on rent in ${placeLabel(v)}`,
+    description: `${v.summary}${price} ${v.typeName} on rent with Gadiride. Get a quote on WhatsApp.`,
+    path: `/vehicle/${v.slug}/`,
+    image: img,
+    imageAlt: v.name,
+  });
 }
 
 export default async function VehiclePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -31,6 +42,12 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
   const similar = all.filter((x) => x.group === v.group && x.slug !== v.slug).slice(0, 3);
   return (
     <>
+      <JsonLd
+        data={[
+          vehicleLd(v, site.showPrices),
+          breadcrumbLd([{ name: "Home", path: "/" }, { name: v.groupName, path: `/vehicles/${v.group}/` }, { name: v.name, path: `/vehicle/${v.slug}/` }]),
+        ]}
+      />
       {/* Space for the fixed header: 60px on phones, 72px from md up. */}
       <div className={`pt-[60px] md:pt-[72px] ${site.heroTheme === "dark" ? "bg-ink-900" : "bg-surface-50"}`} />
       <section className="bg-surface-50 pb-16 pt-3 md:pb-24 md:pt-6">

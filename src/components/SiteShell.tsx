@@ -6,15 +6,19 @@ import ScrollReveal from "./ScrollReveal";
 import QuoteFlow from "./QuoteFlow";
 import WhatsAppFab from "./WhatsAppFab";
 import { SiteProvider } from "./SiteProvider";
-import { getGroups, getServices, getSettings, getTypes, getSearchBar } from "@/lib/content";
+import { getGroups, getServices, getSettings, getTypes, getSearchBar, getVehicles } from "@/lib/content";
 import { dataset, sanityEnabled } from "@/sanity/env";
+import JsonLd from "./JsonLd";
+import { organizationLd, websiteLd } from "@/lib/structuredData";
 
 /** Header, footer, intro loader and quote dialog shared by every public page. */
 export default async function SiteShell({ children }: { children: React.ReactNode }) {
-  const [settings, groups, types, services, searchBar] = await Promise.all([getSettings(), getGroups(), getTypes(), getServices(), getSearchBar()]);
+  const [settings, groups, types, services, searchBar, vehicles] = await Promise.all([getSettings(), getGroups(), getTypes(), getServices(), getSearchBar(), getVehicles()]);
   return (
     <SiteProvider value={{ settings, groups, types, searchBar }}>
       <QuoteFlow>
+        {/* Who Gadiride is, where it rents and how to reach it, for Google and AI answer engines. */}
+        <JsonLd data={[organizationLd(settings, groups, vehicles), websiteLd(settings)]} />
         <Loader enabled={settings.showIntro} />
         <SmoothScroll />
         <ScrollReveal />

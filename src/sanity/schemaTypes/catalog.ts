@@ -3,7 +3,7 @@ import { TypePhotoInput } from "../FallbackPhotoInput";
 import { stockMedia, stockPhotoUrl } from "../stockPhoto";
 import { GROUPS } from "@/data/vehicles";
 import { ART_IDS } from "@/data/vehicleArt";
-import { heroFitField, heroImg, heroPhoneImg, img, str, strList, txt } from "./helpers";
+import { heroFitField, heroImg, heroPhoneImg, img, seo, str, strList, txt } from "./helpers";
 import { FORM_KEYS } from "@/data/services";
 
 const groupList = { list: GROUPS.map((g) => ({ title: g.name, value: g.id })) };
@@ -24,6 +24,8 @@ export const vehicleGroup = defineType({
     heroFitField("heroFit"),
     str("listTitle", "Heading", { description: "Above the vehicles on this page." }),
     heroPhoneImg("heroImageMobile"),
+    // This service page's own Google title, description and share image (empty = good built-in defaults).
+    seo(),
   ],
   preview: { select: { title: "name", subtitle: "blurb", media: "image" } },
 });

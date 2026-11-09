@@ -2,14 +2,17 @@ import PageHero from "@/components/PageHero";
 import ExpandForm from "@/components/ExpandForm";
 import Photo from "@/components/Photo";
 import { accent } from "@/components/Accent";
-import { getPage, getServices, pageMetadata } from "@/lib/content";
+import { getPage, getServices, getSettings, getVehicles, pageMetadata } from "@/lib/content";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbLd, servedCities, servicesLd } from "@/lib/structuredData";
 
 export const generateMetadata = () => pageMetadata("services");
 
 export default async function ServicesPage() {
-  const [p, services] = await Promise.all([getPage("services"), getServices()]);
+  const [p, services, site, vehicles] = await Promise.all([getPage("services"), getServices(), getSettings(), getVehicles()]);
   return (
     <>
+      <JsonLd data={[servicesLd(services, servedCities(site, vehicles)), breadcrumbLd([{ name: "Home", path: "/" }, { name: "Services", path: "/services/" }])]} />
       <PageHero title={accent(p.title)} intro={p.intro} bgPhoto={p.image} bgPhotoMobile={p.imageMobile} bgFit={p.imageFit} art="bus" color="#F4F5F7" />
       {services.map((s, i) => {
         const dark = i % 2 === 1;

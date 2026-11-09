@@ -18,6 +18,8 @@ import {
   type VehicleSeed,
 } from "@/data/vehicles";
 import { DEFAULT_LOCATION } from "@/data/cities";
+import type { Metadata } from "next";
+import { BRAND, PAGE_PATH, buildMetadata, isNoindexPage, shareImageUrl } from "./seo";
 import { FAQ } from "@/data/faq";
 import { SAMPLE_DRIVERS } from "@/data/drivers";
 import { dataset } from "@/sanity/env";
@@ -44,13 +46,13 @@ const QUERY = `{
   "settings": *[_id == "siteSettings"][0]{..., logo${IMG}, headerLogo${IMG}, shareImage${IMG}},
   "home": *[_id == "homePage"][0]{..., slides[]{..., image${IMG}, imageMobile${IMG}}, seo{..., image${IMG}}},
   "pages": *[_id in $pageIds]{..., image${IMG}, imageMobile${IMG}, heroImage${IMG}, heroImageMobile${IMG}, seo{..., image${IMG}}},
-  "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}, heroImageMobile${IMG}, heroFit, listTitle},
+  "groups": *[_type == "vehicleGroup"]{key, name, short, blurb, image${IMG}, heroImage${IMG}, heroImageMobile${IMG}, heroFit, listTitle, seo{title, description, image${IMG}}},
   "types": *[_type == "vehicleType" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
     "id": key.current, name, group, art, image${IMG}
   },
   "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group) && (!defined(liveFrom) || dateTime(liveFrom) <= dateTime(now())) && (!defined(liveUntil) || dateTime(liveUntil) > dateTime(now()))]
     | order(coalesce(order, 100) asc, _createdAt desc){
-      "slug": slug.current, name, group, location, area, pincode, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, featured,
+      "slug": slug.current, "updatedAt": _updatedAt, name, group, location, area, pincode, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, featured,
       photoFit, photoBackground, photoZoom,
       "type": type->key.current,
       image${IMG}, gallery[hidden != true]${IMG}
@@ -73,11 +75,11 @@ type Raw = {
   settings?: Record<string, unknown> | null;
   home?: Record<string, unknown> | null;
   pages?: ({ _id: string } & Record<string, unknown>)[];
-  groups?: { key: GroupId; name?: string; short?: string; blurb?: string; image?: SanityImageDoc; heroImage?: SanityImageDoc; heroImageMobile?: SanityImageDoc; heroFit?: HeroFit; listTitle?: string }[];
+  groups?: { key: GroupId; name?: string; short?: string; blurb?: string; image?: SanityImageDoc; heroImage?: SanityImageDoc; heroImageMobile?: SanityImageDoc; heroFit?: HeroFit; listTitle?: string; seo?: { title?: string; description?: string; image?: SanityImageDoc } }[];
   types?: { id: string; name: string; group: GroupId; art?: ArtId; image?: SanityImageDoc }[];
   trips?: { id: string; from: string; to: string; via?: string[]; date: string; time?: string; liveFrom?: string; expiresAt?: string; seats?: number; full?: boolean; pricePerSeat?: number; notes?: string; rules?: string[]; car?: { slug?: string; name?: string } }[];
   vehicles?: {
-    slug: string; name: string; group: GroupId; location?: string; area?: string; pincode?: string; type?: string; summary?: string;
+    slug: string; updatedAt?: string; name: string; group: GroupId; location?: string; area?: string; pincode?: string; type?: string; summary?: string;
     specs?: { label: string; value: string }[]; mileage?: string; options?: string[]; pricePerDay?: number; featured?: boolean;
     photoFit?: PhotoFit; photoBackground?: PhotoBg; photoZoom?: number;
     image?: SanityImageDoc; gallery?: SanityImageDoc[];
@@ -228,19 +230,19 @@ export async function getPage<K extends PageKey>(key: K): Promise<PageContent[K]
   } as unknown as PageContent[K] & WithSeoImage & HeroImages;
 }
 
-/** Next.js metadata for a page, from its SEO fields. */
-export async function pageMetadata(key: PageKey | "home") {
+/** Next.js metadata for a page, from its SEO fields: title, description, canonical address and share card. */
+export async function pageMetadata(key: PageKey | "home"): Promise<Metadata> {
   const [p, s] = await Promise.all([key === "home" ? getHome() : getPage(key), getSettings()]);
-  const seo = (p as { seo?: { title: string; description: string } }).seo;
-  const img = p.seoImage ?? s.shareImage;
-  return {
-    title: key === "home" ? { absolute: seo?.title ?? "Gadiride" } : seo?.title,
+  const seo = (p as { seo?: { title?: string; description?: string } }).seo;
+  return buildMetadata({
+    title: seo?.title || (key === "home" ? BRAND : undefined),
+    absoluteTitle: key === "home",
     description: seo?.description,
-    openGraph: img ? { images: [{ url: shareUrl(img) }] } : undefined,
-  };
+    path: PAGE_PATH[key as keyof typeof PAGE_PATH] ?? "/",
+    image: shareImageUrl(p.seoImage ?? s.shareImage),
+    noindex: isNoindexPage(key),
+  });
 }
-
-const shareUrl = (p: Photo) => (p.src.startsWith("https://cdn.sanity.io/") ? `${p.src}${p.src.includes("?") ? "&" : "?"}w=1200&h=630&fit=crop&auto=format` : p.src);
 
 /* ---------------------------------------------------------------- catalog */
 
@@ -248,7 +250,7 @@ export const getGroups = cache(async (): Promise<Group[]> => {
   const raw = (await fetchRaw()).groups ?? [];
   return GROUPS.map((g) => {
     const r = raw.find((x) => x.key === g.id);
-    return { ...g, name: r?.name || g.name, short: r?.short || g.short, blurb: r?.blurb || g.blurb, photo: toPhoto(r?.image, r?.name || g.name), heroPhoto: toPhoto(r?.heroImage), heroPhotoMobile: toPhoto(r?.heroImageMobile), heroFit: r?.heroFit, listTitle: r?.listTitle };
+    return { ...g, name: r?.name || g.name, short: r?.short || g.short, blurb: r?.blurb || g.blurb, photo: toPhoto(r?.image, r?.name || g.name), heroPhoto: toPhoto(r?.heroImage), heroPhotoMobile: toPhoto(r?.heroImageMobile), heroFit: r?.heroFit, listTitle: r?.listTitle, seoTitle: r?.seo?.title?.trim() || undefined, seoDescription: r?.seo?.description?.trim() || undefined, seoImage: toPhoto(r?.seo?.image) };
   });
 });
 
@@ -321,6 +323,7 @@ export const getVehicles = cache(async (): Promise<Vehicle[]> => {
         location: d.location?.trim() || DEFAULT_LOCATION,
         area: d.area?.trim() || undefined,
         pincode: d.pincode?.trim() || undefined,
+        updatedAt: d.updatedAt,
         photo: own ?? { ...t.photo, alt: d.name },
         ownPhoto: !!own,
         gallery: photos.slice(1),

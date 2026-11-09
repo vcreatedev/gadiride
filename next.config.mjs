@@ -24,6 +24,8 @@ const nextConfig = {
   // The admin moved from /studio to /admin; old bookmarks keep working.
   async redirects() {
     return [
+      // One address for Google: www.gadiride.com moves permanently to gadiride.com (no duplicate pages).
+      { source: "/:path*", has: [{ type: "host", value: "www.gadiride.com" }], destination: "https://gadiride.com/:path*", permanent: true },
       { source: "/studio/:path*", destination: "/admin/:path*", permanent: true },
       // One admin per site now; the old per-dataset addresses lead to it.
       { source: "/admin/:ws(production|development)/:path*", destination: "/admin/:path*", permanent: false },

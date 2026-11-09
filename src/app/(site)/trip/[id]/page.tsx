@@ -7,13 +7,20 @@ import RequestButton from "@/components/search/RequestButton";
 import { RuleChip } from "@/components/TripsList";
 import { getSettings, getTrip } from "@/lib/content";
 import { tripDay, tripTime } from "@/lib/trips";
+import { buildMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ seats?: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const t = await getTrip((await params).id);
-  if (!t) return { title: "Trip" };
-  return { title: `${t.from.split(",")[0]} to ${t.to.split(",")[0]}, ${tripDay(t.date)} ${tripTime(t.time)}`, description: `Shared car trip in a ${t.car.name}. ${t.seats} seats left.` };
+  const id = (await params).id;
+  const t = await getTrip(id);
+  if (!t) return { title: "Trip", robots: { index: false, follow: true } };
+  return buildMetadata({
+    title: `${t.from.split(",")[0]} to ${t.to.split(",")[0]}, ${tripDay(t.date)} ${tripTime(t.time)}`,
+    description: `Shared car trip in a ${t.car.name}. ${t.seats} seats left.`,
+    path: `/trip/${id}/`,
+    noindex: true,
+  });
 }
 
 /** One shared trip: route with stops, date and time, the car, seats, price, rules and booking. */

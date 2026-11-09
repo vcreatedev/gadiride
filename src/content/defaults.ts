@@ -168,7 +168,7 @@ export const homeDefaults = {
 export const pageDefaults = {
   vehicles: {
     layout: defaultSlots(VEHICLE_PAGE_SECTIONS),
-    seo: { title: "All vehicles", description: "Self drive cars, chauffeur cars, tempo travellers, buses, trucks and JCBs on rent in Hyderabad." },
+    seo: { title: "All vehicles on rent in Hyderabad", description: "Self drive and chauffeur cars, tempo travellers, buses, trucks and JCBs on rent in Hyderabad. Compare them and get a quote on WhatsApp." },
     title: "All vehicles.",
     intro: "Filter by group and type, then request a quote for the one you need.",
     quoteTitle: "Get a quote.",
@@ -191,13 +191,13 @@ export const pageDefaults = {
     stockPhotoNote: "Representative photo. Exact model, make and details confirmed with your quote.",
   },
   services: {
-    seo: { title: "Services", description: "Car rental, passenger transport, goods transport, heavy equipment hire, corporate fleet and driver services." },
+    seo: { title: "Vehicle rental services in Hyderabad", description: "Car rental, tempo traveller and bus hire, goods transport, JCB hire, corporate fleet and driver services in Hyderabad, all from one company." },
     title: "Our services.",
     intro: "Who each service is for, what it includes and how to ask for a quote.",
     confirmNote: "Details of this service are confirmed on WhatsApp.",
   },
   corporate: {
-    seo: { title: "Corporate transport and fleet", description: "Staff transport, guest cars, long-term fleet, goods transport and machinery for companies." },
+    seo: { title: "Corporate car rental & staff transport in Hyderabad", description: "Staff transport, guest cars, long-term fleet, goods transport and machinery for companies in Hyderabad, with one point of contact." },
     title: "Corporate transport.",
     intro: "One partner for people, goods and machinery. Tell us what your company needs.",
     uses: [
@@ -209,7 +209,7 @@ export const pageDefaults = {
     groupsLabel: "Across every group:",
   },
   careers: {
-    seo: { title: "Careers", description: "Work with Gadiride as a driver, heavy vehicle driver, equipment operator or in operations." },
+    seo: { title: "Driver & JCB operator jobs in Hyderabad", description: "Work with Gadiride in Hyderabad as a car driver, heavy vehicle driver, JCB operator or in operations. Apply online and we call you back." },
     title: "Drive with us.",
     intro: "We work with drivers, operators and office staff. Send your details and we will contact you when there is a matching opening.",
     rolesTitle: "Roles we hire for.",
@@ -219,7 +219,7 @@ export const pageDefaults = {
     form: noFormChanges(),
   },
   about: {
-    seo: { title: "About us", description: "Gadiride is a Hyderabad vehicle rental company: self drive cars, chauffeur cars, passenger vehicles, trucks and JCBs." },
+    seo: { title: "About Gadiride: vehicle rental company in Hyderabad", description: "Gadiride is a Hyderabad vehicle rental company for self drive and chauffeur cars, tempo travellers, buses, trucks and JCBs, with quotes and bookings on WhatsApp." },
     title: "About Gadiride.",
     intro: "A Hyderabad rental company that brings every kind of vehicle together, so you find the right one with one call or message.",
     heading: "What we do.",
@@ -231,7 +231,7 @@ export const pageDefaults = {
     ],
   },
   contact: {
-    seo: { title: "Contact", description: "Call 94915 44981 or WhatsApp Gadiride for self drive cars and vehicle rentals in Hyderabad." },
+    seo: { title: "Contact Gadiride: call or WhatsApp 94915 44981", description: "Call or WhatsApp Gadiride on 94915 44981 for self drive cars, chauffeur cars, tempo travellers, buses, trucks and JCBs on rent in Hyderabad." },
     title: "Talk to us.",
     intro: "Call 94915 44981 or message us on WhatsApp. We help with bookings every day.",
     whatsappTitle: "Chat on WhatsApp",
@@ -241,7 +241,7 @@ export const pageDefaults = {
     emptyText: "Please call or WhatsApp us for booking help.",
   },
   faq: {
-    seo: { title: "FAQ", description: "Answers about vehicles, booking requests, drivers, goods transport and heavy equipment." },
+    seo: { title: "Vehicle rental FAQs: cars, buses, trucks & JCBs", description: "Answers to common questions on renting self drive cars, tempo travellers, buses, trucks and JCBs in Hyderabad: booking, drivers, goods transport and heavy equipment." },
     title: "Questions, answered.",
     intro: "Anything else? Ask us on WhatsApp.",
   },
@@ -262,14 +262,14 @@ export const pageDefaults = {
     editLabel: "Edit search",
   },
   drivers: {
-    seo: { title: "Hire a driver", description: "Hire a verified driver for your own vehicle or ours, for local or outstation trips." },
+    seo: { title: "Hire a driver in Hyderabad: local & outstation", description: "Hire a verified, experienced driver in Hyderabad for your own car or ours, for local, airport or outstation trips. Get a quote on WhatsApp." },
     title: "Hire a driver.",
     intro: "Verified drivers in Hyderabad for your own car or ours. Local or outstation, by the day or longer.",
     listTitle: "Our drivers",
     empty: "Our team matches you with a verified driver. Search above with your trip details and we will reply on WhatsApp.",
   },
   partner: {
-    seo: { title: "Attach your vehicle", description: "List your car, bus, truck or machine with Gadiride, with or without a driver." },
+    seo: { title: "Attach your car, bus, truck or JCB with Gadiride", description: "Own a car, bus, truck or JCB? Attach it with Gadiride in Hyderabad and earn from rentals, with or without a driver." },
     title: "Attach your vehicle.",
     intro: "Own a car in Hyderabad? Attach it with Gadiride and earn from rentals. Tempo travellers, buses, trucks and JCBs welcome too.",
     steps: [

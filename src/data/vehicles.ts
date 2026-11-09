@@ -67,13 +67,15 @@ export type Vehicle = VehicleSeed & {
   /** False when the photo is the type's stock photo. */
   ownPhoto: boolean;
   location: string;
+  /** Last edited in the admin (ISO), for the sitemap. */
+  updatedAt?: string;
   gallery: Photo[];
   fit: PhotoFit;
   bg: PhotoBg;
   zoom: number;
 };
 
-export type Group = { id: GroupId; name: string; short: string; blurb: string; art: ArtId; color: string; photo?: Photo; heroPhoto?: Photo; heroPhotoMobile?: Photo; heroFit?: import("@/lib/images").HeroFit; listTitle?: string };
+export type Group = { id: GroupId; name: string; short: string; blurb: string; art: ArtId; color: string; photo?: Photo; heroPhoto?: Photo; heroPhotoMobile?: Photo; heroFit?: import("@/lib/images").HeroFit; listTitle?: string; seoTitle?: string; seoDescription?: string; seoImage?: Photo };
 export type VType = VehicleType & { photo: Photo };
 
 export type HeroVariant = { art: ArtId; color: string };

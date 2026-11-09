@@ -18,6 +18,8 @@ import SectionTitle from "@/components/SectionTitle";
 import { accent } from "@/components/Accent";
 import { getBanners, getDrivers, getFaq, getHome, getPage, getSettings, getTestimonials, getVehicles, pageMetadata, getTrips } from "@/lib/content";
 import { GROUPS, type Vehicle } from "@/data/vehicles";
+import JsonLd from "@/components/JsonLd";
+import { faqLd } from "@/lib/structuredData";
 
 /** Cards per tab in "Popular right now"; Today trips on Home shows the same number. */
 const POPULAR_MAX = 15;
@@ -78,10 +80,12 @@ export default async function Home() {
     ),
     final: <FinalCta content={home.final} />,
   };
+  const order = orderSections(home.layout, HOME_SECTIONS);
   return (
     <>
+      {order.includes("faq") && homeFaq.length > 0 && <JsonLd data={faqLd(homeFaq)} />}
       <HomeHero slides={home.slides} />
-      {orderSections(home.layout, HOME_SECTIONS).map((key) => <Fragment key={key}>{sections[key]}</Fragment>)}
+      {order.map((key) => <Fragment key={key}>{sections[key]}</Fragment>)}
     </>
   );
 }

@@ -143,7 +143,8 @@ const groupPage = (g: (typeof GROUPS)[number]): PageMap => ({
       : []),
     ...(g.id === "cars" ? [areas] : []),
     slotted("faq", withItems(field("faq", "FAQ", "vehiclesPage", "faqTitle", HelpCircleIcon), all("Questions", "faq"))),
-    seo("vehiclesPage"),
+    // This service page's own Google title and description (on its vehicle group).
+    { ...seo("vehicleGroup"), target: doc("vehicleGroup", "seo", `group-${g.id}`) },
   ],
 });
 

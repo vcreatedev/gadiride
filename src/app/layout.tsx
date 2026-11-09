@@ -9,12 +9,22 @@ import "@fontsource/inter/600.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
+import { SITE_URL } from "@/lib/siteUrl";
+
+/** Search Console ownership tags, set in Vercel when the site is added to Google / Bing Webmaster Tools. */
+const verification = {
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } : {}),
+  ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } } : {}),
+};
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ||
-      (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000"),
-  ),
+  // Every absolute link (share images, canonical addresses) uses gadiride.com.
+  metadataBase: new URL(SITE_URL),
+  applicationName: "Gadiride",
+  publisher: "Gadiride",
+  category: "travel",
+  formatDetection: { telephone: true, email: true, address: true },
+  verification,
   title: { default: "Gadiride | Cars, buses, trucks and JCBs on rent", template: "%s | Gadiride" },
   description: "Rent cars, tempo travellers, buses, trucks and backhoe loaders (JCB) from one place. Share your details and get a quote on WhatsApp.",
   openGraph: {

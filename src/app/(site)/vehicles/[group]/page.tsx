@@ -13,6 +13,9 @@ import OfferBanners from "@/components/OfferBanners";
 import AreasServed from "@/components/AreasServed";
 import { GROUPS, HERO_VARIANTS, type GroupId } from "@/data/vehicles";
 import { getBanners, getFaq, getGroups, getHome, getPage, getSettings, getTrips, getVehicles } from "@/lib/content";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbLd, faqLd, vehicleListLd } from "@/lib/structuredData";
+import { buildMetadata, shareImageUrl } from "@/lib/seo";
 
 const SCENE: Record<GroupId, SceneId> = { cars: "city", passenger: "highway", logistics: "port", equipment: "site" };
 
@@ -21,11 +24,37 @@ export function generateStaticParams() {
   return GROUPS.map((g) => ({ group: g.id }));
 }
 
+/** Search titles and descriptions per service, used until the admin sets its own (Search & sharing). */
+const GROUP_SEO: Record<GroupId, { title: string; description: string }> = {
+  cars: {
+    title: "Self drive & chauffeur car rental in Hyderabad",
+    description: "Rent self drive and chauffeur-driven cars in Hyderabad: hatchbacks, sedans, SUVs and luxury cars with doorstep and RGIA airport delivery. Get a quote on WhatsApp.",
+  },
+  passenger: {
+    title: "Tempo traveller & bus rental in Hyderabad",
+    description: "Hire tempo travellers, minibuses and buses in Hyderabad for family trips, weddings, events, pilgrimages and staff transport. Share your group size and get a quote on WhatsApp.",
+  },
+  logistics: {
+    title: "Truck & pickup rental in Hyderabad",
+    description: "Hire pickups and trucks in Hyderabad for shop deliveries, business goods and house shifting. Share your load and route and get a quote on WhatsApp.",
+  },
+  equipment: {
+    title: "JCB (backhoe loader) rental in Hyderabad",
+    description: "Hire JCB backhoe loaders in Hyderabad for construction, digging and site work, with or without an operator. Share your site details and get a quote on WhatsApp.",
+  },
+};
+
 export async function generateMetadata({ params }: { params: Promise<{ group: string }> }): Promise<Metadata> {
   const { group: key } = await params;
-  const g = (await getGroups()).find((x) => x.id === key);
-  if (key === "cars") return { title: { absolute: "Self drive car rental in Hyderabad | Gadiride" }, description: g?.blurb };
-  return { title: g?.name ?? "Vehicles", description: g?.blurb };
+  const [groups, site] = await Promise.all([getGroups(), getSettings()]);
+  const g = groups.find((x) => x.id === key);
+  const fallback = GROUP_SEO[key as GroupId];
+  return buildMetadata({
+    title: g?.seoTitle || fallback?.title || g?.name || "Vehicles",
+    description: g?.seoDescription || fallback?.description || g?.blurb,
+    path: `/vehicles/${key}/`,
+    image: shareImageUrl(g?.seoImage ?? g?.heroPhoto ?? site.shareImage),
+  });
 }
 
 export default async function GroupPage({ params }: { params: Promise<{ group: string }> }) {
@@ -63,10 +92,19 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
       </section>
     ),
   };
+  const order = orderSections(p.layout, VEHICLE_PAGE_SECTIONS);
+  const inGroup = vehicles.filter((v) => v.group === g.id);
   return (
     <>
+      <JsonLd
+        data={[
+          breadcrumbLd([{ name: "Home", path: "/" }, { name: g.name, path: `/vehicles/${g.id}/` }]),
+          ...(inGroup.length ? [vehicleListLd(`${g.name} on rent`, inGroup)] : []),
+          ...(order.includes("faq") && faq.length ? [faqLd(faq)] : []),
+        ]}
+      />
       <PageHero full scene={SCENE[g.id as GroupId]} bgPhoto={g.heroPhoto} bgPhotoMobile={g.heroPhotoMobile} bgFit={g.heroFit} variants={HERO_VARIANTS[g.id as GroupId]} title={<>{g.name}<span className="text-brand-500">.</span></>} intro={g.blurb} art={g.art} color={g.color} bottom={<BookingCard lockTab={g.id as GroupId} />} />
-      {orderSections(p.layout, VEHICLE_PAGE_SECTIONS).map((k) => <Fragment key={k}>{sections[k]}</Fragment>)}
+      {order.map((k) => <Fragment key={k}>{sections[k]}</Fragment>)}
     </>
   );
 }
