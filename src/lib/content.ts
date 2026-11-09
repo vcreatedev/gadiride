@@ -17,6 +17,7 @@ import {
   type Vehicle,
   type VehicleSeed,
 } from "@/data/vehicles";
+import { DEFAULT_LOCATION } from "@/data/cities";
 import { FAQ } from "@/data/faq";
 import { SAMPLE_DRIVERS } from "@/data/drivers";
 import { dataset } from "@/sanity/env";
@@ -47,9 +48,9 @@ const QUERY = `{
   "types": *[_type == "vehicleType" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
     "id": key.current, name, group, art, image${IMG}
   },
-  "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group)]
+  "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group) && (!defined(liveFrom) || dateTime(liveFrom) <= dateTime(now())) && (!defined(liveUntil) || dateTime(liveUntil) > dateTime(now()))]
     | order(coalesce(order, 100) asc, _createdAt desc){
-      "slug": slug.current, name, group, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, featured,
+      "slug": slug.current, name, group, location, area, pincode, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, featured,
       photoFit, photoBackground, photoZoom,
       "type": type->key.current,
       image${IMG}, gallery[hidden != true]${IMG}
@@ -63,7 +64,7 @@ const QUERY = `{
     name, city, experience, licence, duty, drives, languages, about, verified, photo${IMG}
   },
   "trips": *[_type == "trip" && available != false && defined(from) && defined(to) && defined(date)] | order(date asc, time asc){
-    "id": _id, from, to, via, date, time, expiresAt, seats, full, pricePerSeat, notes, rules, "car": vehicle->{"slug": slug.current, name}
+    "id": _id, from, to, via, date, time, liveFrom, expiresAt, seats, full, pricePerSeat, notes, rules, "car": vehicle->{"slug": slug.current, name}
   },
   "testimonials": *[_type == "testimonial" && hidden != true && defined(quote)] | order(coalesce(order, 100) asc, _createdAt desc){quote, name, detail, rating, photo${IMG}}
 }`;
@@ -74,9 +75,9 @@ type Raw = {
   pages?: ({ _id: string } & Record<string, unknown>)[];
   groups?: { key: GroupId; name?: string; short?: string; blurb?: string; image?: SanityImageDoc; heroImage?: SanityImageDoc; heroImageMobile?: SanityImageDoc; heroFit?: HeroFit; listTitle?: string }[];
   types?: { id: string; name: string; group: GroupId; art?: ArtId; image?: SanityImageDoc }[];
-  trips?: { id: string; from: string; to: string; via?: string[]; date: string; time?: string; expiresAt?: string; seats?: number; full?: boolean; pricePerSeat?: number; notes?: string; rules?: string[]; car?: { slug?: string; name?: string } }[];
+  trips?: { id: string; from: string; to: string; via?: string[]; date: string; time?: string; liveFrom?: string; expiresAt?: string; seats?: number; full?: boolean; pricePerSeat?: number; notes?: string; rules?: string[]; car?: { slug?: string; name?: string } }[];
   vehicles?: {
-    slug: string; name: string; group: GroupId; type?: string; summary?: string;
+    slug: string; name: string; group: GroupId; location?: string; area?: string; pincode?: string; type?: string; summary?: string;
     specs?: { label: string; value: string }[]; mileage?: string; options?: string[]; pricePerDay?: number; featured?: boolean;
     photoFit?: PhotoFit; photoBackground?: PhotoBg; photoZoom?: number;
     image?: SanityImageDoc; gallery?: SanityImageDoc[];
@@ -279,6 +280,7 @@ export const getVehicles = cache(async (): Promise<Vehicle[]> => {
       ...v,
       groupName: groupName(v.group),
       typeName: t?.name ?? v.type,
+      location: v.location ?? DEFAULT_LOCATION,
       photo: t?.photo ?? defaultTypePhoto(v.type, v.name),
       ownPhoto: false,
       gallery: [],
@@ -292,7 +294,12 @@ export const getVehicles = cache(async (): Promise<Vehicle[]> => {
     .map((d): Vehicle | null => {
       const t = types.find((x) => x.id === d.type) ?? types.find((x) => x.group === d.group);
       if (!t) return null;
-      const own = toPhoto(d.image, d.name);
+      // One list of photos, the first is the main photo. An older separate main photo goes first (until it is moved into the list).
+      const shots = [d.image, ...(d.gallery ?? [])].filter(
+        (g, i, all): g is SanityImageDoc => !!g?.asset?._ref && all.findIndex((x) => x?.asset?._ref === g.asset?._ref) === i,
+      );
+      const photos = shots.map((g) => toPhoto(g, d.name)).filter((p): p is Photo => !!p);
+      const own = photos[0];
       return {
         slug: d.slug,
         name: d.name,
@@ -311,9 +318,12 @@ export const getVehicles = cache(async (): Promise<Vehicle[]> => {
         featured: !!d.featured,
         groupName: groupName(d.group),
         typeName: t.name,
+        location: d.location?.trim() || DEFAULT_LOCATION,
+        area: d.area?.trim() || undefined,
+        pincode: d.pincode?.trim() || undefined,
         photo: own ?? { ...t.photo, alt: d.name },
         ownPhoto: !!own,
-        gallery: (d.gallery ?? []).map((g) => toPhoto(g, d.name)).filter((p): p is Photo => !!p),
+        gallery: photos.slice(1),
         fit: d.photoFit ?? "cover",
         bg: d.photoBackground ?? "studio",
         zoom: d.photoZoom ?? 100,
@@ -388,7 +398,8 @@ export const getTrips = cache(async (): Promise<Trip[]> => {
   const [raw, vehicles] = await Promise.all([fetchRaw(), getVehicles()]);
   const now = Date.now();
   return (raw.trips ?? [])
-    .filter((t) => Date.parse(tripEndsAt(t.date, t.time, t.expiresAt)) > now)
+    // Between its "Go live at" (if set) and its end ("Show until", else the trip's start).
+    .filter((t) => Date.parse(tripEndsAt(t.date, t.time, t.expiresAt)) > now && (!t.liveFrom || Date.parse(t.liveFrom) <= now))
     .map((t) => {
       const v = vehicles.find((x) => x.slug === t.car?.slug);
       const seats = Math.max(0, t.seats ?? 0);
@@ -400,6 +411,7 @@ export const getTrips = cache(async (): Promise<Trip[]> => {
         date: t.date,
         time: t.time ?? "",
         endsAt: tripEndsAt(t.date, t.time, t.expiresAt),
+        startsAt: t.liveFrom ?? undefined,
         seats,
         full: !!t.full || seats === 0,
         pricePerSeat: t.pricePerSeat ?? undefined,

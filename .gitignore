@@ -9,6 +9,8 @@
 # next.js
 /.next/
 /.next-prod/
+# temporary local build checks (.next-check, .next-dev-check)
+/.next-*/
 /out/
 
 # production

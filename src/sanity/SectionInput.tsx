@@ -6,6 +6,7 @@ import { Stack, Text } from "@sanity/ui";
 import { findSection } from "./pageMap";
 import SectionItems from "./SectionItems";
 import ImageAddressInput, { isImageType } from "./ImageAddressInput";
+import ImageListAddressInput, { imageItemType } from "./ImageListAddressInput";
 
 /**
  * When a document is opened from a page section in the sidebar (e.g. Header → Logo), the pane
@@ -50,11 +51,10 @@ function RootInput(props: ObjectInputProps) {
   if (!only) return props.renderDefault(props);
   const form = props.renderDefault({ ...props, groups: [], members: props.members.filter((m) => keep(m, only)) });
   const lists = section?.items;
-  if (!lists?.length) return form;
   return (
     <Stack space={5}>
       {form}
-      <SectionItems lists={lists} />
+      {lists?.length ? <SectionItems lists={lists} /> : null}
     </Stack>
   );
 }
@@ -89,5 +89,7 @@ export default function SectionInput(props: InputProps) {
   if (props.schemaType.jsonType === "array" && props.path[props.path.length - 1] === "banners") return <BannerFilter {...(props as ArrayOfObjectsInputProps)} />;
   // Every image field also takes a pasted image address or a copied image.
   if (isImageType(props.schemaType)) return <ImageAddressInput {...(props as ObjectInputProps)} />;
+  // Every list of photos (e.g. a vehicle's "More photos") also adds photos from image links.
+  if (imageItemType(props.schemaType)) return <ImageListAddressInput {...(props as ArrayOfObjectsInputProps)} />;
   return props.renderDefault(props);
 }

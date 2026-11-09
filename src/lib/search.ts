@@ -1,5 +1,6 @@
 import type { GroupId, Vehicle } from "@/data/vehicles";
-import { PICKUP_FIELD, isOutsideServiceArea } from "./serviceArea";
+import { PICKUP_FIELD, inArea, placeCity } from "./serviceArea";
+import { pinOf, withoutPin } from "./pincode";
 import type { Driver } from "./content";
 
 export type TabId = GroupId | "driver";
@@ -33,22 +34,30 @@ function biggerThanCars(need: number, vehicles: Vehicle[]): Vehicle[] | undefine
  * Vehicles in the chosen group that satisfy the trip details.
  * Vehicles without the relevant spec are kept (we cannot rule them out).
  * `upsized`: the group was too big for a car, so these are tempo travellers and buses.
- * `outside`: the pickup place is outside Hyderabad, so nothing is offered.
+ * Only vehicles based in the pickup's city are offered (no pickup yet = all of them).
+ * Vehicles in the pickup's area come first (`near` = how many, `nearArea` = that area), then the rest of the city.
+ * A pincode in the pickup counts as an area: vehicles with that pincode come first. A pincode with no
+ * town named finds its city from the vehicles listed with it (or in its district: same first 3 digits).
+ * `outside`: no vehicles of this group are based in that city.
  */
 export function matchVehicles(
   tab: GroupId,
   values: Record<string, string>,
   vehicles: Vehicle[],
   areas: string[] = [],
-): { exact: Vehicle[]; others: Vehicle[]; upsized: boolean; outside: boolean } {
-  if (isOutsideServiceArea(values[PICKUP_FIELD[tab]], areas)) return { exact: [], others: [], upsized: false, outside: true };
-  const inGroup = vehicles.filter((v) => v.group === tab);
+): { exact: Vehicle[]; others: Vehicle[]; upsized: boolean; outside: boolean; near: number; nearArea?: string } {
+  const pickup = values[PICKUP_FIELD[tab]];
+  const city = searchCity(pickup, vehicles, areas);
+  if (city === null) return { exact: [], others: [], upsized: false, outside: true, near: 0 };
+  const here = city ? vehicles.filter((v) => placeCity(v.location, areas) === city) : vehicles;
+  if (city && !here.some((v) => v.group === tab)) return { exact: [], others: [], upsized: false, outside: true, near: 0 };
+  const inGroup = here.filter((v) => v.group === tab);
   const tests: ((v: Vehicle) => boolean)[] = [];
   const need = Number(values.passengers) || 0;
 
   if (tab === "cars") {
-    const bigger = biggerThanCars(need, vehicles);
-    if (bigger) return { exact: bigger, others: [], upsized: true, outside: false };
+    const bigger = biggerThanCars(need, here);
+    if (bigger) return { ...areaFirst(bigger, pickup), others: [], upsized: true, outside: false };
   }
 
   if (tab === "cars") {
@@ -71,16 +80,44 @@ export function matchVehicles(
   }
 
   const exact = inGroup.filter((v) => tests.every((t) => t(v)));
-  return { exact, others: inGroup.filter((v) => !exact.includes(v)), upsized: false, outside: false };
+  return { ...areaFirst(exact, pickup), others: inGroup.filter((v) => !exact.includes(v)), upsized: false, outside: false };
 }
 
-/** Available drivers; ones in the pickup city and who drive the chosen vehicle come first. */
-export function matchDrivers(values: Record<string, string>, drivers: Driver[]) {
-  const where = (values.location || "").toLowerCase();
+/**
+ * The searched city: a town named in the place, else the city of the vehicles at its pincode (or in its
+ * district), else Hyderabad. Null when only a pincode was given and no vehicle is anywhere near it.
+ */
+function searchCity(place: string | undefined, vehicles: Vehicle[], areas: string[]): string | null {
+  const pin = pinOf(place);
+  const named = placeCity(withoutPin(place), areas, "");
+  if (named || !pin) return named || placeCity(place, areas);
+  const at = vehicles.find((v) => v.pincode === pin) ?? vehicles.find((v) => v.pincode?.slice(0, 3) === pin.slice(0, 3));
+  return at ? placeCity(at.location, areas) : null;
+}
+
+/** The vehicles in the searched place's area (or at its pincode) first (same order otherwise), then the rest. */
+function areaFirst(list: Vehicle[], place: string | undefined) {
+  const pin = pinOf(place);
+  const near = list.filter((v) => inArea(withoutPin(place), v.area) || (!!pin && v.pincode === pin));
+  return { exact: [...near, ...list.filter((v) => !near.includes(v))], near: near.length, nearArea: near[0]?.area ?? (near.length ? pin : undefined) };
+}
+
+/**
+ * Drivers for a search: only those in the pickup's city (a driver without a city counts as
+ * Hyderabad); ones in the pickup's area first, then those who drive the chosen vehicle.
+ */
+export function matchDrivers(values: Record<string, string>, drivers: Driver[], areas: string[] = []) {
+  const where = values.location || "";
+  const city = placeCity(where, areas);
   const kind = (values.drives || "").toLowerCase();
-  const score = (d: Driver) =>
-    (d.city && where.includes(d.city.toLowerCase()) ? 2 : 0) + (kind && d.drives.some((x) => x.toLowerCase().includes(kind)) ? 1 : 0);
-  return [...drivers].sort((a, b) => score(b) - score(a));
+  const inCity = city ? drivers.filter((d) => placeCity(d.city || "Hyderabad", areas) === city) : drivers;
+  // A driver's area is the part of their place before the city ("Bhanugudi Junction" in "Bhanugudi Junction, Kakinada").
+  const areaOf = (place?: string) => {
+    const first = (place ?? "").split(",")[0].trim();
+    return first && first.toLowerCase() !== placeCity(place, areas) ? first : undefined;
+  };
+  const score = (d: Driver) => (inArea(where, areaOf(d.city)) ? 2 : 0) + (kind && d.drives.some((x) => x.toLowerCase().includes(kind)) ? 1 : 0);
+  return [...inCity].sort((a, b) => score(b) - score(a));
 }
 
 export const SEARCH_CTA: Record<TabId, string> = {

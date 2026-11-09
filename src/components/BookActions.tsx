@@ -23,7 +23,7 @@ export default function BookActions({
   vehicle: string;
   entries?: Entry[];
   /** The vehicle itself: its type, specs, price and page link go into the message. */
-  details?: Pick<Vehicle, "typeName" | "specs" | "pricePerDay" | "slug">;
+  details?: Pick<Vehicle, "typeName" | "specs" | "pricePerDay" | "slug" | "location" | "area">;
   showPrice?: boolean;
   size?: "md" | "lg";
   className?: string;

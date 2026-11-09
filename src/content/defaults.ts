@@ -183,7 +183,7 @@ export const pageDefaults = {
     tripsEmpty: "Message us on WhatsApp with your route and date. We will find you a seat, or a car of your own.",
     tripsOthersTitle: "Other upcoming trips",
     outsideTitle: "Coming to your city soon!",
-    outsideText: "Right now we pick up across Hyderabad and Secunderabad, airport included, and we are growing fast. Choose a Hyderabad pickup point, or message us on WhatsApp and we will gladly help plan your trip.",
+    outsideText: "We don't have vehicles listed in that city yet, and we are growing fast. Try another pickup city, or message us on WhatsApp and we will gladly help plan your trip.",
     emptyTitle: "Nothing listed for this filter yet",
     emptyText: "Ask us on WhatsApp. We often have more than what is listed here.",
     detailQuoteTitle: "Request a quote",

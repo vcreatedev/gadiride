@@ -2,11 +2,14 @@
  * Place search and reverse geocoding via Photon (OpenStreetMap data, free, no key).
  * Results are limited to India and biased towards the visitor's location once known.
  */
+import { lookupPincode } from "./pincode";
+
 const API = "https://photon.komoot.io";
 const INDIA_BBOX = "68.1,6.5,97.4,35.7";
 const RECENT_KEY = "gr-recent-places";
 
-export type Place = { label: string; detail?: string; lat?: number; lon?: number };
+/** `area`, `city`, `pincode`: the parts the admin fills in when a place is picked. */
+export type Place = { label: string; detail?: string; lat?: number; lon?: number; area?: string; city?: string; pincode?: string };
 
 type Props = {
   name?: string; street?: string; housenumber?: string; locality?: string; district?: string;
@@ -29,7 +32,9 @@ function addressFrom(features: Feature[], cityOnly: boolean): string | null {
   const withStreet = ps.find((p) => p.street);
   const street = withStreet ? [withStreet.housenumber, withStreet.street].filter(Boolean).join(" ") : undefined;
   const locality = first.locality || withStreet?.locality;
-  const parts = [street, locality, area(first.district || withStreet?.district), city, first.postcode && !city ? `${first.state ?? ""} ${first.postcode}`.trim() : undefined];
+  // The pincode goes with the city (or the state), so a pincode search can match it.
+  const pin = first.postcode || ps.find((p) => p.postcode)?.postcode;
+  const parts = [street, locality, area(first.district || withStreet?.district), city ? [city, pin].filter(Boolean).join(" ") : pin ? `${first.state ?? ""} ${pin}`.trim() : undefined];
   const out = [...new Set(parts.filter((x): x is string => !!x))];
   return out.length ? out.join(", ") : null;
 }
@@ -52,11 +57,12 @@ function toPlace(f: Feature, cityOnly = false): Place {
   const parts = cityOnly ? [p.state] : [p.locality, district, p.city, p.state];
   const detail = [...new Set(parts.filter((x): x is string => !!x && x !== label))].join(", ");
   const [lon, lat] = f.geometry.coordinates;
-  return { label, detail: detail || undefined, lat, lon };
+  return { label, detail: detail || undefined, lat, lon, area: cityOnly ? undefined : label, city: p.city, pincode: p.postcode };
 }
 
 /** Autocomplete suggestions for a typed query. `city` restricts results to towns and cities. */
 export async function searchPlaces(q: string, { city = false, signal }: { city?: boolean; signal?: AbortSignal } = {}): Promise<Place[]> {
+  if (/^[1-9]\d{5}$/.test(q.trim())) return pincodePlaces(q.trim(), city, signal);
   const u = new URLSearchParams({ q, limit: "7", lang: "en", bbox: INDIA_BBOX });
   if (city) u.append("osm_tag", "place");
   if (bias) { u.set("lat", String(bias.lat)); u.set("lon", String(bias.lon)); }
@@ -68,6 +74,16 @@ export async function searchPlaces(q: string, { city = false, signal }: { city?:
     .filter((f) => !f.properties.countrycode || f.properties.countrycode === "IN")
     .map((f) => toPlace(f, city))
     .filter((p) => { const k = `${p.label}|${p.detail}`; if (seen.has(k)) return false; seen.add(k); return true; });
+}
+
+/** A typed pincode: its areas (post offices), or just its town for a city-only box. */
+async function pincodePlaces(pin: string, cityOnly: boolean, signal?: AbortSignal): Promise<Place[]> {
+  const offices = await lookupPincode(pin, signal);
+  if (cityOnly) {
+    const towns = [...new Map(offices.filter((o) => o.city).map((o) => [o.city, o])).values()];
+    return towns.map((o) => ({ label: o.city, detail: o.state, city: o.city, pincode: pin }));
+  }
+  return offices.map((o) => ({ label: o.area, detail: [o.city, `${o.state} ${o.pincode}`.trim()].filter(Boolean).join(", "), area: o.area, city: o.city, pincode: o.pincode }));
 }
 
 /** Reads the device location and turns it into a readable address. */
@@ -82,7 +98,16 @@ export function currentPlace({ city = false } = {}): Promise<Place> {
           const data = (await res.json()) as { features: Feature[] };
           const label = addressFrom(data.features, city);
           if (!label) throw new Error();
-          resolve({ label, lat: coords.latitude, lon: coords.longitude });
+          const ps = data.features.map((f) => f.properties);
+          const first = ps[0] ?? {};
+          resolve({
+            label,
+            lat: coords.latitude,
+            lon: coords.longitude,
+            area: first.locality || area(first.district) || first.name,
+            city: first.city || ps.find((p) => p.city)?.city,
+            pincode: first.postcode || ps.find((p) => p.postcode)?.postcode,
+          });
         } catch {
           resolve({ label: `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`, lat: coords.latitude, lon: coords.longitude });
         }

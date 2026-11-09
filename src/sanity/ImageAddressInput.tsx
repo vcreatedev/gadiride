@@ -31,7 +31,7 @@ function fileNameOf(address: string, type: string): string {
 }
 
 /** Reads the image behind a pasted address: data: links locally, web links through the site route. */
-async function downloadImage(address: string): Promise<File> {
+export async function downloadImage(address: string): Promise<File> {
   if (address.startsWith("blob:")) {
     throw new Error("That is a temporary link that only works inside the other website's tab. Right-click the image there, choose “Copy image”, then click this box and press Ctrl+V.");
   }

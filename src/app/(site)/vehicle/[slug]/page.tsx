@@ -1,7 +1,8 @@
+import { placeLabel } from "@/data/vehicles";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Check } from "lucide-react";
+import { ChevronLeft, Check, MapPin } from "lucide-react";
 import VehicleCard from "@/components/VehicleCard";
 import VehicleGallery from "@/components/VehicleGallery";
 import RequestForm from "@/components/RequestForm";
@@ -51,6 +52,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
             <div className="min-w-0">
               <p className="text-sm font-semibold uppercase tracking-wider text-brand-700">{v.groupName}</p>
               <h1 className="display mt-1 text-5xl md:text-6xl">{v.name}</h1>
+              <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-700"><MapPin aria-hidden className="h-4 w-4 text-brand-600" />Based in {placeLabel(v)}</p>
               <p className="mt-4 leading-relaxed">{v.summary}</p>
               {v.specs.length > 0 && (
                 <dl className={`mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-field border border-line bg-line ${v.specs.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
