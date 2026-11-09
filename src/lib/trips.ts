@@ -10,8 +10,10 @@ export type Trip = {
   date: string;
   /** HH:MM */
   time: string;
-  /** When it leaves the website (ISO): "Remove from website at", or the trip's start. */
+  /** When it leaves the website (ISO): "Show until", or the trip's start. */
   endsAt: string;
+  /** When it appears on the website (ISO): "Go live at"; none = as soon as it is published. */
+  startsAt?: string;
   seats: number;
   /** Marked "Fully booked" in the admin, or no seats left. */
   full: boolean;
@@ -41,11 +43,12 @@ export const isRestriction = (rule: string) => /^no\b/i.test(rule.trim());
 /** The value of "Rental type" that searches shared trips. */
 export const TRIP_MODE = "Today trip";
 
-/** A trip's removal time: the admin's "Remove from website at", else its start (date + time, India time). */
+/** A trip's removal time: the admin's "Show until", else its start (date + time, India time). */
 export const tripEndsAt = (date: string, time?: string, expiresAt?: string) => expiresAt || `${date}T${/^\d\d:\d\d$/.test(time ?? "") ? time : "23:59"}:00+05:30`;
 
-/** Still on the website: its removal time has not passed. */
-export const isLive = (t: { endsAt: string }, now = Date.now()) => Date.parse(t.endsAt) > now;
+/** On the website now: its "Go live at" (if any) has come and its end time has not passed. */
+export const isLive = (t: { endsAt: string; startsAt?: string }, now = Date.now()) =>
+  Date.parse(t.endsAt) > now && (!t.startsAt || Date.parse(t.startsAt) <= now);
 
 /** Today's date in India (YYYY-MM-DD). */
 export const todayInIndia = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d);

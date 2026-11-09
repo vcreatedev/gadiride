@@ -1,6 +1,8 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
 import { CalendarIcon } from "@sanity/icons";
 import { TRIP_RULES } from "@/lib/trips";
+import ClockTimeInput from "../ClockTimeInput";
+import TimerInput, { TimerField } from "../TimerInput";
 
 /** Today's date in India (YYYY-MM-DD), the default for a new trip. */
 const todayInIndia = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
@@ -39,15 +41,28 @@ export const trip = defineType({
       name: "time",
       title: "Start time",
       type: "string",
-      placeholder: "e.g. 06:30",
+      description: "Pick the hour, minutes and AM / PM.",
+      components: { input: ClockTimeInput },
       validation: (r) => r.required().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { name: "time (HH:MM)" }),
     }),
     defineField({
-      name: "expiresAt",
-      title: "Remove from website at (date & time)",
+      name: "liveFrom",
+      title: "Go live at (optional)",
       type: "datetime",
-      options: { dateFormat: "DD MMM YYYY", timeFormat: "hh:mm A", timeStep: 15 },
+      description: "Publish now and the trip stays off the website until this date and time, then appears by itself. Empty = live as soon as it is published.",
+      components: { input: TimerInput, field: TimerField },
+    }),
+    defineField({
+      name: "expiresAt",
+      title: "Show until (optional)",
+      type: "datetime",
       description: "The trip disappears from the website at this date and time. Empty = when the trip starts (its date and start time).",
+      components: { input: TimerInput, field: TimerField },
+      validation: (r) =>
+        r.custom((until, ctx) => {
+          const from = (ctx.document as { liveFrom?: string } | undefined)?.liveFrom;
+          return !until || !from || Date.parse(String(until)) > Date.parse(from) ? true : "Must be after Go live at";
+        }),
     }),
     defineField({ name: "seats", title: "Seats left", type: "number", placeholder: "e.g. 3", initialValue: 3, validation: (r) => r.required().min(0).max(60) }),
     defineField({

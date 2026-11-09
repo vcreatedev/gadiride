@@ -26,3 +26,7 @@ export const STATE_CITIES: { state: string; cities: string[] }[] = [
 ];
 
 export const ALL_CITIES = STATE_CITIES.flatMap(({ state, cities }) => cities.map((name) => ({ name, state })));
+
+/** Where a vehicle is based (admin dropdown): Hyderabad first, then every listed town. */
+export const DEFAULT_LOCATION = "Hyderabad";
+export const LOCATION_OPTIONS = [DEFAULT_LOCATION, ...ALL_CITIES.map((c) => c.name).filter((n) => n !== DEFAULT_LOCATION)];

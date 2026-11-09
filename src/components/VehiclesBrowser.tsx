@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Minus, Plus, X } from "lucide-react";
+import { MapPin, Minus, Plus, X } from "lucide-react";
 import type { GroupId, Vehicle } from "@/data/vehicles";
 import { FORMS, applyFormOverride } from "@/data/forms";
 import { CLEAR_EVENT, SEARCH_EVENT, announceClear, announceTrip } from "@/lib/events";
@@ -40,6 +40,7 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
   const { groups: GROUPS, types: TYPES } = useCatalog();
   const [group, setGroup] = useState<GroupId | "all">(lockGroup ?? "all");
   const [type, setType] = useState<string>("all");
+  const [loc, setLoc] = useState<string>("all");
   // The search bar's values for this page (only what the visitor changed).
   const [trip, setTrip] = useState<Record<string, string>>({});
   const formEdits = useSearchBar().forms;
@@ -53,6 +54,8 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
     }
     const t = p.get("type") || window.location.hash.slice(1);
     if (t && TYPES.some((x) => x.id === t)) setType(t);
+    const l = p.get("location");
+    if (l) setLoc(l);
     if (lockGroup) setTrip(pickFormValues(lockGroup, Object.fromEntries(p)));
   }, [lockGroup, GROUPS, TYPES]);
 
@@ -61,6 +64,7 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
     const h = (e: Event) => {
       setTrip((e as CustomEvent<Record<string, string>>).detail);
       setType("all");
+      setLoc("all"); // the pickup place decides the city
       requestAnimationFrame(() => scrollToTarget("#all"));
     };
     window.addEventListener(SEARCH_EVENT, h);
@@ -77,10 +81,11 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
     const p = new URLSearchParams();
     if (!lockGroup && group !== "all") p.set("group", group);
     if (type !== "all") p.set("type", type);
+    if (loc !== "all") p.set("location", loc);
     Object.entries(trip).forEach(([k, v]) => v && p.set(k, v));
     const qs = p.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
-  }, [group, type, lockGroup, trip]);
+  }, [group, type, loc, lockGroup, trip]);
 
   const searching = Object.keys(trip).length > 0;
   const tripValues = useMemo(() => withFormDefaults(fields, trip), [fields, trip]);
@@ -98,9 +103,18 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
     announceTrip({ passengers: v });
   };
   const types = match?.upsized ? [] : TYPES.filter((t) => (group === "all" || t.group === group) && vehicles.some((v) => v.type === t.id));
+  // Cities with vehicles in this list; the chips show only when there is more than one.
+  const locations = useMemo(
+    () => [...new Set(vehicles.filter((v) => group === "all" || v.group === group).map((v) => v.location))].sort((a, b) => a.localeCompare(b)),
+    [vehicles, group],
+  );
+  const atLoc = !searching && loc !== "all" && locations.includes(loc) ? loc : "all";
   const list = useMemo(
-    () => (match ? match.exact : vehicles).filter((v) => (match?.upsized || group === "all" || v.group === group) && (match?.upsized || type === "all" || v.type === type)),
-    [match, vehicles, group, type],
+    () =>
+      (match ? match.exact : vehicles).filter(
+        (v) => (match?.upsized || group === "all" || v.group === group) && (match?.upsized || type === "all" || v.type === type) && (atLoc === "all" || v.location === atLoc),
+      ),
+    [match, vehicles, group, type, atLoc],
   );
   const sample = vehicles.some((v) => v.sample);
 
@@ -139,9 +153,18 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
           ))}
         </div>
       )}
+      {!searching && locations.length > 1 && (
+        <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4" role="group" aria-label="Location">
+          {["all", ...locations].map((l) => (
+            <button key={l} type="button" aria-pressed={atLoc === l} onClick={() => setLoc(l)} className={`chip h-9 ${atLoc === l ? "chip-on" : ""}`}>
+              {l === "all" ? "All locations" : <><MapPin aria-hidden className="h-3.5 w-3.5" />{l}</>}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="text-sm text-ink-400" aria-live="polite">
-          {list.length} {list.length === 1 ? "vehicle" : "vehicles"}{forWhom}. {sample ? "Sample list, availability" : "Availability"} confirmed on request.
+          {list.length} {list.length === 1 ? "vehicle" : "vehicles"}{atLoc !== "all" ? ` in ${atLoc}` : ""}{forWhom}.{match?.near && match.nearArea ? ` ${match.near} in ${match.nearArea} shown first.` : ""} {sample ? "Sample list, availability" : "Availability"} confirmed on request.
         </p>
         {searching && seatField && passengers > 0 && (
           <div className="inline-flex h-8 items-center gap-1 rounded-lg px-1 text-sm ring-1 ring-line" role="group" aria-label="Passengers">
@@ -173,7 +196,7 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
           {/* Pickup outside Hyderabad: say so instead of the usual "nothing listed". */}
           <p className="font-head text-xl font-semibold text-ink-900">{match?.outside ? empty.outsideTitle ?? empty.title : empty.title}</p>
           <p className="mt-2">{match?.outside ? empty.outsideText ?? empty.text : empty.text}</p>
-          <button type="button" className="btn-secondary mt-5" onClick={() => { setGroup(lockGroup ?? "all"); clearSearch(); }}>Clear filters</button>
+          <button type="button" className="btn-secondary mt-5" onClick={() => { setGroup(lockGroup ?? "all"); setLoc("all"); clearSearch(); }}>Clear filters</button>
         </div>
       )}
     </div>

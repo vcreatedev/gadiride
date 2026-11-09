@@ -1,4 +1,7 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
+import { DEFAULT_LOCATION, LOCATION_OPTIONS } from "@/data/cities";
+import AreaInput from "../AreaInput";
+import TimerInput, { TimerField } from "../TimerInput";
 import { GROUPS } from "@/data/vehicles";
 import { VehiclePhotoInput } from "../FallbackPhotoInput";
 import { stockMedia, stockPhotoUrl } from "../stockPhoto";
@@ -59,15 +62,45 @@ export const vehicle = defineType({
       },
       validation: (r) => r.required(),
     }),
+    defineField({
+      name: "location",
+      title: "Location",
+      type: "string",
+      group: "main",
+      options: { list: LOCATION_OPTIONS },
+      initialValue: DEFAULT_LOCATION,
+      description: "City where this vehicle is based. Visitors who search from this city see it; other cities don't.",
+      validation: (r) => r.required(),
+    }),
+    defineField({
+      name: "area",
+      title: "Area (optional)",
+      type: "string",
+      group: "main",
+      placeholder: "Type an area or pincode, or use your location",
+      description: "Locality in that city. Pick a suggestion to fill Location and Pincode too. A search from this area lists this vehicle first, then the rest of the city.",
+      components: { input: AreaInput },
+      validation: (r) => r.max(60),
+    }),
+    defineField({
+      name: "pincode",
+      title: "Pincode (optional)",
+      type: "string",
+      group: "main",
+      placeholder: "e.g. 533001",
+      description: "A search with this pincode lists this vehicle first. Filled in when you pick an area.",
+      validation: (r) => r.regex(/^[1-9]\d{5}$/, { name: "6-digit pincode" }),
+    }),
     defineField({ name: "summary", title: "Short description", type: "text", rows: 3, group: "main", placeholder: "e.g. Easy to drive and park, great mileage for city trips. 5 seats, AC, music system.", validation: (r) => r.required().max(220) }),
 
-    { ...photo("image", "Main photo", "Leave empty to use the vehicle type's photo. Use the hotspot (crop icon) to mark the vehicle's centre. Best size: 1600 × 1000 px (16:10)."), components: { input: VehiclePhotoInput } },
+    // Older vehicles kept their main photo here; it now lives first in Photos (see scripts/merge-vehicle-photos.ts).
+    { ...photo("image", "Main photo (old)"), components: { input: VehiclePhotoInput }, hidden: true },
     defineField({
       name: "gallery",
-      title: "More photos",
+      title: "Photos",
       type: "array",
       group: "photos",
-      description: "Interior, boot, side, back. Shown as thumbnails on the vehicle page. Best size: 1600 × 1000 px (16:10).",
+      description: "The first photo is the main photo (cards and the top of the vehicle page); use Make main to move another one first. Then interior, boot, side, back. No photos = the vehicle type's photo. Best size: 1600 × 1000 px (16:10).",
       of: [
         defineArrayMember({
           type: "image",
@@ -75,7 +108,7 @@ export const vehicle = defineType({
           fields: [defineField({ name: "alt", title: "Alt text", type: "string" })],
         }),
       ],
-      validation: (r) => r.max(12),
+      validation: (r) => r.max(13),
     }),
     defineField({
       name: "photoFit",
@@ -163,6 +196,27 @@ export const vehicle = defineType({
       validation: (r) => r.min(0),
     }),
     defineField({ name: "available", title: "Show on website", type: "boolean", group: "listing", initialValue: true }),
+    defineField({
+      name: "liveFrom",
+      title: "Go live at (optional)",
+      type: "datetime",
+      group: ["main", "listing"], // on Main too, so it is filled in while adding a vehicle
+      description: "Publish now and the vehicle stays off the website until this date and time, then appears by itself. Empty = live as soon as it is published.",
+      components: { input: TimerInput, field: TimerField },
+    }),
+    defineField({
+      name: "liveUntil",
+      title: "Show until (optional)",
+      type: "datetime",
+      group: ["main", "listing"], // on Main too, so it is filled in while adding a vehicle
+      description: "The vehicle hides itself from the website after this date and time. Use the buttons to show it for a number of days. Empty = no end.",
+      components: { input: TimerInput, field: TimerField },
+      validation: (r) =>
+        r.custom((until, ctx) => {
+          const from = (ctx.document as { liveFrom?: string } | undefined)?.liveFrom;
+          return !until || !from || Date.parse(String(until)) > Date.parse(from) ? true : "Must be after Go live at";
+        }),
+    }),
     defineField({ name: "featured", title: 'Show in "Popular right now" on the home page', type: "boolean", group: "listing", initialValue: false }),
     defineField({ name: "order", title: "Sort order", type: "number", group: "listing", description: "New ones start at 0, so they show first. Lower numbers show first.", initialValue: 0 }),
   ],
@@ -171,12 +225,12 @@ export const vehicle = defineType({
     { title: "Name", name: "nameAsc", by: [{ field: "name", direction: "asc" }] },
   ],
   preview: {
-    select: { title: "name", group: "group", type: "type.name", typeKey: "type.key.current", media: "image", typeMedia: "type.image", available: "available", featured: "featured" },
-    prepare: ({ title, group, type, typeKey, media, typeMedia, available, featured }) => ({
+    select: { title: "name", location: "location", area: "area", group: "group", type: "type.name", typeKey: "type.key.current", media: "image", firstPhoto: "gallery.0", typeMedia: "type.image", available: "available", featured: "featured" },
+    prepare: ({ title, location, area, group, type, typeKey, media, firstPhoto, typeMedia, available, featured }) => ({
       title,
-      subtitle: [GROUPS.find((g) => g.id === group)?.short, type, featured && "★ featured", available === false && "hidden"].filter(Boolean).join(" · "),
+      subtitle: [GROUPS.find((g) => g.id === group)?.short, type, [area, location || DEFAULT_LOCATION].filter(Boolean).join(", "), featured && "★ featured", available === false && "hidden"].filter(Boolean).join(" · "),
       // Same photo the website shows: own photo, else the type's, else the built-in one.
-      media: media ?? typeMedia ?? stockMedia(stockPhotoUrl(typeKey, group)),
+      media: media ?? firstPhoto ?? typeMedia ?? stockMedia(stockPhotoUrl(typeKey, group)),
     }),
   },
 });

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import type { Vehicle } from "@/data/vehicles";
+import { ArrowUpRight, MapPin } from "lucide-react";
+import { placeLabel, type Vehicle } from "@/data/vehicles";
 import { FORMS } from "@/data/forms";
 import VehiclePhoto from "./VehiclePhoto";
 import BookActions from "./BookActions";
@@ -28,7 +28,10 @@ export default function VehicleCard({ v, showPrices = false, priority = false }:
       <div className="flex flex-1 flex-col px-2 pb-1 pt-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">{v.typeName}</p>
+            <p className="flex flex-wrap items-center gap-x-2 text-xs font-semibold uppercase tracking-wider text-brand-700">
+              {v.typeName}
+              <span className="inline-flex items-center gap-0.5 normal-case tracking-normal text-ink-400"><MapPin aria-hidden className="h-3 w-3" />{placeLabel(v)}</span>
+            </p>
             <h3 className="mt-1 line-clamp-1 font-head text-xl font-semibold text-ink-900" title={v.name}>
               <span className="group-hover:text-brand-600">{v.name}</span>
             </h3>

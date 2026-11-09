@@ -1,6 +1,6 @@
 import type { StructureBuilder, StructureResolver } from "sanity/structure";
 import {
-  AddCircleIcon, CalendarIcon,
+  AddCircleIcon, CalendarIcon, DashboardIcon,
   CaseIcon, CogIcon, DocumentIcon, EarthGlobeIcon, EnvelopeIcon, HelpCircleIcon, HomeIcon, InfoOutlineIcon,
   LinkIcon, MenuIcon, PackageIcon, SearchIcon, TagIcon, ThListIcon, UserIcon, WarningOutlineIcon, WrenchIcon,
 } from "@sanity/icons";
@@ -9,6 +9,7 @@ import { GROUPS } from "@/data/vehicles";
 import { FOOTER, HEADER, PAGES, SETTINGS, type ItemList, type PageMap, type SectionItem } from "./pageMap";
 import SectionsPane from "./SectionsPane";
 import QuickAddPane from "./QuickAddPane";
+import OverviewPane from "./OverviewPane";
 
 /**
  * The admin sidebar mirrors the website: one entry per page, in the header's order. Each page
@@ -103,10 +104,24 @@ const quickAdd = (S: StructureBuilder) =>
         ]),
     );
 
+/** Overview: every vehicle with its photo, status and place (cities and their areas). */
+const overview = (S: StructureBuilder) =>
+  S.listItem()
+    .id("overview")
+    .title("Overview")
+    .icon(DashboardIcon)
+    .child(
+      S.component(OverviewPane)
+        .id("vehicle-overview")
+        .title("Vehicle overview")
+        .child((docId: string) => S.document().documentId(docId).schemaType("vehicle")),
+    );
+
 export const structure: StructureResolver = (S) =>
   S.list()
     .title("Website")
     .items([
+      overview(S),
       quickAdd(S),
       S.divider(),
       pageItem(S, HEADER),

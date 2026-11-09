@@ -8,7 +8,7 @@ import { CLEAR_EVENT, SEARCH_EVENT, announceClear } from "@/lib/events";
 import { scrollToTarget } from "@/lib/lenis";
 import { pickFormValues, requestEntries } from "@/lib/request";
 import { matchDrivers } from "@/lib/search";
-import { isOutsideServiceArea } from "@/lib/serviceArea";
+import { placeCity } from "@/lib/serviceArea";
 import { useSite } from "./SiteProvider";
 
 type Texts = { title: string; empty: string; outsideTitle: string; outsideText: string; requestLabel: string };
@@ -40,8 +40,9 @@ export default function DriversBrowser({ drivers, texts }: { drivers: Driver[]; 
   }, [trip]);
 
   const searching = Object.keys(trip).length > 0;
-  const outside = searching && isOutsideServiceArea(trip.location, areas);
-  const list = useMemo(() => (outside ? [] : searching ? matchDrivers(trip, drivers) : drivers), [outside, searching, trip, drivers]);
+  const city = searching ? placeCity(trip.location, areas) : "";
+  const outside = !!city && !drivers.some((d) => placeCity(d.city || "Hyderabad", areas) === city);
+  const list = useMemo(() => (outside ? [] : searching ? matchDrivers(trip, drivers, areas) : drivers), [outside, searching, trip, drivers]);
   const entries = useMemo(() => (searching ? requestEntries("driver", trip) : []), [searching, trip]);
   const clearSearch = () => { setTrip({}); announceClear("list"); };
 

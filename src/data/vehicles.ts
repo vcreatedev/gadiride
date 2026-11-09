@@ -43,9 +43,18 @@ export type VehicleSeed = {
   options: string[];
   /** INR per day. Leave undefined until the client confirms. */
   pricePerDay?: number;
+  /** City the vehicle is based in; searches from that city show it. Default Hyderabad. */
+  location?: string;
+  /** Locality in that city (optional); searches from it list this vehicle first. */
+  area?: string;
+  /** 6-digit pincode (optional); a search with this pincode lists this vehicle first. */
+  pincode?: string;
   featured?: boolean;
   sample?: boolean;
 };
+
+/** "Bhanugudi Junction, Kakinada", or just the city. */
+export const placeLabel = (v: { area?: string; location?: string }) => [v.area, v.location].filter(Boolean).join(", ");
 
 export type PhotoFit = "contain" | "cover";
 export type PhotoBg = "studio" | "white" | "dark" | "brand";
@@ -57,6 +66,7 @@ export type Vehicle = VehicleSeed & {
   photo: Photo;
   /** False when the photo is the type's stock photo. */
   ownPhoto: boolean;
+  location: string;
   gallery: Photo[];
   fit: PhotoFit;
   bg: PhotoBg;
