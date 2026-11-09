@@ -53,8 +53,8 @@ export const siteSettings = defineType({
           type: "object",
           name: "socialLink",
           fields: [
-            defineField({ name: "label", title: "Label", type: "string", validation: (r) => r.required() }),
-            defineField({ name: "href", title: "URL", type: "url", validation: (r) => r.required() }),
+            defineField({ name: "label", title: "Label", type: "string", description: "e.g. Instagram, Facebook, YouTube, LinkedIn, X (the icon is picked from the link)", validation: (r) => r.required() }),
+            defineField({ name: "href", title: "URL", type: "url", placeholder: "https://www.instagram.com/gadirideofficial/", validation: (r) => r.required() }),
           ],
         }),
       ],
@@ -65,7 +65,7 @@ export const siteSettings = defineType({
     txt("footerBlurb", "Footer text", { group: "brand", rows: 2 }),
     img("shareImage", "Default share image (1200 × 630)", { group: "brand", description: "Used when a page has no share image of its own. Size: 1200 × 630 px." }),
 
-    img("headerLogo", "Header logo (optional)", { group: "nav", description: "Leave empty to use the built-in Gadiride wordmark. A wide logo on a transparent background works best. Best size: about 480 × 120 px (PNG or SVG); it shows 40 px tall." }),
+    img("headerLogo", "Header logo (optional)", { group: "nav", description: "Leave empty to use the Gadiride name from the brand logo. A wide logo on a transparent background works best. Best size: about 600 × 160 px (PNG, WebP or SVG); it shows 40 px tall." }),
     sectionOrder(NAV_ITEMS, "nav", {
       name: "navOrder",
       title: "Header: menu order",
@@ -91,6 +91,12 @@ export const siteSettings = defineType({
     str("footerContactTitle", "Footer: contact column heading", { group: "nav" }),
     str("footerContactLink", "Footer: contact page link", { group: "nav", description: "e.g. Contact page. Empty = no link." }),
     str("copyright", "Footer: copyright line", { group: "nav", description: "{year} becomes the current year." }),
+    defineField({ name: "showSocial", title: "Footer: show the social icons", type: "boolean", group: "nav", initialValue: true }),
+    str("socialTitle", "Footer: heading above the social icons", { group: "nav", description: "e.g. Follow us" }),
+    defineField({ name: "showCredit", title: "Footer: show the website credit", type: "boolean", group: "nav", initialValue: true }),
+    str("creditLabel", "Footer: credit text", { group: "nav", description: "e.g. Website developed by" }),
+    str("creditName", "Footer: credit name", { group: "nav", description: "e.g. Vcreate. Empty = no credit line." }),
+    defineField({ name: "creditUrl", title: "Footer: credit link", type: "url", group: "nav", description: "e.g. https://www.vcreateofficial.com/" }),
 
     strList("marquee", "Scrolling strip", { group: "offers", description: "Short lines that scroll under the service-page hero. The phone number is added automatically." }),
     offerBanners("banners", { hidden: true, description: "Moved to Home → Offers & deals. Kept so older data is not lost." }),

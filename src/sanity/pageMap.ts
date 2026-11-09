@@ -174,7 +174,7 @@ export const FOOTER: PageMap = {
     field("brand", "Tagline & short description", S, ["tagline", "footerBlurb"], DocumentIcon, "Under the footer logo"),
     field("columns", "Link columns", S, "footerColumns", MenuIcon, "Vehicles, Services, Company…"),
     field("contact", "Contact", S, ["footerContactTitle", "footerContactLink", "phone", "email", "address"], EnvelopeIcon, "Heading, link, phone, email, address"),
-    field("copyright", "Copyright & social links", S, ["copyright", "social"], DocumentIcon, "Bottom line; {year} becomes the current year"),
+    field("copyright", "Bottom line: copyright, follow us & credit", S, ["showSocial", "socialTitle", "social", "copyright", "showCredit", "creditLabel", "creditName", "creditUrl"], DocumentIcon, "Copyright, social icons and the website credit"),
   ],
 };
 
