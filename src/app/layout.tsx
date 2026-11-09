@@ -44,6 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <head>
+        {/* Start connecting to the photo server early, so hero and vehicle photos arrive sooner. */}
+        <link rel="preconnect" href="https://cdn.sanity.io" />
+        <link rel="dns-prefetch" href="https://cdn.sanity.io" />
         <noscript><style>{`#ga-loader{display:none}.invisible{visibility:visible!important}`}</style></noscript>
       </head>
       <body>

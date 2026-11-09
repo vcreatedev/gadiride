@@ -39,7 +39,8 @@ export default function Header() {
   });
   // The name from the brand logo (swoosh, "Gadiride" and pin, without the taxi and truck),
   // unless a Header logo is set in Site settings.
-  const logoImg = site.headerLogo ?? { src: "/brand/gadiride-wordmark.webp", alt: site.name, width: 681, height: 200 };
+  // Sized for the header (3x its 48px height, so still sharp on any phone): 37 KB instead of 87 KB.
+  const logoImg = site.headerLogo ?? { src: "/brand/gadiride-wordmark-header.webp", alt: site.name, width: 490, height: 144 };
   const brand = (light: boolean) =>
     logoImg ? (
       // The built-in name logo is served as is (no re-compression), so its edges stay sharp.

@@ -1,6 +1,7 @@
 import Header from "./Header";
 import Footer from "./Footer";
 import Loader from "./Loader";
+import { introSkipScript } from "@/lib/intro";
 import SmoothScroll from "./SmoothScroll";
 import ScrollReveal from "./ScrollReveal";
 import QuoteFlow from "./QuoteFlow";
@@ -19,7 +20,9 @@ export default async function SiteShell({ children }: { children: React.ReactNod
       <QuoteFlow>
         {/* Who Gadiride is, where it rents and how to reach it, for Google and AI answer engines. */}
         <JsonLd data={[organizationLd(settings, groups, vehicles), websiteLd(settings)]} />
-        <Loader enabled={settings.showIntro} />
+        {/* Before the first paint: a visitor who saw the intro recently skips it (no flash of the overlay). */}
+        {settings.showIntro && <script dangerouslySetInnerHTML={{ __html: introSkipScript(settings.introRepeat) }} />}
+        <Loader enabled={settings.showIntro} repeat={settings.introRepeat} />
         <SmoothScroll />
         <ScrollReveal />
         {/* Boxed site: on screens wider than the content, everything stays inside this frame. */}

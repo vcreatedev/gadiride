@@ -40,7 +40,8 @@ const nextConfig = {
     return [
       ...noindex,
       {
-        source: "/:dir(vehicles|brand)/:file*",
+        // Image files only: the /vehicles/... pages themselves must stay fresh.
+        source: "/:dir(vehicles|brand)/:file([^/]+[.](?:webp|png|jpe?g|avif|svg|gif))",
         headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }],
       },
     ];

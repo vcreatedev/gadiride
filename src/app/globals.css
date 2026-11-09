@@ -13,7 +13,9 @@
   /* scrollbar-gutter: the scrollbar's space is always kept, so nothing shifts when the loader lets the page scroll. */
   html { -webkit-text-size-adjust: 100%; scroll-behavior: auto; scrollbar-gutter: stable; }
   /* While the loader shows, the scrollbar's space is painted the loader's colour, so it is covered too. */
-  html:has(#ga-loader) { background-color: #16161A; }
+  html:not(.intro-skip):has(#ga-loader) { background-color: #16161A; }
+  /* A returning visitor who saw the intro recently: no overlay at all (set before the first paint). */
+  html.intro-skip #ga-loader { display: none !important; }
   /*
     Boxed site: everything sits in one centred frame as wide as the content (1280px).
     --frame is that width on the current screen, --frame-gap the empty space on each side.

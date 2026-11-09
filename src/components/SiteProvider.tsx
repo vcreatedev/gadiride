@@ -15,7 +15,7 @@ const SEARCH_BAR: SearchBar = {
 };
 
 const SiteCtx = createContext<Ctx>({
-  settings: { ...defaults, footerBlurb: footerDefaults.blurb, showIntro: true },
+  settings: { ...defaults, footerBlurb: footerDefaults.blurb, showIntro: true, introRepeat: "daily" },
   groups: GROUPS,
   types: TYPES.map((t) => ({ ...t, photo: defaultTypePhoto(t.id, t.name) })),
 });

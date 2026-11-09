@@ -30,13 +30,16 @@ import { tripEndsAt, type Trip } from "./trips";
 import { IMG, toPhoto, type HeroFit, type Photo, type SanityImageDoc } from "./images";
 
 /**
- * All site content comes through here. One GROQ query per render (cached),
- * revalidated every 60s or immediately via /api/revalidate.
+ * All site content comes through here: one GROQ query, read from Sanity's CDN and kept in the
+ * Next.js data cache, shared by every page. With the publish webhook switched on
+ * (SANITY_REVALIDATE_SECRET set; see /api/revalidate) it is fetched again on every publish and
+ * otherwise once an hour; without it, every 60 seconds. Pages themselves refresh every minute from
+ * this cache (see app/(site)/layout.tsx), so vehicle and trip timers stay on time with no extra calls.
  * Empty Sanity fields fall back to src/content/defaults.ts and src/data,
  * so the site always renders, even on an empty dataset.
  */
 export const SANITY_TAG = "sanity";
-const REVALIDATE = 60;
+const REVALIDATE = process.env.SANITY_REVALIDATE_SECRET ? 3600 : 60;
 
 /* ---------------------------------------------------------------- query */
 
@@ -50,10 +53,10 @@ const QUERY = `{
   "types": *[_type == "vehicleType" && hidden != true && defined(key.current)] | order(coalesce(order, 100) asc, name asc){
     "id": key.current, name, group, art, image${IMG}
   },
-  "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group) && (!defined(liveFrom) || dateTime(liveFrom) <= dateTime(now())) && (!defined(liveUntil) || dateTime(liveUntil) > dateTime(now()))]
+  "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group) ]
     | order(coalesce(order, 100) asc, _createdAt desc){
       "slug": slug.current, "updatedAt": _updatedAt, name, group, location, area, pincode, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, featured,
-      photoFit, photoBackground, photoZoom,
+      photoFit, photoBackground, photoZoom, liveFrom, liveUntil,
       "type": type->key.current,
       image${IMG}, gallery[hidden != true]${IMG}
     },
@@ -81,7 +84,7 @@ type Raw = {
   vehicles?: {
     slug: string; updatedAt?: string; name: string; group: GroupId; location?: string; area?: string; pincode?: string; type?: string; summary?: string;
     specs?: { label: string; value: string }[]; mileage?: string; options?: string[]; pricePerDay?: number; featured?: boolean;
-    photoFit?: PhotoFit; photoBackground?: PhotoBg; photoZoom?: number;
+    photoFit?: PhotoFit; photoBackground?: PhotoBg; photoZoom?: number; liveFrom?: string; liveUntil?: string;
     image?: SanityImageDoc; gallery?: SanityImageDoc[];
   }[];
   services?: { id: string; name: string; forWho?: string; offer?: string; points?: string[]; cta?: string; form?: FormKey; toConfirm?: boolean; image?: SanityImageDoc }[];
@@ -137,12 +140,14 @@ function merge<T>(base: T, over: unknown): T {
 /** Hero style is edited on Home → Hero; older datasets still have it in Site settings. */
 const themeOf = (v: unknown): SiteSettings["heroTheme"] | undefined => (v === "dark" || v === "light" ? v : undefined);
 
-export type Settings = SiteSettings & { footerBlurb: string; logo?: Photo; headerLogo?: Photo; shareImage?: Photo; showIntro: boolean };
+/** How often the logo intro plays: once a day per visitor, once per browser session, or every page load. */
+export type IntroRepeat = "daily" | "session" | "every";
+export type Settings = SiteSettings & { footerBlurb: string; logo?: Photo; headerLogo?: Photo; shareImage?: Photo; showIntro: boolean; introRepeat: IntroRepeat };
 
 export const getSettings = cache(async (): Promise<Settings> => {
   const raw = await fetchRaw();
   const s = raw.settings ?? {};
-  const base = { ...settingsDefaults, footerBlurb: footerDefaults.blurb, showIntro: true };
+  const base = { ...settingsDefaults, footerBlurb: footerDefaults.blurb, showIntro: true, introRepeat: "daily" as IntroRepeat };
   const m = merge(base, s);
   return {
     ...m,
@@ -154,6 +159,7 @@ export const getSettings = cache(async (): Promise<Settings> => {
     banners: (m.banners ?? []).filter((b) => b?.title),
     showPrices: typeof s.showPrices === "boolean" ? s.showPrices : settingsDefaults.showPrices,
     showIntro: typeof s.showIntro === "boolean" ? s.showIntro : true,
+    introRepeat: (["daily", "session", "every"] as const).find((r) => r === s.introRepeat) ?? "daily",
     heroTheme: themeOf(raw.home?.heroTheme) ?? themeOf(s.heroTheme) ?? settingsDefaults.heroTheme,
     navMore: (m.navMore ?? []).filter((l) => l?.label && l?.href),
     navOrder: Array.isArray(s.navOrder) ? (s.navOrder as SectionSlot[]).filter((r) => r?.key) : undefined,
@@ -291,7 +297,9 @@ export const getVehicles = cache(async (): Promise<Vehicle[]> => {
       zoom: 100,
     };
   };
-  const docs = raw.vehicles ?? [];
+  // Only vehicles inside their "Go live at" / "Show until" times (checked at each page refresh).
+  const now = Date.now();
+  const docs = (raw.vehicles ?? []).filter((d) => (!d.liveFrom || Date.parse(d.liveFrom) <= now) && (!d.liveUntil || Date.parse(d.liveUntil) > now));
   const list = docs
     .map((d): Vehicle | null => {
       const t = types.find((x) => x.id === d.type) ?? types.find((x) => x.group === d.group);

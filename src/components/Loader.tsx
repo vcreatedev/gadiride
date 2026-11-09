@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { markReady, whenIdle } from "@/lib/ready";
+import type { IntroRepeat } from "@/lib/content";
+import { INTRO_SEEN_KEY } from "@/lib/intro";
 
 const WORD = "Gadiride".split("");
 /** Letter colours sampled along the logo gradient (#FDB022 → #F47A16 → #E8540C). */
@@ -9,6 +11,14 @@ const SHADES = ["#FDB022", "#FCA61F", "#FA9A1C", "#F78C19", "#F47A16", "#F06C13"
 const INTRO_MS = 1800;
 /** Longest the loader may stay up on a slow connection. */
 const MAX_WAIT_MS = 8000;
+/** Remembers that this visitor has seen the intro. */
+function rememberSeen(repeat: IntroRepeat) {
+  try {
+    (repeat === "session" ? sessionStorage : localStorage).setItem(INTRO_SEEN_KEY, String(Date.now()));
+  } catch {
+    /* storage blocked (private mode): the intro simply plays again next time */
+  }
+}
 
 /** Resolves once every image visible in the first screen has decoded (so nothing pops in after the reveal). */
 function firstScreenImagesDecoded(): Promise<void> {
@@ -21,18 +31,21 @@ function firstScreenImagesDecoded(): Promise<void> {
 }
 
 /**
- * Logo intro on every full page load or reload (not on in-app navigation).
+ * Logo intro on a full page load (not on in-app navigation): every time, once per visit, or once a
+ * day per visitor, as set in the admin (Site settings → Display options).
  * The animation is pure CSS (transform/opacity), so it starts at first paint and
  * stays smooth while the page's scripts load. JS only decides when to fade it out:
  * after the intro has played and the page has finished loading.
  */
-export default function Loader({ enabled = true }: { enabled?: boolean }) {
+export default function Loader({ enabled = true, repeat = "daily" }: { enabled?: boolean; repeat?: IntroRepeat }) {
   const [state, setState] = useState<"on" | "out" | "done">(enabled ? "on" : "done");
   const exitRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     const html = document.documentElement;
-    if (!enabled) { markReady(); return; }
+    // Off, or already seen recently (the inline script marked the page): straight to the site.
+    if (!enabled || html.classList.contains("intro-skip")) { setState("done"); markReady(); return; }
+    rememberSeen(repeat);
     html.style.overflow = "hidden";
 
     let exiting = false;
@@ -70,7 +83,7 @@ export default function Loader({ enabled = true }: { enabled?: boolean }) {
       .then(() => timers.push(window.setTimeout(exit, 150)));
 
     return () => { timers.forEach(clearTimeout); html.style.overflow = ""; };
-  }, [enabled]);
+  }, [enabled, repeat]);
 
   if (state === "done") return null;
   return (
