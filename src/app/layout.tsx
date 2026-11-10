@@ -10,6 +10,7 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
 import { SITE_URL } from "@/lib/siteUrl";
+import StaleBuildGuard from "@/components/StaleBuildGuard";
 
 /** Search Console ownership tags, set in Vercel when the site is added to Google / Bing Webmaster Tools. */
 const verification = {
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <noscript><style>{`#ga-loader{display:none}.invisible{visibility:visible!important}`}</style></noscript>
       </head>
       <body>
+        <StaleBuildGuard />
         {children}
       </body>
     </html>
