@@ -103,12 +103,13 @@ export const titleTextList = (name: string, title: string, o: Opt & { extra?: Re
     ],
   });
 
-export const seo = (group = "seo") =>
+/** `group`: the form tab it sits in; `null` for documents without tabs (e.g. vehicle groups). */
+export const seo = (group: string | null = "seo") =>
   defineField({
     name: "seo",
     title: "Search & sharing",
     type: "object",
-    group,
+    ...(group ? { group } : {}),
     options: { collapsible: true, collapsed: false },
     fields: [
       str("title", "Page title (browser tab and Google)"),

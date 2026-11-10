@@ -25,7 +25,8 @@ export const vehicleGroup = defineType({
     str("listTitle", "Heading", { description: "Above the vehicles on this page." }),
     heroPhoneImg("heroImageMobile"),
     // This service page's own Google title, description and share image (empty = good built-in defaults).
-    seo(),
+    // No tab: vehicle groups have no form tabs, and a field in an undefined tab stops the admin loading.
+    seo(null),
   ],
   preview: { select: { title: "name", subtitle: "blurb", media: "image" } },
 });
