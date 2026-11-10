@@ -10,7 +10,7 @@ import type { HomeContent } from "@/content/defaults";
 import type { ArtId } from "@/data/vehicleArt";
 import { gsap, SplitText, useGSAP, prefersReducedMotion, isSmallScreen } from "@/lib/motion";
 import { drive, dig, prepareRig } from "@/lib/drive";
-import { onReadyNextFrame } from "@/lib/ready";
+import { onReadyCalm } from "@/lib/ready";
 
 const HERO_WIDTH: Record<ArtId, string> = {
   hatch: "min(44vw,560px)", sedan: "min(50vw,640px)", suv: "min(50vw,640px)", pickup: "min(52vw,660px)",
@@ -44,7 +44,7 @@ export default function Hero({ content: c }: { content: HomeContent["hero"] }) {
     gsap.set(q("[data-hero-card]"), { opacity: reduced ? 1 : 0, y: reduced ? 0 : 40 });
     if (!reduced && rig.current) gsap.set(rig.current.root, { x: -window.innerWidth });
 
-    return onReadyNextFrame(() => {
+    return onReadyCalm(() => {
       if (reduced || !rig.current) {
         gsap.set(split.lines, { yPercent: 0 });
         return;

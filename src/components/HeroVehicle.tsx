@@ -6,7 +6,7 @@ import DriverFigure, { ARM_PIVOT } from "./DriverFigure";
 import { ART, type ArtId } from "@/data/vehicleArt";
 import { gsap, useGSAP, prefersReducedMotion } from "@/lib/motion";
 import { drive, dig, prepareRig } from "@/lib/drive";
-import { onReadyNextFrame } from "@/lib/ready";
+import { onReadyCalm } from "@/lib/ready";
 
 /** Front (driver's) door of the sedan drawing, in its viewBox units (490 × 160). Hinged at the front edge. */
 const DOOR = {
@@ -81,7 +81,7 @@ const HeroVehicle = forwardRef<HeroVehicleHandle, { art: ArtId; color: string; d
         .to(arm, { rotation: -132, duration: 0.2, yoyo: true, repeat: 5, ease: "sine.inOut" }, ">")
         .to(arm, { rotation: 0, duration: 0.5, ease: "power2.inOut" }, ">0.1");
     }
-    return onReadyNextFrame(() => tl.play());
+    return onReadyCalm(() => tl.play());
   }, { dependencies: [art, color, withDriver] });
 
   useImperativeHandle(ref, () => ({

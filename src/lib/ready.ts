@@ -14,15 +14,32 @@ export function onReady(cb: () => void) {
 }
 export const isReady = () => ready;
 
+/** Smooth frames in a row before the hero vehicle starts, and the longest it waits for them. */
+const CALM_FRAMES = 3;
+const CALM_FRAME_MS = 40;
+const MAX_WAIT_MS = 1500;
+
 /**
- * Runs `cb` on the frame after "ready". The page-wide setup that also starts at ready (scroll
- * reveal, ScrollTrigger measuring) runs first, all at once, so the hero vehicle's drive that starts
- * here never stops halfway while that heavy work runs.
+ * Runs `cb` after "ready", once the browser draws smoothly again. The setup that starts at ready
+ * (scroll reveal, scroll measuring, the follow-up work GSAP queues) and the end of the page load
+ * take a few long frames; the hero vehicle starts after them, so its drive never freezes halfway.
+ * Waits at most MAX_WAIT_MS. Marks "hero-start" for performance checks.
  */
-export function onReadyNextFrame(cb: () => void): () => void {
+export function onReadyCalm(cb: () => void): () => void {
   let frame = 0;
   const off = onReady(() => {
-    frame = requestAnimationFrame(() => { frame = requestAnimationFrame(cb); });
+    const start = performance.now();
+    let last = start;
+    let calm = 0;
+    const tick = (t: number) => {
+      calm = t - last < CALM_FRAME_MS ? calm + 1 : 0;
+      last = t;
+      if (calm >= CALM_FRAMES || t - start > MAX_WAIT_MS) {
+        performance.mark("hero-start");
+        cb();
+      } else frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
   });
   return () => { off(); cancelAnimationFrame(frame); };
 }
