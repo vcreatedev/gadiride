@@ -193,7 +193,15 @@ const docLabel = (d: Record<string, unknown> | undefined) => {
 const stripMeta = ({ _rev: _r, _updatedAt: _u, _createdAt: _c, ...doc }: SanityDocument) => doc;
 
 type Pending = { id: string; label: string; lines: string[]; draft: SanityDocument };
-type Review = { mode: "publish" | "discard"; ready: Pending[]; fresh: { id: string; label: string }[] };
+/** `all`: started from the list's "Publish ALL" / "Discard ALL" (every changed item), not one row. */
+type Review = { mode: "publish" | "discard"; all: boolean; ready: Pending[]; fresh: { id: string; label: string }[] };
+
+/** "Publish ALL 3 changed items?" for the whole list; "Publish "Maruti Swift"?" for one row. */
+function dialogTitle(review: Review, count: number) {
+  const one = review.ready[0]?.label ?? review.fresh[0]?.label ?? "this item";
+  if (review.mode === "publish") return review.all ? `Publish ALL ${count} changed item${count === 1 ? "" : "s"}?` : `Publish "${one}"?`;
+  return review.all ? `Discard ALL changes to ${count} item${count === 1 ? "" : "s"}?` : `Discard changes to "${one}"?`;
+}
 
 /** Before Publish or Discard: every item and exactly which of its changes go live, or are thrown away. */
 function ChangesDialog({ review, busy, listKey, onCancel, onConfirm }: { review: Review; busy: boolean; listKey: string; onCancel: () => void; onConfirm: () => void }) {
@@ -205,7 +213,7 @@ function ChangesDialog({ review, busy, listKey, onCancel, onConfirm }: { review:
   return (
     <Dialog
       id={`${review.mode}-${listKey}`}
-      header={publishing ? `Publish ${count} item${count === 1 ? "" : "s"}?` : `Discard changes to ${count} item${count === 1 ? "" : "s"}?`}
+      header={dialogTitle(review, count)}
       width={1}
       onClose={() => !busy && onCancel()}
       footer={
@@ -214,7 +222,7 @@ function ChangesDialog({ review, busy, listKey, onCancel, onConfirm }: { review:
           <Button
             tone={publishing ? "positive" : "critical"}
             icon={publishing ? PublishIcon : ResetIcon}
-            text={publishing ? "Publish now" : "Discard changes"}
+            text={publishing ? (review.all ? "Publish ALL now" : "Publish now") : review.all ? "Discard ALL changes" : "Discard changes"}
             loading={busy}
             disabled={!count}
             onClick={onConfirm}
@@ -258,7 +266,7 @@ export function ItemListBlock({ list }: { list: ItemList }) {
   const loaded = useEntries(list, sort);
   const [pending, setPending] = useState<Entry[] | null>(null);
   // The Publish / Discard dialog: the items with real changes, and new items never published.
-  const [review, setReview] = useState<{ mode: "publish" | "discard"; ready: Pending[]; fresh: { id: string; label: string }[] } | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => setPending(null), [loaded]);
   const entries = pending ?? loaded;
@@ -308,7 +316,7 @@ export function ItemListBlock({ list }: { list: ItemList }) {
   };
 
   // Lists each item's changes before anything is published or discarded (one row, or the whole list).
-  const onReview = async (targets: Entry[], mode: "publish" | "discard") => {
+  const onReview = async (targets: Entry[], mode: "publish" | "discard", all = false) => {
     try {
       const docs = await client.fetch<SanityDocument[]>("*[_id in $ids]", { ids: targets.flatMap((e) => [e.id, draftId(e.id)]) });
       const byId = new Map(docs.map((d) => [d._id, d]));
@@ -321,13 +329,13 @@ export function ItemListBlock({ list }: { list: ItemList }) {
         if (!live) fresh.push({ id: e.id, label: docLabel(draft) });
         else ready.push({ id: e.id, label: docLabel(draft), draft, lines: describeChanges(schemaType as ObjectSchemaType, draft, live) });
       }
-      setReview({ mode, ready, fresh });
+      setReview({ mode, all, ready, fresh });
     } catch (err) {
       toast.push({ status: "error", title: "Could not load the changes", description: (err as Error).message });
     }
   };
   const onDiscard = (e: Entry) => void onReview([e], "discard");
-  const onDiscardAll = () => void onReview(changed, "discard");
+  const onDiscardAll = () => void onReview(changed, "discard", true);
 
   // Throws away the listed drafts: changed items go back to the live version, never-published ones are removed.
   const discardAll = async () => {
@@ -371,11 +379,16 @@ export function ItemListBlock({ list }: { list: ItemList }) {
       <Flex align="center" gap={2} wrap="wrap">
         <Box flex={1} style={{ minWidth: 200 }}>
           <Text size={1} weight="semibold">{list.title}</Text>
-          <Box marginTop={2}><Text size={0} muted>{changed.length ? `${changed.length} item${changed.length > 1 ? "s" : ""} with changes not on the website yet.` : "Everything here matches the website. Changes stay drafts until you publish (per row, or all at once)."}</Text></Box>
+          <Box marginTop={2}><Text size={0} muted>{changed.length ? `${changed.length} item${changed.length > 1 ? "s" : ""} with changes not on the website yet: publish each row, or all of them with Publish ALL changes.` : "Everything here matches the website. Changes stay drafts until you publish them (each row, or Publish ALL changes)."}</Text></Box>
         </Box>
         {/* All changed items in this list at once; greyed out with nothing to do. */}
-        <Button icon={ResetIcon} text={`Discard all (${changed.length})`} tone="caution" mode="ghost" fontSize={1} padding={2} disabled={!changed.length} onClick={onDiscardAll} />
-        <Button icon={PublishIcon} text={`Publish all (${changed.length})`} tone="positive" fontSize={1} padding={2} disabled={!changed.length} onClick={() => onReview(changed, "publish")} />
+        {/* List-wide: every changed item in this list at once (each row also has its own Publish / Discard). */}
+        <Tooltip content={tip(changed.length ? `Throws away the unpublished changes of all ${changed.length} changed item${changed.length === 1 ? "" : "s"} in this list` : "Nothing to discard in this list")} placement="top" portal>
+          <span><Button icon={ResetIcon} text={`Discard ALL changes (${changed.length})`} tone="caution" mode="ghost" fontSize={1} padding={2} disabled={!changed.length} onClick={onDiscardAll} /></span>
+        </Tooltip>
+        <Tooltip content={tip(changed.length ? `Publishes all ${changed.length} changed item${changed.length === 1 ? "" : "s"} in this list at once (one website refresh)` : "Nothing to publish in this list")} placement="top" portal>
+          <span><Button icon={PublishIcon} text={`Publish ALL changes (${changed.length})`} tone="positive" fontSize={1} padding={2} disabled={!changed.length} onClick={() => onReview(changed, "publish", true)} /></span>
+        </Tooltip>
         {template && (
           <Button as={OpenLink} childId={crypto.randomUUID()} childParameters={{ type: list.type, template: template.id }} childPayload={template.params} icon={AddIcon} text="Add" mode="ghost" fontSize={1} padding={2} />
         )}
