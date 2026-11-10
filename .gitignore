@@ -11,6 +11,8 @@
 /.next-prod/
 # temporary local build checks (.next-check, .next-dev-check)
 /.next-*/
+# Git Bash crash logs on Windows
+*.stackdump
 /out/
 
 # production
