@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
 import { getLenis, setLenis } from "@/lib/lenis";
-import { isReady, onReady, whenIdle } from "@/lib/ready";
+import { isReady, onReady } from "@/lib/ready";
 
 /** Header height, so anchor jumps (e.g. #all) land below the fixed header. */
 const HEADER_OFFSET = -80;
@@ -30,16 +30,15 @@ export default function SmoothScroll() {
 
     // No scrolling under the loader; release it once the site is ready.
     if (!isReady()) lenis.stop();
-    let cancelIdle = () => {};
     const off = onReady(() => {
       lenis.start();
-      // Measuring every scroll trigger is heavy: do it when idle, not during the car's drive-in.
-      cancelIdle = whenIdle(() => ScrollTrigger.refresh());
+      // Measuring every scroll trigger is heavy: do it now, before the hero vehicle starts
+      // (it starts a frame later), so it never lands in the middle of the drive.
+      ScrollTrigger.refresh();
     });
 
     return () => {
       off();
-      cancelIdle();
       gsap.ticker.remove(tick);
       lenis.destroy();
       setLenis(null);

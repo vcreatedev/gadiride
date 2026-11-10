@@ -56,7 +56,9 @@ export default function OfferBanners({ banners, title }: { banners: Banner[]; ti
       return <a href={telHref(site.phone)} className={cls}><Phone className="h-4 w-4" />{b.cta}</a>;
     if (b.href === "whatsapp" || (b.href === "tel" && !site.phone))
       return <a href={whatsappChatHref(site.whatsappNumber)} target="_blank" rel="noopener noreferrer" className={cls}><WhatsAppIcon className="h-4 w-4" />{b.cta}</a>;
-    return <Link href={b.href || "/vehicles/cars/#all"} className={cls}>{b.cta}<ArrowRight className="h-4 w-4" /></Link>;
+    // Search results are built on each request: load them on click, not in the background.
+    const href = b.href || "/vehicles/cars/#all";
+    return <Link href={href} prefetch={href.startsWith("/search") ? false : undefined} className={cls}>{b.cta}<ArrowRight className="h-4 w-4" /></Link>;
   };
 
   return (

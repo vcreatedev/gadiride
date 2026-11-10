@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { gsap, ScrollTrigger, prefersReducedMotion } from "@/lib/motion";
-import { isReady, onReady, whenIdle } from "@/lib/ready";
+import { isReady, onReady } from "@/lib/ready";
 
 /**
  * Site-wide scroll reveal: cards, list items and marked blocks below the hero rise and fade in
@@ -51,17 +51,16 @@ export default function ScrollReveal() {
     };
 
     // Wait for the loader (first visit) and for the new page's DOM (navigation).
-    // First visit: wait until the browser is idle, so the hero car's drive-in stays smooth.
+    // First visit: right at ready, before the hero vehicle starts (it starts a frame later), so
+    // this setup never runs in the middle of its drive.
     let raf = 0;
-    let cancelIdle = () => {};
     const firstLoad = !isReady();
     const off = onReady(() => {
-      if (firstLoad) cancelIdle = whenIdle(start);
+      if (firstLoad) start();
       else raf = requestAnimationFrame(start);
     });
     return () => {
       off();
-      cancelIdle();
       cancelAnimationFrame(raf);
       triggers.forEach((t) => t.kill());
       if (items.length) gsap.set(items, { clearProps: "transform,opacity,visibility" });

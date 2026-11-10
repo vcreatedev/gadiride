@@ -12,7 +12,8 @@ export default function VehicleCard({ v, priority = false }: { v: Vehicle; prior
   return (
     <article className="group relative flex h-full w-full cursor-pointer flex-col rounded-card bg-white p-3 shadow-card ring-1 ring-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-lift hover:ring-brand-200">
       {/* The whole card opens the vehicle page; WhatsApp and Call sit above this link. */}
-      <Link href={href} className="absolute inset-0 z-0 rounded-card" aria-label={`${v.name} details`} />
+      {/* No background preloading: many cards scroll past, and a visitor opens one. */}
+      <Link href={href} prefetch={false} className="absolute inset-0 z-0 rounded-card" aria-label={`${v.name} details`} />
       <div className="pointer-events-none block">
         <VehiclePhoto
           photo={v.photo}
