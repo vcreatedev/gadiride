@@ -2,9 +2,14 @@ import { defineArrayMember, defineField, defineType } from "sanity";
 import { DEFAULT_LOCATION, LOCATION_OPTIONS } from "@/data/cities";
 import AreaInput from "../AreaInput";
 import TimerInput, { TimerField } from "../TimerInput";
+import { SiteContactInput } from "../SiteDefaultInputs";
 import { GROUPS } from "@/data/vehicles";
 import { VehiclePhotoInput } from "../FallbackPhotoInput";
 import { stockMedia, stockPhotoUrl } from "../stockPhoto";
+
+/** A 10-digit mobile, or with the country code; spaces, + and - are fine. */
+const contactNumber = (v?: string) =>
+  !v || /^\d{10,13}$/.test(v.replace(/[\s()+-]/g, "")) || "Enter a 10-digit mobile number, e.g. 98765 43210 (or with the country code: 91 98765 43210).";
 
 const photo = (name: string, title: string, description?: string) =>
   defineField({
@@ -25,6 +30,7 @@ export const vehicle = defineType({
     { name: "main", title: "Main", default: true },
     { name: "photos", title: "Photos" },
     { name: "details", title: "Details" },
+    { name: "booking", title: "Price & contact" },
     { name: "listing", title: "Listing" },
   ],
   fields: [
@@ -191,9 +197,27 @@ export const vehicle = defineType({
       title: "Price per day (₹)",
       type: "number",
       placeholder: "e.g. 1499",
-      group: "details",
-      description: 'Only shown when "Show prices" is on in Site settings.',
+      group: "booking",
+      description: 'Shown on the vehicle cards and the vehicle page. Empty = "Price on request".',
       validation: (r) => r.min(0),
+    }),
+    defineField({
+      name: "whatsappNumber",
+      title: "WhatsApp number (optional)",
+      type: "string",
+      group: "booking",
+      description: "WhatsApp bookings for this vehicle go to this number. Empty = the WhatsApp number in Site settings.",
+      components: { input: SiteContactInput },
+      validation: (r) => r.custom(contactNumber),
+    }),
+    defineField({
+      name: "phone",
+      title: "Phone number (optional)",
+      type: "string",
+      group: "booking",
+      description: "The Call button on this vehicle rings this number. Empty = the phone in Site settings.",
+      components: { input: SiteContactInput },
+      validation: (r) => r.custom(contactNumber),
     }),
     defineField({ name: "available", title: "Show on website", type: "boolean", group: "listing", initialValue: true }),
     defineField({

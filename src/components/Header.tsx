@@ -131,7 +131,7 @@ export default function Header() {
             </Dialog.Trigger>
             <Dialog.Portal>
               <Dialog.Overlay className="fixed inset-0 z-[60] bg-ink-900/50" />
-              <Dialog.Content data-lenis-prevent className="fixed inset-y-0 right-0 z-[70] flex w-full flex-col overflow-y-auto bg-white px-4 pb-6 pt-[env(safe-area-inset-top)] shadow-float sm:px-6 lg:px-8">
+              <Dialog.Content data-lenis-prevent className="fixed inset-y-0 right-0 z-[70] flex w-full flex-col overflow-y-auto overscroll-contain bg-white px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] shadow-float sm:px-6 lg:px-8">
                 {/* same height and side padding as the header bar, so the logo and button don't move when the menu opens */}
                 <div className="mb-6 flex h-[60px] shrink-0 items-center justify-between md:h-[72px]">
                   <Dialog.Title asChild><span>{brand(false)}</span></Dialog.Title>

@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!v) return {};
   const img = v.photo.src.startsWith("https://cdn.sanity.io/") ? `${v.photo.src}${v.photo.src.includes("?") ? "&" : "?"}w=1200&h=630&fit=fill&bg=ffffff&auto=format` : v.photo.src;
   // "Maruti Swift on rent in Kukatpally, Hyderabad": the words people search for.
-  const price = site.showPrices && v.pricePerDay ? ` From ₹${v.pricePerDay.toLocaleString("en-IN")} a day.` : "";
+  const price = v.pricePerDay ? ` From ₹${v.pricePerDay.toLocaleString("en-IN")} a day.` : "";
   return buildMetadata({
     title: `${v.name} on rent in ${placeLabel(v)}`,
     description: `${v.summary}${price} ${v.typeName} on rent with Gadiride. Get a quote on WhatsApp.`,
@@ -39,12 +39,13 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
   const [all, site, p] = await Promise.all([getVehicles(), getSettings(), getPage("vehicles")]);
   const v = all.find((x) => x.slug === key);
   if (!v) notFound();
+  const perDay = v.pricePerDay;
   const similar = all.filter((x) => x.group === v.group && x.slug !== v.slug).slice(0, 3);
   return (
     <>
       <JsonLd
         data={[
-          vehicleLd(v, site.showPrices),
+          vehicleLd(v),
           breadcrumbLd([{ name: "Home", path: "/" }, { name: v.groupName, path: `/vehicles/${v.group}/` }, { name: v.name, path: `/vehicle/${v.slug}/` }]),
         ]}
       />
@@ -92,14 +93,14 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
               )}
               <div className="mt-6 rounded-card bg-white p-5 shadow-card">
                 <p className="font-head text-3xl font-semibold text-ink-900">
-                  {site.showPrices && v.pricePerDay ? (
-                    <>₹{v.pricePerDay.toLocaleString("en-IN")}<span className="text-base font-medium text-ink-600"> per day</span></>
+                  {perDay ? (
+                    <>₹{perDay.toLocaleString("en-IN")}<span className="text-base font-medium text-ink-600"> per day</span></>
                   ) : (
                     <span className="text-2xl">Price on request</span>
                   )}
                 </p>
                 <p className="mt-1 text-sm text-ink-400">Book instantly on WhatsApp or call our team.</p>
-                <BookActions title={FORMS[v.group].title} vehicle={v.name} details={v} showPrice={site.showPrices} size="lg" className="mt-4" />
+                <BookActions title={FORMS[v.group].title} vehicle={v.name} details={v} size="lg" className="mt-4" />
               </div>
               <div className="mt-6 rounded-card bg-white p-6 shadow-card">
                 <h2 className="font-head text-xl font-semibold">{p.detailQuoteTitle}</h2>
@@ -123,7 +124,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ slug: 
               <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {similar.map((s) => (
                   <li key={s.slug} className="flex h-full">
-                    <VehicleCard v={s} showPrices={site.showPrices} />
+                    <VehicleCard v={s} />
                   </li>
                 ))}
               </ul>

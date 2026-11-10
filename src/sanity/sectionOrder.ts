@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { useClient } from "sanity";
 import { HOME_SECTIONS, NAV_ITEMS, VEHICLE_PAGE_SECTIONS, type SectionSlot } from "@/data/sections";
-import { apiVersion } from "./env";
+import { apiVersion, testOverlay } from "./env";
+import { mergedFetch } from "./testCopy";
 import type { SectionItem } from "./pageMap";
 
 /** Default order per document that has one ("layout" or "navOrder"). */
@@ -23,7 +24,8 @@ export function useLayout(docId?: string, field = "layout"): SectionSlot[] | nul
     if (!docId) return;
     let alive = true;
     const load = () =>
-      client.fetch<SectionSlot[] | null>(layoutQuery(field), { id: docId }).then(
+      // Test copy: the live order until this page is edited here.
+      (testOverlay ? mergedFetch<SectionSlot[] | null>(client, layoutQuery(field), { id: docId }) : client.fetch<SectionSlot[] | null>(layoutQuery(field), { id: docId })).then(
         (l) => { if (alive) setLayout(l ?? null); },
         () => undefined, // keep the default order if the fetch fails
       );

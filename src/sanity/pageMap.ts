@@ -188,7 +188,7 @@ export const SETTINGS: PageMap = {
     field("numbers", "Phone & WhatsApp numbers", S, ["phone", "whatsappNumber"], EnvelopeIcon, "Call and WhatsApp buttons everywhere"),
     field("email", "Email & address", S, ["email", "address"], EnvelopeIcon),
     field("social", "Social links", S, "social", LinkIcon),
-    field("display", "Display options", S, ["showPrices", "showIntro", "introRepeat"], CogIcon, "Show prices, logo intro and how often it plays"),
+    field("display", "Display options", S, ["showIntro", "introRepeat"], CogIcon, "Logo intro and how often it plays"),
     { key: "all", title: "All settings (full form)", icon: CogIcon, target: doc(S, []), meta: true },
   ],
 };

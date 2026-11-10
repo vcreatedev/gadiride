@@ -7,7 +7,7 @@ import { SITE_URL, absoluteUrl } from "./siteUrl";
 /**
  * schema.org structured data (JSON-LD). Google uses it for rich results; ChatGPT, Perplexity,
  * Gemini and other answer engines use it to understand who Gadiride is, what it rents, where, and
- * at what price. Everything here mirrors what the page itself shows (prices only when shown).
+ * at what price. Everything here mirrors what the page itself shows.
  */
 
 const CONTEXT = "https://schema.org";
@@ -86,13 +86,13 @@ const firstNumber = (s?: string) => {
   return m ? Number(m[0]) : undefined;
 };
 
-/** One vehicle on rent: what it is, where it is, its photos and (when shown) its price per day. */
-export function vehicleLd(v: Vehicle, showPrices: boolean) {
+/** One vehicle on rent: what it is, where it is, its photos and (when set) its price per day. */
+export function vehicleLd(v: Vehicle) {
   const url = absoluteUrl(vehiclePath(v.slug));
   const seats = firstNumber(spec(v, /seat/i));
   const fuel = spec(v, /fuel/i);
   const gears = spec(v, /transmission|gear/i);
-  const price = showPrices && v.pricePerDay ? v.pricePerDay : undefined;
+  const price = v.pricePerDay;
   return {
     "@context": CONTEXT,
     "@type": v.group === "cars" ? "Car" : "Vehicle",

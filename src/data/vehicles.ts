@@ -43,6 +43,9 @@ export type VehicleSeed = {
   options: string[];
   /** INR per day. Leave undefined until the client confirms. */
   pricePerDay?: number;
+  /** This vehicle's own WhatsApp (digits with country code) and phone; empty = the ones in Site settings. */
+  whatsappNumber?: string;
+  phone?: string;
   /** City the vehicle is based in; searches from that city show it. Default Hyderabad. */
   location?: string;
   /** Locality in that city (optional); searches from it list this vehicle first. */

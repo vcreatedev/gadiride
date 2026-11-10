@@ -1,6 +1,8 @@
 "use client";
 import { forwardRef, useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
-import { useDocumentOperation, useEditState } from "sanity";
+import { useClient, useDocumentOperation, useEditState } from "sanity";
+import { apiVersion, testOverlay } from "./env";
+import { liveCopies } from "./testCopy";
 import { usePaneRouter, type UserComponent } from "sanity/structure";
 import { Box, Button, Card, Flex, Stack, Text, Tooltip } from "@sanity/ui";
 import { DragHandleIcon, EyeClosedIcon, EyeOpenIcon, PublishIcon, ResetIcon } from "@sanity/icons";
@@ -104,6 +106,7 @@ function OrderedList({ page, childItemId, docId, field }: { page: PageMap; child
   const { items, hidden, movable } = useMemo(() => arrange(page.sections, rows), [page, rows]);
   const ops = useDocumentOperation(docId, docId);
   const edit = useEditState(docId, docId);
+  const client = useClient({ apiVersion });
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   // Patching before the document has loaded is silently ignored, so wait until it is ready.
@@ -111,6 +114,15 @@ function OrderedList({ page, childItemId, docId, field }: { page: PageMap; child
   const save = (next: SectionSlot[]) => {
     if (!ready) return;
     setPending(next);
+    // Test copy: a page not stored here yet is first copied in full from the live site, so the
+    // order change never leaves an almost empty page behind.
+    if (testOverlay && !edit.draft && !edit.published) {
+      void liveCopies(client, [docId])
+        .then(([copy]) => (copy ? client.createIfNotExists({ ...copy, _id: `drafts.${docId}` }) : undefined))
+        .then(() => ops.patch.execute([{ setIfMissing: { [field]: [] } }, { set: { [field]: toSanity(next) } }]))
+        .catch(() => setPending(null));
+      return;
+    }
     ops.patch.execute([{ setIfMissing: { [field]: [] } }, { set: { [field]: toSanity(next) } }]);
   };
   const onDragEnd = ({ active, over }: DragEndEvent) => {

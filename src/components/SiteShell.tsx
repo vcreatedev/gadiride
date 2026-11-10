@@ -36,9 +36,9 @@ export default async function SiteShell({ children }: { children: React.ReactNod
           <a
             href="/admin/"
             className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-[calc(var(--frame-gap)+1.25rem)] z-40 rounded-full bg-taxi px-3 py-1.5 font-mono text-[11px] font-medium text-ink-900 shadow-lift"
-            title="This site is showing the development dataset. gadiride.com is not affected."
+            title="Test site: gadiride.com's live content plus the edits made in this site's admin (removed after an hour). gadiride.com is not affected."
           >
-            DEV DATA · {dataset}
+            TEST SITE · live data + test edits
           </a>
         )}
       </QuoteFlow>

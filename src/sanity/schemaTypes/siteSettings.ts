@@ -115,7 +115,8 @@ export const siteSettings = defineType({
       options: { list: [{ title: "Light (day)", value: "light" }, { title: "Dark (night)", value: "dark" }], layout: "radio" },
       initialValue: "light",
     }),
-    defineField({ name: "showPrices", title: "Show prices on the website", type: "boolean", group: "display", initialValue: false }),
+    // No longer used: a vehicle's price always shows when it has one. Kept hidden so saved settings stay valid.
+    defineField({ name: "showPrices", title: "Show prices on the website (old)", type: "boolean", group: "display", hidden: true }),
     defineField({
       name: "showIntro",
       title: "Play the logo intro",

@@ -62,7 +62,7 @@ export default async function Home() {
         <div className="container-x"><OfferBanners banners={banners} title={home.offers.title} /></div>
       </section>
     ),
-    popular: <Featured content={home.featured} groups={popularByGroup(vehicles, home.featured.tabs)} drivers={drivers} driversLabel={home.featured.tabs.drivers} driversEmpty={search.driversEmpty} showPrices={settings.showPrices} />,
+    popular: <Featured content={home.featured} groups={popularByGroup(vehicles, home.featured.tabs)} drivers={drivers} driversLabel={home.featured.tabs.drivers} driversEmpty={search.driversEmpty} />,
     trips: <HomeTrips content={home.trips} trips={trips} max={POPULAR_MAX} />,
     areas: <AreasServed title={settings.areasTitle} text={settings.areasText} areas={settings.areas} highlights={settings.highlights} phone={settings.phone} />,
     why: <WhyBand content={home.why} />,

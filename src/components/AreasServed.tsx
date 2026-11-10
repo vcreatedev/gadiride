@@ -26,13 +26,13 @@ export default function AreasServed({
           <h2 id="areas-title" className="h2">{accent(title)}</h2>
           {text && <p className="lead mt-4 text-ink-600">{text}</p>}
           {highlights.length > 0 && (
-            <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+            <ul className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
               {highlights.map((h, i) => {
                 const Icon = ICONS[i % ICONS.length];
                 return (
-                  <li key={h.title} className="rounded-card bg-surface-50 p-5">
+                  <li key={h.title} className="rounded-card bg-surface-50 p-4 sm:p-5">
                     <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-gradient text-white"><Icon className="h-5 w-5" /></span>
-                    <h3 className="mt-3 font-head text-lg font-semibold text-ink-900">{h.title}</h3>
+                    <h3 className="mt-3 font-head text-base font-semibold text-ink-900 sm:text-lg">{h.title}</h3>
                     {h.text && <p className="mt-1 text-sm text-ink-600">{h.text}</p>}
                   </li>
                 );

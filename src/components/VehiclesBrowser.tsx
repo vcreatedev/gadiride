@@ -24,7 +24,6 @@ type EmptyText = { title: string; text: string; outsideTitle?: string; outsideTe
 type Props = {
   vehicles: Vehicle[];
   lockGroup?: GroupId;
-  showPrices?: boolean;
   empty: EmptyText;
   /** List heading, e.g. "Pick your car." */
   title?: string;
@@ -35,7 +34,7 @@ type Props = {
   tripTexts?: TripTexts & { heading: string };
 };
 
-export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = false, empty, title, mixedTitle, trips, tripTexts }: Props) {
+export default function VehiclesBrowser({ vehicles, lockGroup, empty, title, mixedTitle, trips, tripTexts }: Props) {
   const { areas } = useSite();
   const { groups: GROUPS, types: TYPES } = useCatalog();
   const [group, setGroup] = useState<GroupId | "all">(lockGroup ?? "all");
@@ -187,7 +186,7 @@ export default function VehiclesBrowser({ vehicles, lockGroup, showPrices = fals
         <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((v, i) => (
             <li key={v.slug} className="flex h-full">
-              <VehicleCard v={v} showPrices={showPrices} />
+              <VehicleCard v={v} />
             </li>
           ))}
         </ul>

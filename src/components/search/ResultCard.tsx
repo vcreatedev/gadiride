@@ -11,7 +11,6 @@ export default function ResultCard({
   title,
   entries,
   detailsLabel,
-  showPrices,
   priority,
   days = 1,
 }: {
@@ -21,10 +20,9 @@ export default function ResultCard({
   title: string;
   entries: Entry[];
   detailsLabel: string;
-  showPrices: boolean;
   priority?: boolean;
 }) {
-  const price = showPrices && v.pricePerDay;
+  const price = v.pricePerDay;
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-card bg-white shadow-card ring-1 ring-black/5 transition-shadow hover:shadow-lift">
       <Link href={`/vehicle/${v.slug}/`} className="block" tabIndex={-1} aria-hidden>

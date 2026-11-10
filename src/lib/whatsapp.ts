@@ -30,15 +30,22 @@ export function buildDirectMessage(title: string, entries: Entry[]) {
 
 /** `number` comes from site settings (useSite() on the client, getSettings() on the server). */
 /** A vehicle's key facts for a WhatsApp message: type, specs, price and a link to its page. */
-export function vehicleEntries(v: { typeName?: string; location?: string; area?: string; specs: { label: string; value: string }[]; pricePerDay?: number; slug: string }, showPrice = false): Entry[] {
+export function vehicleEntries(v: { typeName?: string; location?: string; area?: string; specs: { label: string; value: string }[]; pricePerDay?: number; slug: string }): Entry[] {
   const link = typeof window !== "undefined" ? `${window.location.origin}/vehicle/${v.slug}/` : `/vehicle/${v.slug}/`;
+  const price = v.pricePerDay;
   return [
     ...(v.typeName ? [{ label: "Type", value: v.typeName }] : []),
     ...(v.location ? [{ label: "Location", value: [v.area, v.location].filter(Boolean).join(", ") }] : []),
     ...v.specs.slice(0, 4).map((s) => ({ label: s.label, value: s.value })),
-    ...(showPrice && v.pricePerDay ? [{ label: "Price", value: `₹${v.pricePerDay.toLocaleString("en-IN")} / day` }] : []),
+    ...(price ? [{ label: "Price", value: `₹${price.toLocaleString("en-IN")} / day` }] : []),
     { label: "Link", value: link },
   ];
+}
+
+/** WhatsApp digits for wa.me links: spaces and + dropped; a 10-digit Indian mobile gets the 91 country code. */
+export function waDigits(raw?: string): string {
+  const digits = (raw ?? "").replace(/\D/g, "");
+  return digits.length === 10 ? `91${digits}` : digits;
 }
 
 export function whatsappHref(message: string, number = "") {

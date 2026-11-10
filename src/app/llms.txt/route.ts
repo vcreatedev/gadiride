@@ -9,9 +9,10 @@ export const revalidate = 3600;
 const line = (label: string, value?: string) => (value ? `- ${label}: ${value}` : "");
 const rupees = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
-function vehicleLine(v: Vehicle, showPrices: boolean) {
+function vehicleLine(v: Vehicle) {
   const seats = v.specs.find((s) => /seat/i.test(s.label))?.value;
-  const facts = [v.typeName, seats && `${seats} seats`, `in ${placeLabel(v)}`, showPrices && v.pricePerDay ? `from ${rupees(v.pricePerDay)} a day` : ""].filter(Boolean).join(", ");
+  const price = v.pricePerDay;
+  const facts = [v.typeName, seats && `${seats} seats`, `in ${placeLabel(v)}`, price ? `from ${rupees(price)} a day` : ""].filter(Boolean).join(", ");
   return `- [${v.name}](${absoluteUrl(`/vehicle/${v.slug}/`)}): ${facts}.${v.summary ? ` ${v.summary}` : ""}`;
 }
 
@@ -55,7 +56,7 @@ export async function GET() {
     "## Vehicles available now",
     ...groups.flatMap((g) => {
       const list = live.filter((v) => v.group === g.id);
-      return list.length ? ["", `### ${g.name}`, ...list.map((v) => vehicleLine(v, site.showPrices))] : [];
+      return list.length ? ["", `### ${g.name}`, ...list.map((v) => vehicleLine(v))] : [];
     }),
     "",
     "## Frequently asked questions",

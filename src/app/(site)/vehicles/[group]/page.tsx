@@ -81,7 +81,7 @@ export default async function GroupPage({ params }: { params: Promise<{ group: s
     vehicles: (
       <section id="all" className="scroll-mt-20 bg-surface-50 py-10 md:py-14">
         <div className="container-x">
-          <VehiclesBrowser title={listTitle} mixedTitle={p.listTitleMixed} trips={isCars ? trips : undefined} tripTexts={{ heading: p.tripsHeading, title: p.tripsEmptyTitle, empty: p.tripsEmpty, othersTitle: p.tripsOthersTitle }} vehicles={vehicles} lockGroup={g.id as GroupId} showPrices={site.showPrices} empty={{ title: p.emptyTitle, text: p.emptyText, outsideTitle: p.outsideTitle, outsideText: p.outsideText }} />
+          <VehiclesBrowser title={listTitle} mixedTitle={p.listTitleMixed} trips={isCars ? trips : undefined} tripTexts={{ heading: p.tripsHeading, title: p.tripsEmptyTitle, empty: p.tripsEmpty, othersTitle: p.tripsOthersTitle }} vehicles={vehicles} lockGroup={g.id as GroupId} empty={{ title: p.emptyTitle, text: p.emptyText, outsideTitle: p.outsideTitle, outsideText: p.outsideText }} />
         </div>
       </section>
     ),

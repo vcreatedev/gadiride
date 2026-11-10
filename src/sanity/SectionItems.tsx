@@ -8,7 +8,9 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
-import { apiVersion } from "./env";
+import { LIVE_DATASET, apiVersion, testOverlay } from "./env";
+import { liveCopies, mergedFetch } from "./testCopy";
+import { urlFor } from "./image";
 import type { ItemList } from "./pageMap";
 import { LIVE_DELAY, describeChanges, sameValue } from "./publishChanges";
 import { scheduleState, whenText, type Schedule } from "@/lib/timer";
@@ -45,7 +47,9 @@ const DEFAULT_SORT = "coalesce(order, 100) asc, _createdAt asc";
 
 /** One document in the list: its published id plus which copies exist (published, draft). */
 /** `dirty`: has a draft that really differs from the website (an untouched leftover draft does not count). */
-type Entry = { id: string; previewId: string; ids: string[]; shown: boolean; dirty: boolean; schedule: Schedule };
+/** `liveOnly` (test copy only): a live item not edited here; `doc` is its content, for the preview. */
+type Entry = { id: string; previewId: string; ids: string[]; shown: boolean; dirty: boolean; schedule: Schedule; liveOnly: boolean; doc?: Record<string, unknown> };
+type Row = { _id: string; shown: boolean; doc: Record<string, unknown>; live?: boolean };
 
 /** A document without its system fields, for comparing a draft with its live copy. */
 const content = (d: Record<string, unknown> | undefined) => {
@@ -65,8 +69,10 @@ function useEntries(list: ItemList, sort: string): Entry[] | null {
     let alive = true;
     const vars = { ...JSON.parse(key), type };
     const where = `_type == $type${filter ? ` && (${filter})` : ""}`;
+    // Test copy: the test edits plus the live items not edited here (same filter and order).
+    const rowsQuery = `*[${where}] | order(${sort}){_id, "shown": ${shownExpr}, "doc": @, "live": _live == true}`;
     const load = () =>
-      client.fetch<{ _id: string; shown: boolean; doc: Record<string, unknown> }[]>(`*[${where}] | order(${sort}){_id, "shown": ${shownExpr}, "doc": @}`, vars).then(
+      (testOverlay ? mergedFetch<Row[]>(client, rowsQuery, vars) : client.fetch<Row[]>(rowsQuery, vars)).then(
         (rows) => {
           if (!alive) return;
           // One entry per item; its draft (unpublished edits) decides what the admin shows, order included.
@@ -76,7 +82,7 @@ function useEntries(list: ItemList, sort: string): Entry[] | null {
             const id = getPublishedId(r._id);
             const isDraft = r._id !== id;
             const e = byId.get(id);
-            if (!e) byId.set(id, { id, previewId: r._id, ids: [r._id], shown: r.shown, dirty: false, schedule: {}, rank });
+            if (!e) byId.set(id, { id, previewId: r._id, ids: [r._id], shown: r.shown, dirty: false, schedule: {}, rank, liveOnly: !!r.live, doc: r.doc });
             else byId.set(id, { ...e, ids: [...e.ids, r._id], ...(isDraft ? { shown: r.shown, rank, previewId: r._id } : {}) });
           });
           const withDirty = [...byId.values()].map((e) => {
@@ -118,8 +124,40 @@ function TimerTag({ schedule }: { schedule: Schedule }) {
   );
 }
 
+/** Test copy: a live item not edited here, shown from its live content (the test copy does not have it). */
+function LivePreview({ doc }: { doc?: Record<string, unknown> }) {
+  const photo = findPhoto(doc);
+  return (
+    <Flex align="center" gap={2} padding={2}>
+      <Box style={{ width: 33, height: 33, flexShrink: 0, borderRadius: 3, overflow: "hidden", background: "var(--card-muted-bg-color, #f3f3f3)" }}>
+        {photo && <img src={urlFor({ asset: { _ref: photo } }, LIVE_DATASET).width(66).height(66).fit("crop").url()} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
+      </Box>
+      <Stack space={2} style={{ minWidth: 0 }}>
+        <Text size={1} weight="medium" textOverflow="ellipsis">{docLabel(doc)}</Text>
+        <Text size={0} muted textOverflow="ellipsis">Live content · not changed in this test copy</Text>
+      </Stack>
+    </Flex>
+  );
+}
+
+/** The first photo in a document (gallery, then other image fields), for a small preview. */
+function findPhoto(value: unknown): string | undefined {
+  if (Array.isArray(value)) return value.map(findPhoto).find(Boolean);
+  if (!value || typeof value !== "object") return undefined;
+  const ref = (value as { asset?: { _ref?: unknown } }).asset?._ref;
+  if (typeof ref === "string" && ref.startsWith("image-")) return ref;
+  return Object.values(value as Record<string, unknown>).map(findPhoto).find(Boolean);
+}
+
 /** Whether this item is on the website: Live, Hidden, or has edits still waiting for Publish. */
 function LiveTag({ entry }: { entry: Entry }) {
+  if (entry.liveOnly) {
+    return (
+      <Tooltip content={tip("From the live site, not changed in this test copy. Edit it (or use the eye) to make a test copy of just this item.")} placement="top" portal>
+        <Badge tone="positive" fontSize={0} padding={2} radius={2} style={{ whiteSpace: "nowrap" }}>Live</Badge>
+      </Tooltip>
+    );
+  }
   const [tone, label, help] = !isLive(entry)
     ? (["caution", "Not published", "Not on the website yet. Open it and click Publish."] as const)
     : entry.dirty
@@ -158,8 +196,13 @@ function ItemRow({ entry, type, schemaType, sortable, onToggle, onDelete, onPubl
           </Tooltip>
         )}
         <Card flex={1} as={OpenLink} childId={entry.id} childParameters={{ type }} radius={2} data-as="a" style={{ textDecoration: "none", minWidth: 0, opacity: entry.shown ? 1 : 0.5 }}>
-          <Preview schemaType={schemaType} value={{ _id: entry.previewId, _type: type }} layout="default" />
+          {entry.liveOnly ? <LivePreview doc={entry.doc} /> : <Preview schemaType={schemaType} value={{ _id: entry.previewId, _type: type }} layout="default" />}
         </Card>
+        {testOverlay && !entry.liveOnly && (
+          <Tooltip content={tip("Stored in this test copy: shown on the test site only, and removed about an hour after the last change.")} placement="top" portal>
+            <Badge tone="caution" fontSize={0} padding={2} radius={2} style={{ whiteSpace: "nowrap" }}>Test edit</Badge>
+          </Tooltip>
+        )}
         <LiveTag entry={entry} />
         <TimerTag schedule={entry.schedule} />
         {/* Always shown; greyed out while this item matches the website. */}
@@ -281,7 +324,10 @@ export function ItemListBlock({ list }: { list: ItemList }) {
     setPending(next);
     try {
       const needDraft = patches.filter((p) => !hasDraft(p.entry)).map((p) => p.entry.id);
-      const live = needDraft.length ? await client.fetch<SanityDocument[]>("*[_id in $ids]", { ids: needDraft }) : [];
+      const stored = needDraft.length ? await client.fetch<SanityDocument[]>("*[_id in $ids]", { ids: needDraft }) : [];
+      // Test copy: a live item not stored here yet is copied (just that item) before the change.
+      const fromLive = testOverlay ? await liveCopies(client, needDraft.filter((id) => !stored.some((d) => d._id === id))) : [];
+      const live = [...stored, ...fromLive];
       const tx = client.transaction();
       for (const doc of live) tx.createIfNotExists({ ...stripMeta(doc), _id: draftId(doc._id) });
       for (const p of patches) tx.patch(draftId(p.entry.id), (q) => q.set(p.set));
@@ -298,7 +344,10 @@ export function ItemListBlock({ list }: { list: ItemList }) {
   };
   // Deletes the item for good (published copy and any draft), after a confirm.
   const onDelete = (e: Entry) => {
-    if (!window.confirm("Delete this for good? It disappears from the website and cannot be undone. (To only hide it, use the eye.)")) return;
+    const question = testOverlay
+      ? "Remove this test edit? A live item shows its live version again on the test site; one added here is removed."
+      : "Delete this for good? It disappears from the website and cannot be undone. (To only hide it, use the eye.)";
+    if (!window.confirm(question)) return;
     setPending((entries ?? []).filter((x) => x.id !== e.id));
     const tx = client.transaction();
     for (const id of e.ids) tx.delete(id);
@@ -402,7 +451,7 @@ export function ItemListBlock({ list }: { list: ItemList }) {
           <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={onDragEnd}>
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
               <Stack space={1}>
-                {entries.map((e) => <ItemRow key={e.id} entry={e} type={list.type} schemaType={schemaType} sortable={sortable} onToggle={list.toggle === false ? undefined : () => onToggle(e)} onDelete={list.template === false ? undefined : () => onDelete(e)} onPublish={() => onReview([e], "publish")} onDiscard={() => onDiscard(e)} />)}
+                {entries.map((e) => <ItemRow key={e.id} entry={e} type={list.type} schemaType={schemaType} sortable={sortable} onToggle={list.toggle === false ? undefined : () => onToggle(e)} onDelete={list.template === false || e.liveOnly ? undefined : () => onDelete(e)} onPublish={() => onReview([e], "publish")} onDiscard={() => onDiscard(e)} />)}
               </Stack>
             </SortableContext>
           </DndContext>

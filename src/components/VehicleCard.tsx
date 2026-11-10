@@ -6,8 +6,8 @@ import VehiclePhoto from "./VehiclePhoto";
 import BookActions from "./BookActions";
 
 /** Fleet card: photo, name, key specs, per-day price, and WhatsApp / Call booking buttons. */
-export default function VehicleCard({ v, showPrices = false, priority = false }: { v: Vehicle; showPrices?: boolean; priority?: boolean }) {
-  const price = showPrices && v.pricePerDay;
+export default function VehicleCard({ v, priority = false }: { v: Vehicle; priority?: boolean }) {
+  const price = v.pricePerDay;
   const href = `/vehicle/${v.slug}/`;
   return (
     <article className="group relative flex h-full w-full cursor-pointer flex-col rounded-card bg-white p-3 shadow-card ring-1 ring-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-lift hover:ring-brand-200">
@@ -62,7 +62,7 @@ export default function VehicleCard({ v, showPrices = false, priority = false }:
             )}
             <span className="text-sm font-semibold text-ink-600 underline-offset-4 group-hover:text-brand-600 group-hover:underline">Details</span>
           </div>
-          <BookActions title={FORMS[v.group].title} vehicle={v.name} details={v} showPrice={showPrices} className="relative z-10 mt-3" />
+          <BookActions title={FORMS[v.group].title} vehicle={v.name} details={v} className="relative z-10 mt-3" />
         </div>
       </div>
     </article>

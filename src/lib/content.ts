@@ -21,9 +21,11 @@ import { DEFAULT_LOCATION } from "@/data/cities";
 import type { Metadata } from "next";
 import { BRAND, PAGE_PATH, buildMetadata, isNoindexPage, shareImageUrl } from "./seo";
 import { cityOption } from "./serviceArea";
+import { waDigits } from "./whatsapp";
 import { FAQ } from "@/data/faq";
 import { SAMPLE_DRIVERS } from "@/data/drivers";
-import { dataset } from "@/sanity/env";
+import { LIVE_DATASET, dataset, testOverlay } from "@/sanity/env";
+import { evaluate, parse } from "groq-js";
 import { CAREER_ROLES, SERVICES, type FormKey, type Service } from "@/data/services";
 import type { ArtId } from "@/data/vehicleArt";
 import { footerDefaults, homeDefaults, pageDefaults, type HomeContent, type PageContent, type PageKey } from "@/content/defaults";
@@ -56,7 +58,7 @@ const QUERY = `{
   },
   "vehicles": *[_type == "vehicle" && available != false && defined(slug.current) && defined(group) ]
     | order(coalesce(order, 100) asc, _createdAt desc){
-      "slug": slug.current, "updatedAt": _updatedAt, name, group, location, area, pincode, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, featured,
+      "slug": slug.current, "updatedAt": _updatedAt, name, group, location, area, pincode, summary, specs[hidden != true]{label, value}, mileage, options, pricePerDay, whatsappNumber, phone, featured,
       photoFit, photoBackground, photoZoom, liveFrom, liveUntil,
       "type": type->key.current,
       image${IMG}, gallery[hidden != true]${IMG}
@@ -84,7 +86,7 @@ type Raw = {
   trips?: { id: string; from: string; to: string; via?: string[]; date: string; time?: string; liveFrom?: string; expiresAt?: string; seats?: number; full?: boolean; pricePerSeat?: number; notes?: string; rules?: string[]; car?: { slug?: string; name?: string } }[];
   vehicles?: {
     slug: string; updatedAt?: string; name: string; group: GroupId; location?: string; area?: string; pincode?: string; type?: string; summary?: string;
-    specs?: { label: string; value: string }[]; mileage?: string; options?: string[]; pricePerDay?: number; featured?: boolean;
+    specs?: { label: string; value: string }[]; mileage?: string; options?: string[]; pricePerDay?: number; whatsappNumber?: string; phone?: string; featured?: boolean;
     photoFit?: PhotoFit; photoBackground?: PhotoBg; photoZoom?: number; liveFrom?: string; liveUntil?: string;
     image?: SanityImageDoc; gallery?: SanityImageDoc[];
   }[];
@@ -95,9 +97,37 @@ type Raw = {
   testimonials?: { quote: string; name: string; detail?: string; rating?: number; photo?: SanityImageDoc }[];
 };
 
+/** Every published document in a dataset (the whole site is about a hundred, so this stays small). */
+const ALL_PUBLISHED = `*[!(_id in path("drafts.**")) && !(_id in path("versions.**")) && !(_id in path("_.**"))]`;
+const ASSET_TYPES = new Set(["sanity.imageAsset", "sanity.fileAsset"]);
+type StoredDoc = { _id: string; _type: string; [field: string]: unknown };
+
+/**
+ * Test copy mode (dev.gadiride.com, local server): the live documents with the ones edited in the
+ * dev admin on top, run through the same QUERY locally (groq-js), so every page works unchanged.
+ * A test edit replaces the live document with the same id, even when it hides it. Photos remember
+ * which dataset stores them, for their URLs (see IMG). The live dataset is only read.
+ */
+async function fetchWithTestEdits(): Promise<Raw> {
+  if (!client) return {};
+  const opts = { next: { revalidate: REVALIDATE, tags: [SANITY_TAG] } };
+  const [live, edits] = await Promise.all([
+    client.withConfig({ dataset: LIVE_DATASET }).fetch<StoredDoc[]>(ALL_PUBLISHED, {}, opts),
+    client.fetch<StoredDoc[]>(ALL_PUBLISHED, {}, opts),
+  ]);
+  const docs = new Map<string, StoredDoc>();
+  const add = (list: StoredDoc[] | null, from: string) =>
+    (list ?? []).forEach((d) => docs.set(d._id, ASSET_TYPES.has(d._type) ? { ...d, _dataset: from } : d));
+  add(live, LIVE_DATASET);
+  add(edits, dataset);
+  const result = await evaluate(parse(QUERY), { dataset: [...docs.values()], params: { pageIds: [...PAGE_TYPES] } });
+  return ((await result.get()) as Raw | null) ?? {};
+}
+
 const fetchRaw = cache(async (): Promise<Raw> => {
   if (!client) return {};
   try {
+    if (testOverlay) return await fetchWithTestEdits();
     return (
       (await client.fetch<Raw>(QUERY, { pageIds: [...PAGE_TYPES] }, { next: { revalidate: REVALIDATE, tags: [SANITY_TAG] } })) ?? {}
     );
@@ -152,13 +182,12 @@ export const getSettings = cache(async (): Promise<Settings> => {
   const m = merge(base, s);
   return {
     ...m,
-    whatsappNumber: m.whatsappNumber.replace(/\D/g, ""),
+    whatsappNumber: waDigits(m.whatsappNumber),
     cities: (m.cities ?? []).filter((c) => c?.name),
     social: (m.social ?? []).filter((x) => x?.label && x?.href),
     marquee: (m.marquee ?? []).filter(Boolean),
     areas: (m.areas ?? []).filter(Boolean),
     banners: (m.banners ?? []).filter((b) => b?.title),
-    showPrices: typeof s.showPrices === "boolean" ? s.showPrices : settingsDefaults.showPrices,
     showIntro: typeof s.showIntro === "boolean" ? s.showIntro : true,
     introRepeat: (["daily", "session", "every"] as const).find((r) => r === s.introRepeat) ?? "daily",
     heroTheme: themeOf(raw.home?.heroTheme) ?? themeOf(s.heroTheme) ?? settingsDefaults.heroTheme,
@@ -326,6 +355,9 @@ export const getVehicles = cache(async (): Promise<Vehicle[]> => {
         summary: d.summary ?? "",
         options: d.options ?? [],
         pricePerDay: d.pricePerDay ?? undefined,
+        // Own booking numbers; empty = Site settings (BookActions falls back).
+        whatsappNumber: waDigits(d.whatsappNumber) || undefined,
+        phone: d.phone?.trim() || undefined,
         featured: !!d.featured,
         groupName: groupName(d.group),
         typeName: t.name,
@@ -456,7 +488,8 @@ export const getDrivers = cache(async (): Promise<Driver[]> => {
   if (docs.length) {
     return docs.map((d) => ({ ...d, ...driverPlace(d), pincode: d.pincode?.trim() || undefined, drives: d.drives ?? [], languages: d.languages ?? [], verified: !!d.verified, photo: toPhoto(d.photo, d.name) }));
   }
-  if (dataset === "production") return [];
+  // The live site (and the test copy, which shows live content) never shows sample drivers.
+  if (dataset === LIVE_DATASET || testOverlay) return [];
   return SAMPLE_DRIVERS.map((d) => ({ ...d, ...driverPlace(d), verified: false, sample: true }));
 });
 

@@ -1,0 +1,42 @@
+# Every hour: test edits made in the dev admin (dev.gadiride.com, local server) are deleted once
+# they are an hour old. The dev site shows the live production content with those edits on top,
+# so it falls back to the live content. Production is never touched: the script only deletes in
+# the development dataset.
+#
+# Needs the repository secret SANITY_SYNC_TOKEN: a Sanity API token with the Editor role
+# (sanity.io/manage → project → API → Tokens). Scheduled runs use the default branch (main).
+# GitHub pauses schedules in public repos after 60 days without commits; "Run workflow" restarts it.
+name: Remove old dev test edits
+
+on:
+  schedule:
+    - cron: "7 * * * *" # every hour at :07 (GitHub may start it a few minutes late)
+  workflow_dispatch: {}
+  # Also once whenever this job or its script changes on main, as a check.
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sync-dev-data.yml
+      - scripts/clean-dev-test-edits.mjs
+
+concurrency:
+  group: sync-dev-data
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Delete test edits older than an hour (development only)
+        run: node scripts/clean-dev-test-edits.mjs
+        env:
+          SANITY_PROJECT_ID: imd3p4ax
+          SANITY_SYNC_TOKEN: ${{ secrets.SANITY_SYNC_TOKEN }}

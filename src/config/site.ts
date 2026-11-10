@@ -32,8 +32,6 @@ export type SiteSettings = {
   /** Empty = "Cities we serve" section hidden. */
   cities: { name: string; note?: string }[];
   social: { label: string; href: string }[];
-  /** Show per-day prices on cards and vehicle pages. */
-  showPrices: boolean;
   /** Scrolling strip under the service-page hero. */
   marquee: string[];
   /** Offer banners on the service pages. */
@@ -87,8 +85,6 @@ export const site: SiteSettings = {
     { name: "Vijayawada", note: "Cars on request." },
   ],
   social: [{ label: "Instagram", href: "https://www.instagram.com/gadirideofficial/" }],
-  // Sample prices are listed; local and preview builds show them, the live site waits for Site settings.
-  showPrices: process.env.NEXT_PUBLIC_SANITY_DATASET !== "production",
   marquee: [
     "Self drive cars from ₹1,199 a day",
     "Zero deposit option on select cars",

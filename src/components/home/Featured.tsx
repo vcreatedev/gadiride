@@ -23,16 +23,31 @@ type Props = {
   driversLabel: string;
   /** Shown in the Drivers tab while no driver profiles are published. */
   driversEmpty: string;
-  showPrices: boolean;
 };
 
 const MAX = 15;
+/**
+ * Phones: one row you swipe sideways (the next card peeks in), so the section stays about one
+ * screen tall instead of 15 cards stacked. Tablets and up: the grid.
+ */
+const ROW = "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:p-0 lg:grid-cols-3";
+const CELL = "flex w-[85%] shrink-0 snap-start [&>*]:w-full sm:w-auto";
+
+/** Phones only: tells the visitor the row scrolls sideways. */
+function SwipeHint({ count }: { count: number }) {
+  if (count < 2) return null;
+  return (
+    <p className="mt-1 flex items-center justify-center gap-1.5 text-xs font-medium text-ink-400 sm:hidden">
+      Swipe to see all {count}<ArrowRight aria-hidden className="h-3.5 w-3.5" />
+    </p>
+  );
+}
 const pill = "inline-flex h-11 items-center gap-2 rounded-full pl-3 pr-4 text-sm font-semibold transition";
 const pillOn = "bg-brand-gradient text-white shadow-[0_6px_16px_-8px_rgba(232,84,12,0.7)]";
 const pillOff = "bg-white text-ink-900 shadow-sm ring-1 ring-line hover:-translate-y-0.5 hover:ring-brand-400";
 
 /** Popular vehicles (and drivers), one service at a time, cars first, with a "View all" button for the open tab. */
-export default function Featured({ content: c, groups, drivers, driversLabel, driversEmpty, showPrices }: Props) {
+export default function Featured({ content: c, groups, drivers, driversLabel, driversEmpty }: Props) {
   const [active, setActive] = useState<TabId>(groups[0]?.id ?? "driver");
   const tabs: { id: TabId; label: string; count: number }[] = [
     ...groups.map((g) => ({ id: g.id, label: g.label, count: g.vehicles.length })),
@@ -68,24 +83,30 @@ export default function Featured({ content: c, groups, drivers, driversLabel, dr
           })}
         </div>
 
-        <div id="featured-panel" role="tabpanel" className="mt-10">
+        <div id="featured-panel" role="tabpanel" className="mt-6 sm:mt-10">
           {group && (
-            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {group.vehicles.map((v, i) => (
-                <li key={v.slug} className="flex h-full">
-                  <VehicleCard v={v} showPrices={showPrices} />
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className={ROW}>
+                {group.vehicles.map((v) => (
+                  <li key={v.slug} className={CELL}>
+                    <VehicleCard v={v} />
+                  </li>
+                ))}
+              </ul>
+              <SwipeHint count={group.vehicles.length} />
+            </>
           )}
           {active === "driver" && (drivers.length ? (
-            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {drivers.slice(0, MAX).map((d) => (
-                <li key={d.name} className="flex h-full">
-                  <DriverCard d={d} title={FORMS.driver.title} entries={[]} requestLabel="Request this driver" />
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className={ROW}>
+                {drivers.slice(0, MAX).map((d) => (
+                  <li key={d.name} className={CELL}>
+                    <DriverCard d={d} title={FORMS.driver.title} entries={[]} requestLabel="Request this driver" />
+                  </li>
+                ))}
+              </ul>
+              <SwipeHint count={Math.min(drivers.length, MAX)} />
+            </>
           ) : (
             <div className="flex flex-col items-center rounded-card bg-white px-6 py-12 text-center shadow-card">
               <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600"><Users className="h-7 w-7" /></span>
@@ -95,7 +116,7 @@ export default function Featured({ content: c, groups, drivers, driversLabel, dr
           ))}
         </div>
 
-        <div className="mt-10 flex justify-center">
+        <div className="mt-6 flex justify-center sm:mt-10">
           <Link href={allHref} className="btn-primary h-12 rounded-full px-7 text-[15px]">
             {c.linkLabel || "View all"}<ArrowRight className="h-4 w-4" />
           </Link>

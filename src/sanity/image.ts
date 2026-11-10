@@ -4,4 +4,12 @@ import { dataset, projectId } from "./env";
 
 const builder = createImageUrlBuilder({ projectId: projectId || "missing", dataset });
 
-export const urlFor = (source: SanityImageSource) => builder.image(source).auto("format").fit("max");
+/**
+ * A photo's URL. `fromDataset`: where the photo is stored, when not this site's dataset (in test
+ * copy mode the pages mix live photos with ones added in the dev admin).
+ */
+export const urlFor = (source: SanityImageSource, fromDataset: string = dataset) =>
+  (fromDataset === dataset ? builder : createImageUrlBuilder({ projectId: projectId || "missing", dataset: fromDataset }))
+    .image(source)
+    .auto("format")
+    .fit("max");

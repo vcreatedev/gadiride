@@ -10,6 +10,8 @@ import { FOOTER, HEADER, PAGES, SETTINGS, type ItemList, type PageMap, type Sect
 import SectionsPane from "./SectionsPane";
 import QuickAddPane from "./QuickAddPane";
 import OverviewPane from "./OverviewPane";
+import { testOverlay } from "./env";
+import { liveCopyTemplate } from "./testCopy";
 
 /**
  * The admin sidebar mirrors the website: one entry per page, in the header's order. Each page
@@ -24,13 +26,21 @@ const ICONS: Record<string, ComponentType> = {
   contact: EnvelopeIcon, search: SearchIcon, "404": WarningOutlineIcon, header: MenuIcon, footer: MenuIcon, settings: EarthGlobeIcon,
 };
 
+/** A document pane. In the test copy (dev admin) it starts from the live content until edited. */
+const docNode = (S: StructureBuilder, type: string, id: string) => {
+  const node = S.document().schemaType(type).documentId(id);
+  return testOverlay ? node.initialValueTemplate(liveCopyTemplate(type), { id }) : node;
+};
+
 /** What opens when a section is clicked. */
 function open(S: StructureBuilder, item: SectionItem) {
   const t = item.target;
   if (t.kind === "doc") {
     const id = t.id ?? t.type;
-    return S.document().schemaType(t.type).documentId(id).title(item.title);
+    return docNode(S, t.type, id).title(item.title);
   }
+  // Test copy: Sanity's own lists only see the test edits, so use the list that also shows live items.
+  if (testOverlay) return quickPane(S, `list-${item.key}`, { title: item.title, type: t.type, filter: t.filter, params: t.params, template: t.template });
   const list = S.documentList()
     .id(`list-${item.key}`)
     .title(item.title)
@@ -66,7 +76,7 @@ const quickPane = (S: StructureBuilder, id: string, list: ItemList) =>
     .id(`add-list-${id}`)
     .title(list.title)
     .options({ list })
-    .child((docId: string, ctx) => S.document().documentId(docId).schemaType(ctx.params?.type ?? list.type));
+    .child((docId: string, ctx) => docNode(S, ctx.params?.type ?? list.type, docId));
 
 /** Quick add: each service's vehicles (and drivers), with "Add" creating one in the right place. */
 const quickAdd = (S: StructureBuilder) =>
@@ -114,8 +124,20 @@ const overview = (S: StructureBuilder) =>
       S.component(OverviewPane)
         .id("vehicle-overview")
         .title("Vehicle overview")
-        .child((docId: string) => S.document().documentId(docId).schemaType("vehicle")),
+        .child((docId: string) => docNode(S, "vehicle", docId)),
     );
+
+/** A vehicle group's document (fixed ids). */
+const groupItem = (S: StructureBuilder, id: string, name: string) =>
+  testOverlay
+    ? S.listItem().id(`group-${id}`).title(name).icon(PackageIcon).child(docNode(S, "vehicleGroup", `group-${id}`))
+    : S.documentListItem().id(`group-${id}`).schemaType("vehicleGroup").title(name);
+
+/** Every document of a type (in the test copy: live ones too). */
+const typeListItem = (S: StructureBuilder, type: string, title: string, icon: ComponentType) =>
+  testOverlay
+    ? S.listItem().id(`all-${type}`).title(title).icon(icon).child(quickPane(S, `all-${type}`, { title, type }))
+    : S.documentTypeListItem(type).title(title).icon(icon);
 
 export const structure: StructureResolver = (S) =>
   S.list()
@@ -148,9 +170,9 @@ export const structure: StructureResolver = (S) =>
                 .id("vehicle-groups")
                 .title("Vehicle groups")
                 .icon(PackageIcon)
-                .child(S.list().title("Vehicle groups").items(GROUPS.map((g) => S.documentListItem().id(`group-${g.id}`).schemaType("vehicleGroup").title(g.name)))),
-              S.documentTypeListItem("vehicleType").title("All vehicle types").icon(TagIcon),
-              S.documentTypeListItem("vehicle").title("All vehicles").icon(ThListIcon),
+                .child(S.list().title("Vehicle groups").items(GROUPS.map((g) => groupItem(S, g.id, g.name)))),
+              typeListItem(S, "vehicleType", "All vehicle types", TagIcon),
+              typeListItem(S, "vehicle", "All vehicles", ThListIcon),
             ]),
         ),
     ]);

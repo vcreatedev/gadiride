@@ -4,7 +4,8 @@ import { getPublishedId, useClient } from "sanity";
 import { DEFAULT_LOCATION } from "@/data/cities";
 import { GROUPS, type GroupId } from "@/data/vehicles";
 import { scheduleState } from "@/lib/timer";
-import { apiVersion } from "./env";
+import { apiVersion, testOverlay } from "./env";
+import { mergedFetch } from "./testCopy";
 import { stockPhotoUrl } from "./stockPhoto";
 
 /** Where a vehicle stands on the website right now (from its published copy). */
@@ -81,7 +82,8 @@ export function useOverview() {
   useEffect(() => {
     let alive = true;
     const load = () =>
-      client.fetch<Row[]>(QUERY).then(
+      // Test copy: the test edits plus every live vehicle not edited here.
+      (testOverlay ? mergedFetch<Row[]>(client, QUERY) : client.fetch<Row[]>(QUERY)).then(
         (r) => {
           if (!alive) return;
           setRows(r);

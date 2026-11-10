@@ -63,7 +63,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
       <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((v, i) => (
           <li key={v.slug}>
-            <ResultCard v={v} title={title} entries={entries} detailsLabel={p.detailsLabel} showPrices={settings.showPrices} priority={first && i < 3} days={tab === "cars" ? bookedDays(values) : 1} />
+            <ResultCard v={v} title={title} entries={entries} detailsLabel={p.detailsLabel} priority={first && i < 3} days={tab === "cars" ? bookedDays(values) : 1} />
           </li>
         ))}
       </ul>

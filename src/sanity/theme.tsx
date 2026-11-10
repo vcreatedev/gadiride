@@ -1,5 +1,5 @@
 "use client";
-import { buildLegacyTheme, type NavbarProps } from "sanity";
+import { buildLegacyTheme, type LayoutProps, type NavbarProps } from "sanity";
 
 /** Admin (Sanity Studio) in the website's colours: logo orange on the site's dark ink. */
 const BRAND = {
@@ -50,6 +50,24 @@ export function GadirideIcon() {
       <circle cx="12" cy="11" r="4.2" fill="#fff" />
       <circle cx="12" cy="31" r="2.6" fill="#16161A" />
     </svg>
+  );
+}
+
+/**
+ * Phones held upright: Sanity lets a list grow to its full height inside the scrolling frame, but
+ * the list's own box keeps every swipe to itself (overscroll-behavior: contain), so neither scrolled
+ * and the lower menu items could not be reached. Let the swipe pass on to the frame. On wider
+ * screens the list scrolls in its own box as before.
+ */
+const PHONE_SCROLL_FIX = `#sanity [data-testid="pane-content"] > [data-ui="Box"] { overscroll-behavior-y: auto; }`;
+
+/** The admin's outer layout: Sanity's own, plus the phone scrolling fix above. */
+export function StudioLayout(props: LayoutProps) {
+  return (
+    <>
+      <style>{PHONE_SCROLL_FIX}</style>
+      {props.renderDefault(props)}
+    </>
   );
 }
 
