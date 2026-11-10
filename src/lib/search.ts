@@ -87,7 +87,7 @@ export function matchVehicles(
  * The searched city: a town named in the place, else the city of the vehicles at its pincode (or in its
  * district), else Hyderabad. Null when only a pincode was given and no vehicle is anywhere near it.
  */
-function searchCity(place: string | undefined, vehicles: Vehicle[], areas: string[]): string | null {
+function searchCity(place: string | undefined, vehicles: { location: string; pincode?: string }[], areas: string[]): string | null {
   const pin = pinOf(place);
   const named = placeCity(withoutPin(place), areas, "");
   if (named || !pin) return named || placeCity(place, areas);
@@ -103,20 +103,19 @@ function areaFirst(list: Vehicle[], place: string | undefined) {
 }
 
 /**
- * Drivers for a search: only those in the pickup's city (a driver without a city counts as
- * Hyderabad); ones in the pickup's area first, then those who drive the chosen vehicle.
+ * Drivers for a search, the same way as vehicles: only those based in the pickup's city (a pincode
+ * alone finds its city from the drivers listed with it); ones in the pickup's area or at its pincode
+ * first, then those who drive the chosen vehicle. Empty when no driver is based in that city.
  */
 export function matchDrivers(values: Record<string, string>, drivers: Driver[], areas: string[] = []) {
   const where = values.location || "";
-  const city = placeCity(where, areas);
   const kind = (values.drives || "").toLowerCase();
-  const inCity = city ? drivers.filter((d) => placeCity(d.city || "Hyderabad", areas) === city) : drivers;
-  // A driver's area is the part of their place before the city ("Bhanugudi Junction" in "Bhanugudi Junction, Kakinada").
-  const areaOf = (place?: string) => {
-    const first = (place ?? "").split(",")[0].trim();
-    return first && first.toLowerCase() !== placeCity(place, areas) ? first : undefined;
-  };
-  const score = (d: Driver) => (inArea(where, areaOf(d.city)) ? 2 : 0) + (kind && d.drives.some((x) => x.toLowerCase().includes(kind)) ? 1 : 0);
+  const city = searchCity(where, drivers, areas);
+  if (city === null) return [];
+  const inCity = city ? drivers.filter((d) => placeCity(d.location, areas) === city) : drivers;
+  const pin = pinOf(where);
+  const near = (d: Driver) => inArea(withoutPin(where), d.area) || (!!pin && d.pincode === pin);
+  const score = (d: Driver) => (near(d) ? 2 : 0) + (kind && d.drives.some((x) => x.toLowerCase().includes(kind)) ? 1 : 0);
   return [...inCity].sort((a, b) => score(b) - score(a));
 }
 

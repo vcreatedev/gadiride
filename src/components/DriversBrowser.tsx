@@ -8,7 +8,6 @@ import { CLEAR_EVENT, SEARCH_EVENT, announceClear } from "@/lib/events";
 import { scrollToTarget } from "@/lib/lenis";
 import { pickFormValues, requestEntries } from "@/lib/request";
 import { matchDrivers } from "@/lib/search";
-import { placeCity } from "@/lib/serviceArea";
 import { useSite } from "./SiteProvider";
 
 type Texts = { title: string; empty: string; outsideTitle: string; outsideText: string; requestLabel: string };
@@ -40,9 +39,10 @@ export default function DriversBrowser({ drivers, texts }: { drivers: Driver[]; 
   }, [trip]);
 
   const searching = Object.keys(trip).length > 0;
-  const city = searching ? placeCity(trip.location, areas) : "";
-  const outside = !!city && !drivers.some((d) => placeCity(d.city || "Hyderabad", areas) === city);
-  const list = useMemo(() => (outside ? [] : searching ? matchDrivers(trip, drivers, areas) : drivers), [outside, searching, trip, drivers]);
+  const matched = useMemo(() => (searching ? matchDrivers(trip, drivers, areas) : drivers), [searching, trip, drivers, areas]);
+  // A searched place where no driver is based: the "coming to your city" note instead of an empty list.
+  const outside = searching && !!trip.location?.trim() && matched.length === 0 && drivers.length > 0;
+  const list = outside ? [] : matched;
   const entries = useMemo(() => (searching ? requestEntries("driver", trip) : []), [searching, trip]);
   const clearSearch = () => { setTrip({}); announceClear("list"); };
 

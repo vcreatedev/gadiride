@@ -20,6 +20,7 @@ import {
 import { DEFAULT_LOCATION } from "@/data/cities";
 import type { Metadata } from "next";
 import { BRAND, PAGE_PATH, buildMetadata, isNoindexPage, shareImageUrl } from "./seo";
+import { cityOption } from "./serviceArea";
 import { FAQ } from "@/data/faq";
 import { SAMPLE_DRIVERS } from "@/data/drivers";
 import { dataset } from "@/sanity/env";
@@ -66,7 +67,7 @@ const QUERY = `{
   "faq": *[_type == "faq" && hidden != true && defined(question)] | order(coalesce(order, 100) asc, _createdAt asc){"q": question, "a": answer},
   "roles": *[_type == "careerRole" && hidden != true && defined(role)] | order(coalesce(order, 100) asc, _createdAt asc){role, detail},
   "drivers": *[_type == "driver" && available != false && defined(name)] | order(coalesce(order, 100) asc, _createdAt desc){
-    name, city, experience, licence, duty, drives, languages, about, verified, photo${IMG}
+    name, city, location, area, pincode, experience, licence, duty, drives, languages, about, verified, photo${IMG}
   },
   "trips": *[_type == "trip" && available != false && defined(from) && defined(to) && defined(date)] | order(date asc, time asc){
     "id": _id, from, to, via, date, time, liveFrom, expiresAt, seats, full, pricePerSeat, notes, rules, "car": vehicle->{"slug": slug.current, name}
@@ -90,7 +91,7 @@ type Raw = {
   services?: { id: string; name: string; forWho?: string; offer?: string; points?: string[]; cta?: string; form?: FormKey; toConfirm?: boolean; image?: SanityImageDoc }[];
   faq?: { q: string; a: string }[];
   roles?: { role: string; detail: string }[];
-  drivers?: { name: string; city?: string; experience?: number; licence?: string; duty?: string; drives?: string[]; languages?: string[]; about?: string; verified?: boolean; photo?: SanityImageDoc }[];
+  drivers?: { name: string; city?: string; location?: string; area?: string; pincode?: string; experience?: number; licence?: string; duty?: string; drives?: string[]; languages?: string[]; about?: string; verified?: boolean; photo?: SanityImageDoc }[];
   testimonials?: { quote: string; name: string; detail?: string; rating?: number; photo?: SanityImageDoc }[];
 };
 
@@ -395,6 +396,8 @@ export const getCareerRoles = cache(async (): Promise<CareerRole[]> => {
 
 export type Driver = {
   name: string; city?: string; experience?: number; licence?: string; duty?: string;
+  /** City the driver is based in (searches from that city show them), their area and pincode. */
+  location: string; area?: string; pincode?: string;
   drives: string[]; languages: string[]; about?: string; verified: boolean; photo?: Photo;
   /** Sample profile shown only on development / preview builds. */
   sample?: boolean;
@@ -436,11 +439,25 @@ export const getTrips = cache(async (): Promise<Trip[]> => {
 /** One upcoming trip, for its details page. */
 export const getTrip = cache(async (id: string): Promise<Trip | undefined> => (await getTrips()).find((t) => t.id === id));
 
+/**
+ * A driver's city and area: the admin's Location and Area, else worked out from the older free-text
+ * "City / area" ("Kukatpally" -> Hyderabad, area Kukatpally), so drivers saved before still match.
+ */
+function driverPlace(d: { location?: string; area?: string; city?: string }) {
+  const old = d.city?.trim();
+  const location = d.location?.trim() || cityOption(old) || DEFAULT_LOCATION;
+  const oldArea = old?.split(",")[0].trim();
+  const area = d.area?.trim() || (oldArea && oldArea.toLowerCase() !== location.toLowerCase() ? oldArea : undefined);
+  return { location, area };
+}
+
 export const getDrivers = cache(async (): Promise<Driver[]> => {
   const docs = (await fetchRaw()).drivers ?? [];
-  if (docs.length) return docs.map((d) => ({ ...d, drives: d.drives ?? [], languages: d.languages ?? [], verified: !!d.verified, photo: toPhoto(d.photo, d.name) }));
+  if (docs.length) {
+    return docs.map((d) => ({ ...d, ...driverPlace(d), pincode: d.pincode?.trim() || undefined, drives: d.drives ?? [], languages: d.languages ?? [], verified: !!d.verified, photo: toPhoto(d.photo, d.name) }));
+  }
   if (dataset === "production") return [];
-  return SAMPLE_DRIVERS.map((d) => ({ ...d, verified: false, sample: true }));
+  return SAMPLE_DRIVERS.map((d) => ({ ...d, ...driverPlace(d), verified: false, sample: true }));
 });
 
 export type Testimonial = { quote: string; name: string; detail?: string; rating: number; photo?: Photo };

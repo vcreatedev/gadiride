@@ -30,7 +30,7 @@ export default function DriverCard({ d, title, entries, requestLabel }: { d: Dri
             {d.verified && <BadgeCheck className="h-5 w-5 shrink-0 text-brand-500" aria-label="Documents verified" />}
           </h3>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-500">
-            {d.city && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{d.city}</span>}
+            {d.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{[d.area, d.location].filter(Boolean).join(", ")}</span>}
             {d.sample && <span className="rounded-full bg-taxi/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ink-800">Sample profile</span>}
           </p>
         </div>

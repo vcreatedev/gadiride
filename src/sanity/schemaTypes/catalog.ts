@@ -5,6 +5,8 @@ import { GROUPS } from "@/data/vehicles";
 import { ART_IDS } from "@/data/vehicleArt";
 import { heroFitField, heroImg, heroPhoneImg, img, seo, str, strList, txt } from "./helpers";
 import { FORM_KEYS } from "@/data/services";
+import { DEFAULT_LOCATION, LOCATION_OPTIONS } from "@/data/cities";
+import AreaInput from "../AreaInput";
 
 const groupList = { list: GROUPS.map((g) => ({ title: g.name, value: g.id })) };
 
@@ -98,7 +100,34 @@ export const driver = defineType({
   fields: [
     { ...str("name", "Name", { required: true }), placeholder: "e.g. Ramesh Kumar" },
     img("photo", "Photo", { description: "Face photo. Best size: 600 × 600 px (square)." }),
-    { ...str("city", "City / area", { description: "Drivers in the customer's pickup city are shown first." }), placeholder: "e.g. Kukatpally, Hyderabad" },
+    // The older free-text place; kept (hidden) so nothing is lost. Location + Area below replace it.
+    { ...str("city", "City / area (old)"), hidden: true },
+    defineField({
+      name: "location",
+      title: "Location",
+      type: "string",
+      options: { list: LOCATION_OPTIONS },
+      initialValue: DEFAULT_LOCATION,
+      description: "City where this driver is based. Customers who search from this city see them; other cities don't.",
+      validation: (r) => r.required(),
+    }),
+    defineField({
+      name: "area",
+      title: "Area (optional)",
+      type: "string",
+      placeholder: "Type an area or pincode, or use your location",
+      description: "Locality in that city. Pick a suggestion to fill Location and Pincode too. A search from this area lists this driver first.",
+      components: { input: AreaInput },
+      validation: (r) => r.max(60),
+    }),
+    defineField({
+      name: "pincode",
+      title: "Pincode (optional)",
+      type: "string",
+      placeholder: "e.g. 533001",
+      description: "A search with this pincode lists this driver first. Filled in when you pick an area.",
+      validation: (r) => r.regex(/^[1-9]\d{5}$/, { name: "6-digit pincode" }),
+    }),
     defineField({ name: "experience", title: "Experience (years)", type: "number", placeholder: "e.g. 8", validation: (r) => r.min(0).max(60) }),
     { ...str("licence", "Licence"), placeholder: "e.g. LMV + Transport" },
     { ...str("duty", "Duty type"), placeholder: "e.g. Local & outstation" },
@@ -111,8 +140,12 @@ export const driver = defineType({
   ],
   orderings: [{ title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] }],
   preview: {
-    select: { title: "name", city: "city", available: "available", media: "photo" },
-    prepare: ({ title, city, available, media }) => ({ title, subtitle: [city, available === false && "hidden"].filter(Boolean).join(" · "), media }),
+    select: { title: "name", city: "city", location: "location", area: "area", available: "available", media: "photo" },
+    prepare: ({ title, city, location, area, available, media }) => ({
+      title,
+      subtitle: [[area, location].filter(Boolean).join(", ") || city, available === false && "hidden"].filter(Boolean).join(" · "),
+      media,
+    }),
   },
 });
 
