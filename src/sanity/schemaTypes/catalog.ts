@@ -58,6 +58,8 @@ export const vehicleType = defineType({
       validation: (r) => r.required(),
     }),
     defineField({ name: "order", title: "Sort order", type: "number", initialValue: 100 }),
+    // Added from a vehicle's form ("New vehicle type"): hidden until a vehicle using it is published (see newTypes.ts).
+    defineField({ name: "waitingForVehicle", title: "Waiting for its vehicle to be published", type: "string", hidden: true, readOnly: true }),
   ],
   orderings: [{ title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }] }],
   preview: {

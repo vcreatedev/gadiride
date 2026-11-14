@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
-import { useDocumentOperation, useSchema, type DocumentActionComponent, type DocumentActionProps, type DocumentBadgeComponent, type ObjectSchemaType } from "sanity";
-import { Box, Stack, Text } from "@sanity/ui";
+import { useEffect, useState } from "react";
+import { useClient, useDocumentOperation, useSchema, type DocumentActionComponent, type DocumentActionProps, type DocumentBadgeComponent, type ObjectSchemaType, type SanityDocument } from "sanity";
+import { Box, Stack, Text, useToast } from "@sanity/ui";
 import { HIDDEN_FIELD } from "./schemaTypes/visibility";
+import { apiVersion } from "./env";
+import { revealInto, typeLines, waitingTypes } from "./newTypes";
 
 type Doc = Record<string, unknown>;
 type Item = Doc & { _key?: string };
@@ -115,10 +117,32 @@ export function withPublishSummary(original: DocumentActionComponent): DocumentA
   const Action: DocumentActionComponent = (props: DocumentActionProps) => {
     const result = original(props);
     const schemaType = useSchema().get(props.type) as ObjectSchemaType | undefined;
+    const client = useClient({ apiVersion });
+    const toast = useToast();
     const [open, setOpen] = useState(false);
+    // A vehicle type added from this vehicle's form (hidden until now) goes live together with the vehicle.
+    const typeRef = props.type === "vehicle" ? (props.draft as { type?: { _ref?: string } } | null)?.type?._ref : undefined;
+    const [newTypes, setNewTypes] = useState<SanityDocument[]>([]);
+    useEffect(() => {
+      if (!open || !typeRef) return;
+      let alive = true;
+      waitingTypes(client, { type: { _ref: typeRef } }).then((t) => alive && setNewTypes(t), () => alive && setNewTypes([]));
+      return () => { alive = false; };
+    }, [client, open, typeRef]);
     if (!result) return result;
     const close = () => setOpen(false);
-    const lines = open && props.draft ? describeChanges(schemaType, props.draft as Doc, props.published as Doc | null) : [];
+    const shownTypes = open && typeRef ? newTypes : [];
+    const lines = open && props.draft ? [...describeChanges(schemaType, props.draft as Doc, props.published as Doc | null), ...typeLines(shownTypes)] : [];
+    const publish = async () => {
+      try {
+        const types = typeRef ? await waitingTypes(client, { type: { _ref: typeRef } }) : [];
+        if (types.length) await revealInto(client.transaction(), types).commit();
+      } catch (err) {
+        toast.push({ status: "error", title: "Could not show the new vehicle type", description: `${(err as Error).message} Nothing was published.` });
+        return;
+      }
+      result.onHandle?.();
+    };
     // Green while there are changes waiting to go live; the usual grey when there is nothing to publish.
     const pending = !!props.draft && (!props.published || !sameValue(content(props.draft as Doc), content(props.published as Doc)));
     return {
@@ -135,7 +159,7 @@ export function withPublishSummary(original: DocumentActionComponent): DocumentA
             onCancel: close,
             onConfirm: () => {
               close();
-              result.onHandle?.();
+              void publish();
             },
           }
         : result.dialog,

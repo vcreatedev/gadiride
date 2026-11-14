@@ -1,6 +1,6 @@
 "use client";
 import { forwardRef, useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
-import { Preview, getPublishedId, useClient, useSchema, type ObjectSchemaType, type SanityDocument, type SchemaType } from "sanity";
+import { getPublishedId, useClient, useSchema, type ObjectSchemaType, type SanityDocument, type SchemaType } from "sanity";
 import { usePaneRouter } from "sanity/structure";
 import { Badge, Box, Button, Card, Dialog, Flex, Stack, Text, Tooltip, useToast } from "@sanity/ui";
 import { AddIcon, DragHandleIcon, EyeClosedIcon, EyeOpenIcon, PublishIcon, ResetIcon, TrashIcon } from "@sanity/icons";
@@ -8,9 +8,10 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
-import { LIVE_DATASET, apiVersion, testOverlay } from "./env";
+import { apiVersion, testOverlay } from "./env";
 import { liveCopies, mergedFetch } from "./testCopy";
-import { urlFor } from "./image";
+import ItemPreview, { docLabel } from "./ItemPreview";
+import { revealInto, typeLines, waitingTypes } from "./newTypes";
 import type { ItemList } from "./pageMap";
 import { LIVE_DELAY, describeChanges, sameValue } from "./publishChanges";
 import { scheduleState, whenText, type Schedule } from "@/lib/timer";
@@ -70,7 +71,7 @@ function useEntries(list: ItemList, sort: string): Entry[] | null {
     const vars = { ...JSON.parse(key), type };
     const where = `_type == $type${filter ? ` && (${filter})` : ""}`;
     // Test copy: the test edits plus the live items not edited here (same filter and order).
-    const rowsQuery = `*[${where}] | order(${sort}){_id, "shown": ${shownExpr}, "doc": @, "live": _live == true}`;
+    const rowsQuery = `*[${where}] | order(${sort}){_id, "shown": ${shownExpr}, "doc": { ...@, "typeName": type->name, "typeKey": type->key.current }, "live": _live == true}`;
     const load = () =>
       (testOverlay ? mergedFetch<Row[]>(client, rowsQuery, vars) : client.fetch<Row[]>(rowsQuery, vars)).then(
         (rows) => {
@@ -83,16 +84,17 @@ function useEntries(list: ItemList, sort: string): Entry[] | null {
             const isDraft = r._id !== id;
             const e = byId.get(id);
             if (!e) byId.set(id, { id, previewId: r._id, ids: [r._id], shown: r.shown, dirty: false, schedule: {}, rank, liveOnly: !!r.live, doc: r.doc });
-            else byId.set(id, { ...e, ids: [...e.ids, r._id], ...(isDraft ? { shown: r.shown, rank, previewId: r._id } : {}) });
+            else byId.set(id, { ...e, ids: [...e.ids, r._id], ...(isDraft ? { shown: r.shown, rank, previewId: r._id, doc: r.doc } : {}) });
           });
           const withDirty = [...byId.values()].map((e) => {
             const draft = docs.get(`drafts.${e.id}`);
             const live = docs.get(e.id);
-            const shownDoc = (draft ?? live) as (Schedule & { expiresAt?: string; date?: string; time?: string }) | undefined;
+            const currentDoc = draft ?? live ?? e.doc;
+            const shownDoc = currentDoc as (Schedule & { expiresAt?: string; date?: string; time?: string }) | undefined;
             // Trips end at "Show until" (expiresAt), else when they start (their date and start time).
             const tripEnd = type === "trip" && shownDoc?.date ? tripEndsAt(shownDoc.date, shownDoc.time, shownDoc.expiresAt) : undefined;
             const schedule = { liveFrom: shownDoc?.liveFrom, liveUntil: shownDoc?.liveUntil ?? tripEnd };
-            return { ...e, dirty: !!draft && (!live || !sameValue(content(draft), content(live))), schedule };
+            return { ...e, doc: currentDoc, dirty: !!draft && (!live || !sameValue(content(draft), content(live))), schedule };
           });
           setEntries(withDirty.sort((a, b) => a.rank - b.rank).map(({ rank: _rank, ...e }) => e));
         },
@@ -122,31 +124,6 @@ function TimerTag({ schedule }: { schedule: Schedule }) {
       <Badge tone={tone} fontSize={0} padding={2} radius={2} style={{ whiteSpace: "nowrap" }}>⏱ {state.text}</Badge>
     </Tooltip>
   );
-}
-
-/** Test copy: a live item not edited here, shown from its live content (the test copy does not have it). */
-function LivePreview({ doc }: { doc?: Record<string, unknown> }) {
-  const photo = findPhoto(doc);
-  return (
-    <Flex align="center" gap={2} padding={2}>
-      <Box style={{ width: 33, height: 33, flexShrink: 0, borderRadius: 3, overflow: "hidden", background: "var(--card-muted-bg-color, #f3f3f3)" }}>
-        {photo && <img src={urlFor({ asset: { _ref: photo } }, LIVE_DATASET).width(66).height(66).fit("crop").url()} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />}
-      </Box>
-      <Stack space={2} style={{ minWidth: 0 }}>
-        <Text size={1} weight="medium" textOverflow="ellipsis">{docLabel(doc)}</Text>
-        <Text size={0} muted textOverflow="ellipsis">Live content · not changed in this test copy</Text>
-      </Stack>
-    </Flex>
-  );
-}
-
-/** The first photo in a document (gallery, then other image fields), for a small preview. */
-function findPhoto(value: unknown): string | undefined {
-  if (Array.isArray(value)) return value.map(findPhoto).find(Boolean);
-  if (!value || typeof value !== "object") return undefined;
-  const ref = (value as { asset?: { _ref?: unknown } }).asset?._ref;
-  if (typeof ref === "string" && ref.startsWith("image-")) return ref;
-  return Object.values(value as Record<string, unknown>).map(findPhoto).find(Boolean);
 }
 
 /** Whether this item is on the website: Live, Hidden, or has edits still waiting for Publish. */
@@ -188,54 +165,67 @@ function ItemRow({ entry, type, schemaType, sortable, onToggle, onDelete, onPubl
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id, disabled: !sortable });
   const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition, position: "relative", zIndex: isDragging ? 2 : undefined };
   return (
-    <Card ref={setNodeRef} style={style} radius={2} shadow={isDragging ? 2 : undefined}>
-      <Flex align="center" gap={1}>
+    <Card ref={setNodeRef} style={style} radius={3} border shadow={isDragging ? 3 : 1}>
+      <Flex align="stretch">
         {sortable && (
-          <Tooltip content={tip("Drag to re-order")} placement="top" portal>
-            <Button ref={setActivatorNodeRef} mode="bleed" icon={DragHandleIcon} padding={2} aria-label="Drag to re-order" style={{ cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }} {...attributes} {...listeners} />
-          </Tooltip>
+          <Box style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px", borderRight: "1px solid var(--card-border-color, #f1f3f5)" }}>
+            <Tooltip content={tip("Drag to re-order")} placement="top" portal>
+              <Button ref={setActivatorNodeRef} mode="bleed" icon={DragHandleIcon} padding={2} aria-label="Drag to re-order" style={{ cursor: isDragging ? "grabbing" : "grab", touchAction: "none" }} {...attributes} {...listeners} />
+            </Tooltip>
+          </Box>
         )}
-        <Card flex={1} as={OpenLink} childId={entry.id} childParameters={{ type }} radius={2} data-as="a" style={{ textDecoration: "none", minWidth: 0, opacity: entry.shown ? 1 : 0.5 }}>
-          {entry.liveOnly ? <LivePreview doc={entry.doc} /> : <Preview schemaType={schemaType} value={{ _id: entry.previewId, _type: type }} layout="default" />}
-        </Card>
-        {testOverlay && !entry.liveOnly && (
-          <Tooltip content={tip("Stored in this test copy: shown on the test site only, and removed about an hour after the last change.")} placement="top" portal>
-            <Badge tone="caution" fontSize={0} padding={2} radius={2} style={{ whiteSpace: "nowrap" }}>Test edit</Badge>
-          </Tooltip>
-        )}
-        <LiveTag entry={entry} />
-        <TimerTag schedule={entry.schedule} />
-        {/* Always shown; greyed out while this item matches the website. */}
-        <Tooltip content={tip(draft ? "Publish this item: see its changes, then put them on the website" : "Nothing to publish: matches the website")} placement="top" portal>
-          <span><Button mode={draft ? "default" : "ghost"} tone="positive" fontSize={1} paddingX={2} paddingY={2} text="Publish" disabled={!draft} onClick={onPublish} /></span>
-        </Tooltip>
-        <Tooltip content={tip(!draft ? "Nothing to discard: matches the website" : isLive(entry) ? "Discard changes: go back to what the website shows" : "Discard: this was never published, so it is removed")} placement="top" portal>
-          <span><Button mode="ghost" tone="caution" fontSize={1} paddingX={2} paddingY={2} text="Discard" disabled={!draft} onClick={onDiscard} /></span>
-        </Tooltip>
-        {onToggle && (
-          <Tooltip content={tip(entry.shown ? "Click to hide on the website (then Publish)" : "Hidden on the website. Click to show (then Publish)")} placement="top" portal>
-            <Button mode="bleed" padding={2} icon={entry.shown ? EyeOpenIcon : EyeClosedIcon} aria-label={entry.shown ? "Hide" : "Show"} onClick={onToggle} />
-          </Tooltip>
-        )}
-        {onDelete && (
-          <Tooltip content={tip("Delete")} placement="top" portal>
-            <Button mode="bleed" tone="critical" padding={2} icon={TrashIcon} aria-label="Delete" onClick={onDelete} />
-          </Tooltip>
-        )}
+        <Stack flex={1} style={{ minWidth: 0 }}>
+          {/* Main Card Body (opens the document in right pane) */}
+          <Card as={OpenLink} childId={entry.id} childParameters={{ type }} data-as="a" style={{ textDecoration: "none", minWidth: 0, opacity: entry.shown ? 1 : 0.6, display: "block" }}>
+            <ItemPreview doc={entry.doc} type={type} schemaType={schemaType} previewId={entry.previewId} liveOnly={entry.liveOnly} />
+          </Card>
+
+          {/* Dedicated Action and Status Footer Bar - completely separated from content */}
+          <Box paddingX={3} paddingY={2} style={{ borderTop: "1px solid var(--card-border-color, #f1f3f5)", background: "var(--card-muted-bg-color, #fafbfc)" }}>
+            <Flex align="center" justify="space-between" gap={2} wrap="wrap">
+              {/* Left: Status badges */}
+              <Flex align="center" gap={1} wrap="wrap">
+                <LiveTag entry={entry} />
+                <TimerTag schedule={entry.schedule} />
+                {testOverlay && !entry.liveOnly && (
+                  <Tooltip content={tip("Stored in this test copy: shown on the test site only, and removed about an hour after the last change.")} placement="top" portal>
+                    <Badge tone="caution" fontSize={0} padding={2} radius={2} style={{ whiteSpace: "nowrap" }}>Test edit</Badge>
+                  </Tooltip>
+                )}
+              </Flex>
+
+              {/* Right: Actions */}
+              <Flex align="center" gap={1}>
+                <Tooltip content={tip(draft ? "Publish this item: see its changes, then put them on the website" : "Nothing to publish: matches the website")} placement="top" portal>
+                  <span><Button mode={draft ? "default" : "ghost"} tone="positive" fontSize={1} paddingX={2} paddingY={2} text="Publish" disabled={!draft} onClick={onPublish} /></span>
+                </Tooltip>
+                <Tooltip content={tip(!draft ? "Nothing to discard: matches the website" : isLive(entry) ? "Discard changes: go back to what the website shows" : "Discard: this was never published, so it is removed")} placement="top" portal>
+                  <span><Button mode="ghost" tone="caution" fontSize={1} paddingX={2} paddingY={2} text="Discard" disabled={!draft} onClick={onDiscard} /></span>
+                </Tooltip>
+                {onToggle && (
+                  <Tooltip content={tip(entry.shown ? "Click to hide on the website (then Publish)" : "Hidden on the website. Click to show (then Publish)")} placement="top" portal>
+                    <Button mode="bleed" padding={2} icon={entry.shown ? EyeOpenIcon : EyeClosedIcon} aria-label={entry.shown ? "Hide" : "Show"} onClick={onToggle} />
+                  </Tooltip>
+                )}
+                {onDelete && (
+                  <Tooltip content={tip("Delete")} placement="top" portal>
+                    <Button mode="bleed" tone="critical" padding={2} icon={TrashIcon} aria-label="Delete" onClick={onDelete} />
+                  </Tooltip>
+                )}
+              </Flex>
+            </Flex>
+          </Box>
+        </Stack>
       </Flex>
     </Card>
   );
 }
 
 const draftId = (id: string) => `drafts.${id}`;
-const LABEL_KEYS = ["name", "title", "question", "heading", "label", "city"];
-const docLabel = (d: Record<string, unknown> | undefined) => {
-  const v = LABEL_KEYS.map((k) => d?.[k]).find((x) => typeof x === "string" && x.trim());
-  return typeof v === "string" ? v : "Untitled";
-};
 const stripMeta = ({ _rev: _r, _updatedAt: _u, _createdAt: _c, ...doc }: SanityDocument) => doc;
 
-type Pending = { id: string; label: string; lines: string[]; draft: SanityDocument };
+/** `alsoShow`: a vehicle type added from this vehicle's form, hidden until now; it goes live with it. */
+type Pending = { id: string; label: string; lines: string[]; draft: SanityDocument; alsoShow: SanityDocument[] };
 /** `all`: started from the list's "Publish ALL" / "Discard ALL" (every changed item), not one row. */
 type Review = { mode: "publish" | "discard"; all: boolean; ready: Pending[]; fresh: { id: string; label: string }[] };
 
@@ -375,8 +365,13 @@ export function ItemListBlock({ list }: { list: ItemList }) {
         const draft = byId.get(draftId(e.id));
         const live = byId.get(e.id);
         if (!draft) continue;
-        if (!live) fresh.push({ id: e.id, label: docLabel(draft) });
-        else ready.push({ id: e.id, label: docLabel(draft), draft, lines: describeChanges(schemaType as ObjectSchemaType, draft, live) });
+        if (!live) {
+          fresh.push({ id: e.id, label: docLabel(draft) });
+          continue;
+        }
+        const alsoShow = mode === "publish" && list.type === "vehicle" ? await waitingTypes(client, draft) : [];
+        const lines = [...describeChanges(schemaType as ObjectSchemaType, draft, live), ...typeLines(alsoShow)];
+        ready.push({ id: e.id, label: docLabel(draft), draft, lines, alsoShow });
       }
       setReview({ mode, all, ready, fresh });
     } catch (err) {
@@ -409,6 +404,8 @@ export function ItemListBlock({ list }: { list: ItemList }) {
     setBusy(true);
     try {
       const tx = client.transaction();
+      // Vehicle types added from these vehicles' forms are switched on too (once each).
+      revealInto(tx, review.ready.flatMap((p) => p.alsoShow));
       for (const p of review.ready) {
         tx.createOrReplace({ ...stripMeta(p.draft), _id: p.id });
         tx.delete(draftId(p.id));
@@ -424,39 +421,41 @@ export function ItemListBlock({ list }: { list: ItemList }) {
   };
 
   return (
-    <Stack space={2}>
-      <Flex align="center" gap={2} wrap="wrap">
-        <Box flex={1} style={{ minWidth: 200 }}>
+    <Stack space={3}>
+      {/* Title with Add on the right; the explanation under it. */}
+      <Flex align="flex-start" justify="space-between" gap={3}>
+        <Stack space={2} style={{ flex: 1, minWidth: 0 }}>
           <Text size={1} weight="semibold">{list.title}</Text>
-          <Box marginTop={2}><Text size={0} muted>{changed.length ? `${changed.length} item${changed.length > 1 ? "s" : ""} with changes not on the website yet: publish each row, or all of them with Publish ALL changes.` : "Everything here matches the website. Changes stay drafts until you publish them (each row, or Publish ALL changes)."}</Text></Box>
-        </Box>
-        {/* All changed items in this list at once; greyed out with nothing to do. */}
-        {/* List-wide: every changed item in this list at once (each row also has its own Publish / Discard). */}
-        <Tooltip content={tip(changed.length ? `Throws away the unpublished changes of all ${changed.length} changed item${changed.length === 1 ? "" : "s"} in this list` : "Nothing to discard in this list")} placement="top" portal>
-          <span><Button icon={ResetIcon} text={`Discard ALL changes (${changed.length})`} tone="caution" mode="ghost" fontSize={1} padding={2} disabled={!changed.length} onClick={onDiscardAll} /></span>
-        </Tooltip>
-        <Tooltip content={tip(changed.length ? `Publishes all ${changed.length} changed item${changed.length === 1 ? "" : "s"} in this list at once (one website refresh)` : "Nothing to publish in this list")} placement="top" portal>
-          <span><Button icon={PublishIcon} text={`Publish ALL changes (${changed.length})`} tone="positive" fontSize={1} padding={2} disabled={!changed.length} onClick={() => onReview(changed, "publish", true)} /></span>
-        </Tooltip>
+          <Text size={0} muted>{changed.length ? `${changed.length} item${changed.length > 1 ? "s" : ""} with changes not on the website yet: publish each row, or all of them with Publish ALL changes.` : "Everything here matches the website. Changes stay drafts until you publish them (each row, or Publish ALL changes)."}</Text>
+        </Stack>
         {template && (
-          <Button as={OpenLink} childId={crypto.randomUUID()} childParameters={{ type: list.type, template: template.id }} childPayload={template.params} icon={AddIcon} text="Add" mode="ghost" fontSize={1} padding={2} />
+          <Button as={OpenLink} childId={crypto.randomUUID()} childParameters={{ type: list.type, template: template.id }} childPayload={template.params} icon={AddIcon} text="Add" tone="primary" fontSize={1} paddingX={3} paddingY={2} />
         )}
       </Flex>
-      <Card border radius={2} padding={1}>
+      {/* List-wide, side by side and the same width (each row also has its own Publish / Discard); greyed out with nothing to do. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 8 }}>
+        <Tooltip content={tip(changed.length ? `Publishes all ${changed.length} changed item${changed.length === 1 ? "" : "s"} in this list at once (one website refresh)` : "Nothing to publish in this list")} placement="top" portal>
+          <span style={{ display: "block" }}><Button icon={PublishIcon} text={`Publish ALL changes (${changed.length})`} tone="positive" fontSize={1} padding={2} style={{ width: "100%" }} disabled={!changed.length} onClick={() => onReview(changed, "publish", true)} /></span>
+        </Tooltip>
+        <Tooltip content={tip(changed.length ? `Throws away the unpublished changes of all ${changed.length} changed item${changed.length === 1 ? "" : "s"} in this list` : "Nothing to discard in this list")} placement="top" portal>
+          <span style={{ display: "block" }}><Button icon={ResetIcon} text={`Discard ALL changes (${changed.length})`} tone="caution" mode="ghost" fontSize={1} padding={2} style={{ width: "100%" }} disabled={!changed.length} onClick={onDiscardAll} /></span>
+        </Tooltip>
+      </div>
+      <Box>
         {entries === null ? (
-          <Box padding={2}><Text size={1} muted>Loading…</Text></Box>
+          <Card border radius={2} padding={3}><Text size={1} muted>Loading…</Text></Card>
         ) : entries.length === 0 ? (
-          <Box padding={2}><Text size={1} muted>Nothing here yet.</Text></Box>
+          <Card border radius={2} padding={3}><Text size={1} muted>Nothing here yet.</Text></Card>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={onDragEnd}>
             <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-              <Stack space={1}>
+              <Stack space={3}>
                 {entries.map((e) => <ItemRow key={e.id} entry={e} type={list.type} schemaType={schemaType} sortable={sortable} onToggle={list.toggle === false ? undefined : () => onToggle(e)} onDelete={list.template === false || e.liveOnly ? undefined : () => onDelete(e)} onPublish={() => onReview([e], "publish")} onDiscard={() => onDiscard(e)} />)}
               </Stack>
             </SortableContext>
           </DndContext>
         )}
-      </Card>
+      </Box>
       {review && <ChangesDialog review={review} busy={busy} listKey={`${list.type}-${list.title}`} onCancel={() => setReview(null)} onConfirm={review.mode === "publish" ? publishAll : discardAll} />}
     </Stack>
   );

@@ -14,6 +14,7 @@ import VisibilityItem from "./src/sanity/VisibilityItem";
 import FooterDiscard from "./src/sanity/DraftBar";
 import { LiveStatusBadge, withDiscardSummary, withPublishSummary } from "./src/sanity/publishChanges";
 import { DEFAULT_LOCATION } from "./src/data/cities";
+import { defaultSpecs, defaultSummary } from "./src/sanity/vehicleForm";
 
 /** Types that may not be created or deleted from the Studio (fixed set). */
 const FIXED = new Set([...Object.keys(SINGLETONS), "vehicleGroup"]);
@@ -27,7 +28,8 @@ type SchemaDef = { type?: string; fields?: SchemaDef[]; of?: SchemaDef[]; compon
  */
 const forTestCopy = (t: SchemaDef): SchemaDef =>
   t.type === "reference"
-    ? { ...t, weak: true, components: { ...t.components, input: LiveReferenceInput } } as SchemaDef
+    ? // A field with its own input (a vehicle's type) shows LiveReferenceInput itself in the test copy.
+      { ...t, weak: true, components: { ...t.components, input: t.components?.input ?? LiveReferenceInput } } as SchemaDef
     : { ...t, ...(t.fields ? { fields: t.fields.map(forTestCopy) } : {}), ...(t.of ? { of: t.of.map(forTestCopy) } : {}) };
 const studioTypes = testOverlay ? (schemaTypes as unknown as SchemaDef[]).map(forTestCopy) as unknown as typeof schemaTypes : schemaTypes;
 
@@ -59,7 +61,8 @@ const shared: Omit<WorkspaceOptions, "name" | "title" | "basePath" | "dataset"> 
         title: "Vehicle in group",
         schemaType: "vehicle",
         parameters: [{ name: "group", type: "string" }],
-        value: (p: { group: string }) => ({ group: p.group, location: DEFAULT_LOCATION, available: true, featured: false, order: 0, photoFit: "cover", photoBackground: "studio", photoZoom: 100 }),
+        // Starts with a sample short description and the usual specification rows for its group (the admin fills them in).
+        value: (p: { group: string }) => ({ group: p.group, location: DEFAULT_LOCATION, summary: defaultSummary(p.group), specs: defaultSpecs(p.group), available: true, featured: false, order: 0, photoFit: "cover", photoBackground: "studio", photoZoom: 100 }),
       },
       {
         id: "type-by-group",

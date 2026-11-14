@@ -1,6 +1,6 @@
 "use client";
-import { useState, type ClipboardEvent, type KeyboardEvent } from "react";
-import { LinkIcon } from "@sanity/icons";
+import { useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent } from "react";
+import { LinkIcon, UploadIcon } from "@sanity/icons";
 import { Box, Button, Card, Flex, Stack, Text, TextInput } from "@sanity/ui";
 import { insert, setIfMissing, useClient, type ArrayOfObjectsInputProps, type SchemaType } from "sanity";
 import { apiVersion } from "./env";
@@ -18,12 +18,13 @@ const linksIn = (text: string) => text.split(/[\s,]+/).map((x) => x.trim()).filt
 const newKey = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 
 /**
- * Every list of photos: the usual list with Upload / Select, plus a box under it that adds photos
- * from image links (one or several at once, press Enter) or a copied image (Ctrl+V).
+ * Every list of photos: the usual list, plus "Upload photos" (pick several files at once) and a box
+ * that adds photos from image links (one or several at once, press Enter) or a copied image (Ctrl+V).
  */
 export default function ImageListAddressInput(props: ArrayOfObjectsInputProps) {
   const client = useClient({ apiVersion });
   const itemType = imageItemType(props.schemaType);
+  const filePicker = useRef<HTMLInputElement>(null);
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -62,6 +63,16 @@ export default function ImageListAddressInput(props: ArrayOfObjectsInputProps) {
     fromBox();
   };
 
+  // Photos picked from the computer or phone: several at once, added in the order picked.
+  const onPick = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.currentTarget.files ?? []);
+    e.currentTarget.value = ""; // picking the same files again still works
+    const photos = files.filter((f) => f.type.startsWith("image/"));
+    const skipped = files.filter((f) => !f.type.startsWith("image/")).map((f) => `${f.name}: not a photo, skipped`);
+    if (!photos.length) return setErrors(skipped);
+    void addAll(photos).then(() => skipped.length && setErrors((prev) => [...skipped, ...prev]));
+  };
+
   // Copied images (e.g. "Copy image" in Chrome) pasted straight into the box.
   const onPaste = (e: ClipboardEvent<HTMLInputElement>) => {
     const files = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith("image/"));
@@ -78,6 +89,21 @@ export default function ImageListAddressInput(props: ArrayOfObjectsInputProps) {
     <Stack space={2}>
       <Text size={1} weight="semibold">{summary}</Text>
       {props.renderDefault(props)}
+      {!props.readOnly && itemType && (
+        <>
+          <input ref={filePicker} type="file" accept="image/*" multiple hidden onChange={onPick} />
+          <Button
+            icon={UploadIcon}
+            mode="ghost"
+            fontSize={1}
+            padding={3}
+            text={busy ?? "Upload photos (you can pick several at once)"}
+            loading={!!busy}
+            disabled={!!busy}
+            onClick={() => filePicker.current?.click()}
+          />
+        </>
+      )}
       {!props.readOnly && itemType && (
         <Flex gap={2} align="center">
           <Box flex={1}>

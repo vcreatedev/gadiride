@@ -22,6 +22,7 @@ export const STATUS_LABEL: Record<Status, string> = {
 type Row = {
   _id: string; name?: string; group?: GroupId; location?: string; area?: string; pincode?: string;
   available?: boolean; liveFrom?: string; liveUntil?: string; type?: string; typeKey?: string; photo?: string;
+  pricePerDay?: number; specs?: { label: string; value: string; hidden?: boolean }[]; mileage?: string;
 };
 
 /** One vehicle for the overview: what the admin sees (draft first) and what the website shows. */
@@ -29,10 +30,11 @@ export type OverviewVehicle = {
   id: string; name: string; group?: GroupId; groupName: string; type?: string;
   city: string; area?: string; pincode?: string; photo?: string;
   status: Status; timer?: string; edits: boolean;
+  pricePerDay?: number; specs?: { label: string; value: string; hidden?: boolean }[]; mileage?: string;
 };
 
 const QUERY = `*[_type == "vehicle"]{
-  _id, name, group, location, area, pincode, available, liveFrom, liveUntil,
+  _id, name, group, location, area, pincode, available, liveFrom, liveUntil, pricePerDay, specs, mileage,
   "type": type->name, "typeKey": type->key.current,
   "photo": coalesce(gallery[hidden != true][0].asset->url, image.asset->url, type->image.asset->url)
 }`;
@@ -69,6 +71,9 @@ function toVehicles(rows: Row[], now: number): OverviewVehicle[] {
       status: statusOf(pub, now),
       timer: scheduleState(shown, now)?.text,
       edits: !!draft && !!pub,
+      pricePerDay: shown.pricePerDay,
+      specs: shown.specs,
+      mileage: shown.mileage,
     };
   });
 }

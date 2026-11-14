@@ -5,6 +5,7 @@ import { Badge, Box, Button, Card, Flex, Grid, Heading, Spinner, Stack, Text, Te
 import { PinIcon, SearchIcon } from "@sanity/icons";
 import { GROUPS, type GroupId } from "@/data/vehicles";
 import { STATUS_LABEL, byLocation, useOverview, type OverviewVehicle, type Status } from "./overviewData";
+import { FactsGrid, PriceText, vehicleFacts } from "./VehicleFacts";
 
 type LinkProps = { childId: string; childParameters?: Record<string, string>; children?: ReactNode; style?: CSSProperties };
 
@@ -59,12 +60,12 @@ function VehicleCard({ v }: { v: OverviewVehicle }) {
           <Badge tone={STATUS_TONE[v.status]} fontSize={0}>{STATUS_LABEL[v.status]}</Badge>
           {v.edits && <Badge tone="caution" fontSize={0}>Edits not published</Badge>}
         </Flex>
-        <Text size={2} weight="semibold" textOverflow="ellipsis">{v.name}</Text>
-        <Text size={1} muted textOverflow="ellipsis">{[v.groupName, v.type].filter(Boolean).join(" · ")}</Text>
-        <Flex align="center" gap={2}>
-          <Text size={1} muted><PinIcon /></Text>
-          <Text size={1} textOverflow="ellipsis">{[v.area, v.city].filter(Boolean).join(", ")}{v.pincode ? ` ${v.pincode}` : ""}</Text>
-        </Flex>
+        <Stack space={2}>
+          <Text size={2} weight="semibold" textOverflow="ellipsis">{v.name}</Text>
+          <PriceText pricePerDay={v.pricePerDay} />
+        </Stack>
+        {/* Same facts as the cards on the website: type, place and the first three specifications. */}
+        <FactsGrid facts={vehicleFacts({ typeName: v.type, area: v.area, location: v.city, pincode: v.pincode, specs: v.specs, mileage: v.mileage }, { maxSpecs: 3, withOptions: false })} />
         {v.timer && <Text size={1} muted>⏱ {v.timer}</Text>}
       </Stack>
     </Card>

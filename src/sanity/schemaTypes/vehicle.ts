@@ -6,49 +6,37 @@ import { SiteContactInput } from "../SiteDefaultInputs";
 import { GROUPS } from "@/data/vehicles";
 import { VehiclePhotoInput } from "../FallbackPhotoInput";
 import { stockMedia, stockPhotoUrl } from "../stockPhoto";
+import VehicleNameInput from "../VehicleNameInput";
+import VehicleTypeInput from "../VehicleTypeInput";
+import SpecsInput from "../SpecsInput";
+import OptionsInput from "../OptionsInput";
+import { defaultSpecs, defaultSummary } from "../vehicleForm";
 
 /** A 10-digit mobile, or with the country code; spaces, + and - are fine. */
 const contactNumber = (v?: string) =>
   !v || /^\d{10,13}$/.test(v.replace(/[\s()+-]/g, "")) || "Enter a 10-digit mobile number, e.g. 98765 43210 (or with the country code: 91 98765 43210).";
 
-const photo = (name: string, title: string, description?: string) =>
-  defineField({
-    name,
-    title,
-    type: "image",
-    group: "photos",
-    description,
-    options: { hotspot: true },
-    fields: [defineField({ name: "alt", title: "Alt text (describe the photo)", type: "string" })],
-  });
+const SUMMARY_MAX = 220;
 
+/** All fields in one list, no tabs: what the vehicle is, its photos, details, price and contact, then when it shows. */
 export const vehicle = defineType({
   name: "vehicle",
   title: "Vehicle",
   type: "document",
-  groups: [
-    { name: "main", title: "Main", default: true },
-    { name: "photos", title: "Photos" },
-    { name: "details", title: "Details" },
-    { name: "booking", title: "Price & contact" },
-    { name: "listing", title: "Listing" },
-  ],
   fields: [
-    defineField({ name: "name", title: "Name", type: "string", group: "main", placeholder: "e.g. Maruti Swift (Manual)", validation: (r) => r.required().max(60) }),
     defineField({
-      name: "slug",
-      title: "URL slug",
-      type: "slug",
-      group: "main",
-      description: "Used in the page address, e.g. /vehicle/7-seater-suv/. Click Generate.",
-      options: { source: "name", maxLength: 80 },
-      validation: (r) => r.required(),
+      name: "name",
+      title: "Name",
+      type: "string",
+      placeholder: "e.g. Maruti Swift (Manual)",
+      description: "Also makes the page address (e.g. /vehicle/maruti-swift-manual/). It stays the same once the vehicle is live.",
+      components: { input: VehicleNameInput },
+      validation: (r) => r.required().max(60),
     }),
     defineField({
       name: "group",
       title: "Vehicle group",
       type: "string",
-      group: "main",
       options: { list: GROUPS.map((g) => ({ title: g.name, value: g.id })), layout: "radio" },
       validation: (r) => r.required(),
     }),
@@ -56,9 +44,9 @@ export const vehicle = defineType({
       name: "type",
       title: "Vehicle type",
       type: "reference",
-      group: "main",
       to: [{ type: "vehicleType" }],
-      description: "Only types from the selected group are listed. Add new types under Catalog → Vehicle types.",
+      description: "Only types from the selected group are listed. Not there? Click New vehicle type.",
+      components: { input: VehicleTypeInput },
       options: {
         disableNew: true,
         filter: ({ document }) => ({
@@ -72,7 +60,6 @@ export const vehicle = defineType({
       name: "location",
       title: "Location",
       type: "string",
-      group: "main",
       options: { list: LOCATION_OPTIONS },
       initialValue: DEFAULT_LOCATION,
       description: "City where this vehicle is based. Visitors who search from this city see it; other cities don't.",
@@ -82,7 +69,6 @@ export const vehicle = defineType({
       name: "area",
       title: "Area (optional)",
       type: "string",
-      group: "main",
       placeholder: "Type an area or pincode, or use your location",
       description: "Locality in that city. Pick a suggestion to fill Location and Pincode too. A search from this area lists this vehicle first, then the rest of the city.",
       components: { input: AreaInput },
@@ -92,21 +78,26 @@ export const vehicle = defineType({
       name: "pincode",
       title: "Pincode (optional)",
       type: "string",
-      group: "main",
       placeholder: "e.g. 533001",
       description: "A search with this pincode lists this vehicle first. Filled in when you pick an area.",
       validation: (r) => r.regex(/^[1-9]\d{5}$/, { name: "6-digit pincode" }),
     }),
-    defineField({ name: "summary", title: "Short description", type: "text", rows: 3, group: "main", placeholder: "e.g. Easy to drive and park, great mileage for city trips. 5 seats, AC, music system.", validation: (r) => r.required().max(220) }),
+    defineField({
+      name: "summary",
+      title: "Short description",
+      type: "text",
+      rows: 3,
+      description: "Starts with a sample: change it to describe this vehicle.",
+      // New vehicles added from a group get that group's sample (see the vehicle-by-group template).
+      initialValue: defaultSummary("cars"),
+      validation: (r) => r.required().max(SUMMARY_MAX),
+    }),
 
-    // Older vehicles kept their main photo here; it now lives first in Photos (see scripts/merge-vehicle-photos.ts).
-    { ...photo("image", "Main photo (old)"), components: { input: VehiclePhotoInput }, hidden: true },
     defineField({
       name: "gallery",
       title: "Photos",
       type: "array",
-      group: "photos",
-      description: "The first photo is the main photo (cards and the top of the vehicle page); use Make main to move another one first. Then interior, boot, side, back. No photos = the vehicle type's photo. Best size: 1600 × 1000 px (16:10).",
+      description: "Upload several at once. The first photo is the main photo (cards and the top of the vehicle page); use Make main to move another one first. No photos = the vehicle type's photo. Best size: 1600 × 1000 px (16:10).",
       of: [
         defineArrayMember({
           type: "image",
@@ -114,13 +105,14 @@ export const vehicle = defineType({
           fields: [defineField({ name: "alt", title: "Alt text", type: "string" })],
         }),
       ],
+      // "Upload photos" (several at once) and photo links replace the one-at-a-time "Add item".
+      options: { disableActions: ["add", "addBefore", "addAfter"] },
       validation: (r) => r.max(13),
     }),
     defineField({
       name: "photoFit",
       title: "Photo framing",
       type: "string",
-      group: "photos",
       initialValue: "cover",
       options: {
         layout: "radio",
@@ -134,7 +126,6 @@ export const vehicle = defineType({
       name: "photoBackground",
       title: "Card background behind the photo",
       type: "string",
-      group: "photos",
       initialValue: "studio",
       options: {
         layout: "radio",
@@ -147,29 +138,25 @@ export const vehicle = defineType({
         ],
       },
     }),
-    defineField({
-      name: "photoZoom",
-      title: "Zoom",
-      type: "number",
-      group: "photos",
-      description: "100 = normal. Increase if the vehicle looks small in its card, e.g. 115.",
-      initialValue: 100,
-      validation: (r) => r.min(70).max(160),
-    }),
+    // Not in the form any more; a zoom already set on a vehicle still applies on the website (100 = normal).
+    defineField({ name: "photoZoom", title: "Zoom", type: "number", initialValue: 100, hidden: true, validation: (r) => r.min(70).max(160) }),
 
     defineField({
       name: "specs",
       title: "Specifications",
       type: "array",
-      group: "details",
-      description: "Label and value pairs, e.g. Seats: 7, Fuel: CNG, Mileage: 34 km/kg. All show on the vehicle page; the first three also show on cards.",
+      description: "Fill in the values; pick from the list (▾) or type your own. Empty rows are not shown. All show on the vehicle page; the first three also show on the cards. Drag to change the order.",
+      components: { input: SpecsInput },
+      // New vehicles start with Seats, Transmission, Fuel and Mileage (group-specific from the vehicle-by-group template).
+      initialValue: () => defaultSpecs("cars"),
       of: [
         defineArrayMember({
           type: "object",
           name: "spec",
           fields: [
-            defineField({ name: "label", title: "Label", type: "string", placeholder: "e.g. Seats", validation: (r) => r.required() }),
-            defineField({ name: "value", title: "Value", type: "string", placeholder: "e.g. 5", validation: (r) => r.required() }),
+            // Empty rows are skipped on the website, so these are not required (no red boxes while typing).
+            defineField({ name: "label", title: "Label", type: "string" }),
+            defineField({ name: "value", title: "Value", type: "string" }),
           ],
           preview: { select: { title: "label", subtitle: "value" } },
         }),
@@ -179,25 +166,16 @@ export const vehicle = defineType({
       name: "options",
       title: "Options",
       type: "array",
-      group: "details",
       of: [defineArrayMember({ type: "string" })],
       options: { layout: "tags" },
-      description: "e.g. Self drive, With driver, With operator",
-    }),
-    defineField({
-      name: "mileage",
-      title: "Mileage",
-      type: "string",
-      group: "details",
-      placeholder: "e.g. 20 km/l  ·  CNG: 31 km/kg  ·  JCB: 5 litres/hour",
-      description: "Shown with the specifications on the vehicle page. Empty = not shown.",
+      description: 'Shown as ticks on the vehicle page. Type one and press Enter, or use Quick add. Without "Self drive", the booking form starts on "With driver".',
+      components: { input: OptionsInput },
     }),
     defineField({
       name: "pricePerDay",
       title: "Price per day (₹)",
       type: "number",
       placeholder: "e.g. 1499",
-      group: "booking",
       description: 'Shown on the vehicle cards and the vehicle page. Empty = "Price on request".',
       validation: (r) => r.min(0),
     }),
@@ -205,7 +183,6 @@ export const vehicle = defineType({
       name: "whatsappNumber",
       title: "WhatsApp number (optional)",
       type: "string",
-      group: "booking",
       description: "WhatsApp bookings for this vehicle go to this number. Empty = the WhatsApp number in Site settings.",
       components: { input: SiteContactInput },
       validation: (r) => r.custom(contactNumber),
@@ -214,17 +191,15 @@ export const vehicle = defineType({
       name: "phone",
       title: "Phone number (optional)",
       type: "string",
-      group: "booking",
       description: "The Call button on this vehicle rings this number. Empty = the phone in Site settings.",
       components: { input: SiteContactInput },
       validation: (r) => r.custom(contactNumber),
     }),
-    defineField({ name: "available", title: "Show on website", type: "boolean", group: "listing", initialValue: true }),
+    defineField({ name: "available", title: "Show on website", type: "boolean", initialValue: true }),
     defineField({
       name: "liveFrom",
       title: "Go live at (optional)",
       type: "datetime",
-      group: ["main", "listing"], // on Main too, so it is filled in while adding a vehicle
       description: "Publish now and the vehicle stays off the website until this date and time, then appears by itself. Empty = live as soon as it is published.",
       components: { input: TimerInput, field: TimerField },
     }),
@@ -232,7 +207,6 @@ export const vehicle = defineType({
       name: "liveUntil",
       title: "Show until (optional)",
       type: "datetime",
-      group: ["main", "listing"], // on Main too, so it is filled in while adding a vehicle
       description: "The vehicle hides itself from the website after this date and time. Use the buttons to show it for a number of days. Empty = no end.",
       components: { input: TimerInput, field: TimerField },
       validation: (r) =>
@@ -241,18 +215,55 @@ export const vehicle = defineType({
           return !until || !from || Date.parse(String(until)) > Date.parse(from) ? true : "Must be after Go live at";
         }),
     }),
-    defineField({ name: "featured", title: 'Show in "Popular right now" on the home page', type: "boolean", group: "listing", initialValue: false }),
-    defineField({ name: "order", title: "Sort order", type: "number", group: "listing", description: "New ones start at 0, so they show first. Lower numbers show first.", initialValue: 0 }),
+    defineField({ name: "featured", title: 'Show in "Popular right now" on the home page', type: "boolean", initialValue: false }),
+    defineField({ name: "order", title: "Sort order", type: "number", description: "New ones start at 0, so they show first. Lower numbers show first.", initialValue: 0 }),
+
+    // Not in the form. The page address is made from the Name (VehicleNameInput).
+    defineField({ name: "slug", title: "Page address", type: "slug", options: { source: "name", maxLength: 80 }, hidden: true }),
+    // Older vehicles kept their main photo here; it now lives first in Photos (see scripts/merge-vehicle-photos.ts).
+    defineField({
+      name: "image",
+      title: "Main photo (old)",
+      type: "image",
+      options: { hotspot: true },
+      fields: [defineField({ name: "alt", title: "Alt text (describe the photo)", type: "string" })],
+      components: { input: VehiclePhotoInput },
+      hidden: true,
+    }),
+    // The old Mileage box: Mileage is now a row in Specifications. Kept so older values still show on
+    // the website until moved (Specifications offers "Move into the list").
+    defineField({ name: "mileage", title: "Mileage (old)", type: "string", hidden: true }),
   ],
   orderings: [
     { title: "Sort order", name: "orderAsc", by: [{ field: "order", direction: "asc" }, { field: "name", direction: "asc" }] },
     { title: "Name", name: "nameAsc", by: [{ field: "name", direction: "asc" }] },
   ],
   preview: {
-    select: { title: "name", location: "location", area: "area", group: "group", type: "type.name", typeKey: "type.key.current", media: "image", firstPhoto: "gallery.0", typeMedia: "type.image", available: "available", featured: "featured" },
-    prepare: ({ title, location, area, group, type, typeKey, media, firstPhoto, typeMedia, available, featured }) => ({
-      title,
-      subtitle: [GROUPS.find((g) => g.id === group)?.short, type, [area, location || DEFAULT_LOCATION].filter(Boolean).join(", "), featured && "★ featured", available === false && "hidden"].filter(Boolean).join(" · "),
+    select: {
+      title: "name",
+      location: "location",
+      area: "area",
+      group: "group",
+      type: "type.name",
+      typeKey: "type.key.current",
+      media: "image",
+      firstPhoto: "gallery.0",
+      typeMedia: "type.image",
+      available: "available",
+      featured: "featured",
+      pricePerDay: "pricePerDay",
+    },
+    prepare: ({ title, location, area, group, type, typeKey, media, firstPhoto, typeMedia, available, featured, pricePerDay }) => ({
+      title: title || "Untitled vehicle",
+      subtitle: [
+        typeof pricePerDay === "number" ? `₹${pricePerDay.toLocaleString("en-IN")}/day` : "Price on request",
+        type || GROUPS.find((g) => g.id === group)?.short,
+        [area, location || DEFAULT_LOCATION].filter(Boolean).join(", "),
+        featured && "★ featured",
+        available === false && "hidden",
+      ]
+        .filter(Boolean)
+        .join(" · "),
       // Same photo the website shows: own photo, else the type's, else the built-in one.
       media: media ?? firstPhoto ?? typeMedia ?? stockMedia(stockPhotoUrl(typeKey, group)),
     }),
