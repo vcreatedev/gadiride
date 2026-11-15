@@ -1,4 +1,4 @@
-import Link from "next/link";
+import IntentLink from "../IntentLink";
 import { Check } from "lucide-react";
 import BookActions from "../BookActions";
 import VehiclePhoto from "../VehiclePhoto";
@@ -25,7 +25,7 @@ export default function ResultCard({
   const price = v.pricePerDay;
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-card bg-white shadow-card ring-1 ring-black/5 transition-shadow hover:shadow-lift">
-      <Link href={`/vehicle/${v.slug}/`} prefetch={false} className="block" tabIndex={-1} aria-hidden>
+      <IntentLink href={`/vehicle/${v.slug}/`} pendingSpinner className="relative block" tabIndex={-1} aria-hidden>
         <VehiclePhoto
           photo={v.photo}
           fit={v.fit}
@@ -35,12 +35,12 @@ export default function ResultCard({
           sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
           className="aspect-[16/10] w-full"
         />
-      </Link>
+      </IntentLink>
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">{v.typeName}</p>
-            <h3 className="mt-0.5 truncate font-head text-xl font-semibold text-ink-900"><Link href={`/vehicle/${v.slug}/`} prefetch={false} className="hover:text-brand-600">{v.name}</Link></h3>
+            <h3 className="mt-0.5 truncate font-head text-xl font-semibold text-ink-900"><IntentLink href={`/vehicle/${v.slug}/`} className="hover:text-brand-600">{v.name}</IntentLink></h3>
           </div>
           {price ? (
             <p className="shrink-0 text-right font-head text-lg font-semibold text-ink-900">
@@ -80,9 +80,9 @@ export default function ResultCard({
 
         <div className="mt-auto pt-5">
           <BookActions title={title} vehicle={v.name} details={v} entries={entries} />
-          <Link href={`/vehicle/${v.slug}/`} prefetch={false} className="mt-3 block text-center text-sm font-semibold text-ink-600 underline-offset-4 hover:text-brand-600 hover:underline">
+          <IntentLink href={`/vehicle/${v.slug}/`} className="mt-3 block text-center text-sm font-semibold text-ink-600 underline-offset-4 hover:text-brand-600 hover:underline">
             {detailsLabel}
-          </Link>
+          </IntentLink>
         </div>
       </div>
     </article>
